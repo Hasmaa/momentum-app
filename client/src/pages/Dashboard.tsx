@@ -43,7 +43,8 @@ import {
   useDisclosure,
   FocusLock,
   Switch,
-  SimpleGrid
+  SimpleGrid,
+  Icon
 } from '@chakra-ui/react';
 import { Todo } from '../types/todo';
 import { 
@@ -85,11 +86,23 @@ const MotionBox = motion(Box);
 const MotionCard = motion(Card);
 const MotionFlex = motion(Flex);
 
-const SortableCard = ({ todo, isDragging, onEdit, onDelete }: { 
+const getStatusIcon = (status: Todo['status']) => {
+  switch (status) {
+    case 'completed':
+      return CheckIcon;
+    case 'in-progress':
+      return TimeIcon;
+    case 'pending':
+      return WarningIcon;
+  }
+};
+
+const SortableCard = ({ todo, isDragging, onEdit, onDelete, onStatusChange }: { 
   todo: Todo; 
   isDragging?: boolean;
   onEdit: (todo: Todo) => void;
   onDelete: (id: string) => void;
+  onStatusChange: (id: string, newStatus: Todo['status']) => void;
 }) => {
   const {
     attributes,
@@ -104,84 +117,252 @@ const SortableCard = ({ todo, isDragging, onEdit, onDelete }: {
     transition,
   };
 
+  const statusColors = {
+    pending: 'gray',
+    'in-progress': 'blue',
+    completed: 'green'
+  };
+
+  const priorityColors = {
+    low: 'green',
+    medium: 'yellow',
+    high: 'red'
+  };
+
+  const cardBg = useColorModeValue('white', 'gray.800');
+  const descriptionColor = useColorModeValue('gray.600', 'gray.300');
+  const borderColor = useColorModeValue('gray.100', 'gray.700');
+  const hoverBg = useColorModeValue('gray.50', 'gray.700');
+
+  const isOverdue = isPast(new Date(todo.dueDate));
+  const isDueSoon = isWithinInterval(new Date(todo.dueDate), {
+    start: new Date(),
+    end: addDays(new Date(), 2)
+  });
+
   return (
     <Box
       ref={setNodeRef}
       style={style}
       {...attributes}
       {...listeners}
+      role="article"
+      aria-label={`Task: ${todo.title}`}
     >
       <Card
-        bg={useColorModeValue('white', 'gray.800')}
+        bg={cardBg}
         boxShadow={isDragging ? 'lg' : 'sm'}
-        borderRadius="lg"
+        borderRadius="xl"
         mb={4}
         opacity={isDragging ? 0.6 : 1}
         transform={isDragging ? 'scale(1.02)' : 'none'}
         transition="all 0.2s"
+        borderWidth="1px"
+        borderColor={borderColor}
+        position="relative"
+        overflow="visible"
+        _hover={{
+          bg: hoverBg,
+          transform: 'translateY(-2px)',
+          boxShadow: 'md',
+        }}
       >
-        <CardBody>
-          <VStack spacing={3} align="stretch">
+        {/* Status Indicator */}
+        <Box
+          position="absolute"
+          top={0}
+          left={0}
+          bottom={0}
+          width="4px"
+          borderTopLeftRadius="xl"
+          borderBottomLeftRadius="xl"
+          bg={`${statusColors[todo.status]}.400`}
+          transition="all 0.2s"
+        />
+
+        <CardBody py={4} pl={6}>
+          <VStack spacing={4} align="stretch">
+            {/* Header Section */}
             <Flex justify="space-between" align="center">
-              <Heading size="sm">{todo.title}</Heading>
-              <HStack spacing={2}>
-                <IconButton
-                  aria-label="Edit todo"
-                  icon={<EditIcon />}
-                  size="sm"
-                  variant="ghost"
-                  colorScheme="blue"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onEdit(todo);
-                  }}
-                />
-                <IconButton
-                  aria-label="Delete todo"
-                  icon={<DeleteIcon />}
-                  size="sm"
-                  variant="ghost"
-                  colorScheme="red"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(todo.id);
-                  }}
-                />
+              <Heading 
+                size="sm" 
+                noOfLines={1}
+                flex={1}
+                _hover={{ color: 'blue.500' }}
+              >
+                {todo.title}
+              </Heading>
+              
+              <HStack spacing={3}>
+                <Menu>
+                  <Tooltip 
+                    label={`Click to change status. Current: ${todo.status.replace('-', ' ')}`}
+                    placement="top"
+                    hasArrow
+                  >
+                    <MenuButton
+                      as={IconButton}
+                      icon={
+                        <HStack spacing={2}>
+                          <Icon 
+                            as={getStatusIcon(todo.status)} 
+                            color={`${statusColors[todo.status]}.400`}
+                            boxSize={4}
+                          />
+                          <Icon 
+                            as={ChevronDownIcon} 
+                            color={`${statusColors[todo.status]}.400`}
+                            boxSize={3}
+                          />
+                        </HStack>
+                      }
+                      size="sm"
+                      variant="ghost"
+                      colorScheme={statusColors[todo.status]}
+                      aria-label="Change task status"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </Tooltip>
+                  <Portal>
+                    <MenuList>
+                      <MenuItem
+                        icon={<Icon as={WarningIcon} color="gray.400" />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onStatusChange(todo.id, 'pending');
+                        }}
+                        color={statusColors.pending + '.600'}
+                        isDisabled={todo.status === 'pending'}
+                      >
+                        Set to Pending
+                      </MenuItem>
+                      <MenuItem
+                        icon={<Icon as={TimeIcon} color="blue.400" />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onStatusChange(todo.id, 'in-progress');
+                        }}
+                        color={statusColors['in-progress'] + '.600'}
+                        isDisabled={todo.status === 'in-progress'}
+                      >
+                        Set to In Progress
+                      </MenuItem>
+                      <MenuItem
+                        icon={<Icon as={CheckIcon} color="green.400" />}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onStatusChange(todo.id, 'completed');
+                        }}
+                        color={statusColors.completed + '.600'}
+                        isDisabled={todo.status === 'completed'}
+                      >
+                        Set to Completed
+                      </MenuItem>
+                    </MenuList>
+                  </Portal>
+                </Menu>
+
+                <Tooltip label="Edit task" placement="top" hasArrow>
+                  <IconButton
+                    aria-label="Edit todo"
+                    icon={<EditIcon />}
+                    size="sm"
+                    variant="ghost"
+                    colorScheme="blue"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEdit(todo);
+                    }}
+                    _hover={{
+                      bg: 'blue.50',
+                      color: 'blue.600'
+                    }}
+                  />
+                </Tooltip>
+                <Tooltip label="Delete task" placement="top" hasArrow>
+                  <IconButton
+                    aria-label="Delete todo"
+                    icon={<DeleteIcon />}
+                    size="sm"
+                    variant="ghost"
+                    colorScheme="red"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(todo.id);
+                    }}
+                    _hover={{
+                      bg: 'red.50',
+                      color: 'red.600'
+                    }}
+                  />
+                </Tooltip>
               </HStack>
             </Flex>
-            
+
+            {/* Description Section */}
             {todo.description && (
-              <Text fontSize="sm" color="gray.500" noOfLines={2}>
+              <Text 
+                fontSize="sm" 
+                color={descriptionColor} 
+                noOfLines={2}
+                lineHeight="tall"
+              >
                 {todo.description}
               </Text>
             )}
-            
-            <Flex justify="space-between" align="center">
-              <Tag
-                size="sm"
-                colorScheme={{
-                  low: 'green',
-                  medium: 'yellow',
-                  high: 'red'
-                }[todo.priority]}
-                variant="subtle"
-              >
-                {todo.priority}
-              </Tag>
-              
+
+            {/* Metadata Section */}
+            <Flex 
+              justify="space-between" 
+              align="center"
+              wrap="wrap"
+              gap={2}
+            >
               <HStack spacing={2}>
-                <Tag size="sm" variant="subtle">
-                  <TagLeftIcon as={CalendarIcon} />
-                  <TagLabel>{format(new Date(todo.dueDate), 'MMM d')}</TagLabel>
-                </Tag>
+                <Tooltip
+                  label={`Priority: ${todo.priority}`}
+                  placement="top"
+                  hasArrow
+                >
+                  <Tag
+                    size="sm"
+                    colorScheme={priorityColors[todo.priority]}
+                    variant="subtle"
+                    borderRadius="full"
+                    px={3}
+                  >
+                    <TagLeftIcon 
+                      as={WarningIcon} 
+                      boxSize="10px"
+                    />
+                    <TagLabel textTransform="capitalize">
+                      {todo.priority}
+                    </TagLabel>
+                  </Tag>
+                </Tooltip>
+              </HStack>
+              
+              <Tooltip
+                label={`Due: ${format(new Date(todo.dueDate), 'PPP')}`}
+                placement="top"
+                hasArrow
+              >
                 <Tag 
                   size="sm" 
-                  colorScheme={todo.status === 'completed' ? 'green' : todo.status === 'in-progress' ? 'blue' : 'gray'}
                   variant="subtle"
+                  colorScheme={isOverdue ? 'red' : isDueSoon ? 'orange' : 'gray'}
+                  borderRadius="full"
+                  px={3}
                 >
-                  {todo.status}
+                  <TagLeftIcon 
+                    as={CalendarIcon}
+                    boxSize="10px"
+                  />
+                  <TagLabel>
+                    {format(new Date(todo.dueDate), 'MMM d')}
+                  </TagLabel>
                 </Tag>
-              </HStack>
+              </Tooltip>
             </Flex>
           </VStack>
         </CardBody>
@@ -437,17 +618,6 @@ const Dashboard = () => {
     }
   };
 
-  const getStatusIcon = (status: Todo['status']) => {
-    switch (status) {
-      case 'completed':
-        return CheckIcon;
-      case 'in-progress':
-        return TimeIcon;
-      case 'pending':
-        return WarningIcon;
-    }
-  };
-
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
   };
@@ -592,6 +762,7 @@ const Dashboard = () => {
                             onEditModalOpen();
                           }}
                           onDelete={handleDelete}
+                          onStatusChange={handleStatusChange}
                         />
                       ))}
                     </AnimatePresence>
@@ -611,6 +782,7 @@ const Dashboard = () => {
                 onEditModalOpen();
               }}
               onDelete={handleDelete}
+              onStatusChange={handleStatusChange}
             />
           ) : null}
         </DragOverlay>
@@ -724,6 +896,7 @@ const Dashboard = () => {
                           onEditModalOpen();
                         }}
                         onDelete={handleDelete}
+                        onStatusChange={handleStatusChange}
                       />
                     ))}
                   </VStack>
