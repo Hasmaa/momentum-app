@@ -12,6 +12,7 @@ import {
   useToast,
   InputGroup,
   InputLeftElement,
+  InputRightElement,
   IconButton,
   Container,
   Card,
@@ -23,6 +24,7 @@ import {
   Tag,
   TagLabel,
   TagLeftIcon,
+  TagCloseButton,
   Flex,
   Menu,
   MenuButton,
@@ -63,6 +65,8 @@ import {
   ViewIcon,
   SunIcon,
   MoonIcon,
+  CloseIcon,
+  RepeatIcon,
 } from '@chakra-ui/icons';
 import { format, isPast, isWithinInterval, addDays } from 'date-fns';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
@@ -515,6 +519,9 @@ const Droppable: FC<DroppableProps> = ({ children, id }) => {
   );
 };
 
+type StatusType = Todo['status'] | 'all';
+type PriorityType = Todo['priority'] | 'all';
+
 const Dashboard = () => {
   const { colorMode, toggleColorMode } = useColorMode();
   const [todos, setTodos] = useState<Todo[]>([]);
@@ -524,8 +531,8 @@ const Dashboard = () => {
   const [priority, setPriority] = useState<Todo['priority']>('medium');
   const [dueDate, setDueDate] = useState(new Date().toISOString().split('T')[0]);
   const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
-  const [filterStatus, setFilterStatus] = useState<Todo['status'] | 'all'>('all');
-  const [filterPriority, setFilterPriority] = useState<Todo['priority'] | 'all'>('all');
+  const [filterStatus, setFilterStatus] = useState<Set<StatusType>>(new Set(['all']));
+  const [filterPriority, setFilterPriority] = useState<Set<PriorityType>>(new Set(['all']));
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<keyof Todo>('createdAt');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -569,11 +576,68 @@ const Dashboard = () => {
     onClose: onDeleteAlertClose 
   } = useDisclosure();
 
+  const hasActiveFilters = filterStatus.size > 1 || filterPriority.size > 1 || searchQuery.trim() !== '';
+  
+  const clearFilters = () => {
+    setFilterStatus(new Set(['all']));
+    setFilterPriority(new Set(['all']));
+    setSearchQuery('');
+  };
+
+  const handleStatusFilter = (status: StatusType) => {
+    const newFilterStatus = new Set(filterStatus);
+    if (status === 'all') {
+      setFilterStatus(new Set(['all']));
+      return;
+    }
+    
+    newFilterStatus.delete('all');
+    if (newFilterStatus.has(status)) {
+      newFilterStatus.delete(status);
+      if (newFilterStatus.size === 0) {
+        newFilterStatus.add('all');
+      }
+    } else {
+      newFilterStatus.add(status);
+    }
+    setFilterStatus(newFilterStatus);
+  };
+
+  const handlePriorityFilter = (priority: PriorityType) => {
+    const newFilterPriority = new Set(filterPriority);
+    if (priority === 'all') {
+      setFilterPriority(new Set(['all']));
+      return;
+    }
+    
+    newFilterPriority.delete('all');
+    if (newFilterPriority.has(priority)) {
+      newFilterPriority.delete(priority);
+      if (newFilterPriority.size === 0) {
+        newFilterPriority.add('all');
+      }
+    } else {
+      newFilterPriority.add(priority);
+    }
+    setFilterPriority(newFilterPriority);
+  };
+
   const fetchTodos = async () => {
     try {
       const params = new URLSearchParams();
-      if (filterStatus !== 'all') params.append('status', filterStatus);
-      if (filterPriority !== 'all') params.append('priority', filterPriority);
+      
+      if (!filterStatus.has('all')) {
+        Array.from(filterStatus).forEach(status => 
+          params.append('status', status)
+        );
+      }
+      
+      if (!filterPriority.has('all')) {
+        Array.from(filterPriority).forEach(priority => 
+          params.append('priority', priority)
+        );
+      }
+      
       if (searchQuery) params.append('search', searchQuery);
       params.append('sortField', sortField);
       params.append('sortDirection', sortDirection);
@@ -1034,11 +1098,16 @@ const Dashboard = () => {
 
           <Card borderRadius="lg" bg={cardBg} borderColor={borderColor} borderWidth="1px">
             <CardBody>
-              <Grid templateColumns="repeat(12, 1fr)" gap={4} mb={6}>
-                <GridItem colSpan={[12, 12, 6]}>
-                  <InputGroup size="md">
+              <VStack spacing={4} align="stretch">
+                <Flex 
+                  direction={{ base: "column", md: "row" }} 
+                  gap={4} 
+                  align={{ base: "stretch", md: "center" }}
+                  justify="space-between"
+                >
+                  <InputGroup size="md" maxW={{ base: "100%", md: "400px" }}>
                     <InputLeftElement pointerEvents="none">
-                      <SearchIcon color={secondaryTextColor} />
+                      <SearchIcon color={searchQuery ? accentColor : secondaryTextColor} />
                     </InputLeftElement>
                     <Input
                       placeholder="Search tasks..."
@@ -1048,66 +1117,265 @@ const Dashboard = () => {
                       borderRadius="full"
                       _placeholder={{ color: secondaryTextColor }}
                       color={textColor}
+                      borderWidth="2px"
+                      borderColor={searchQuery ? 'blue.500' : 'transparent'}
+                      _hover={{
+                        borderColor: searchQuery ? 'blue.600' : 'gray.300'
+                      }}
+                      _focus={{
+                        borderColor: 'blue.500'
+                      }}
                     />
-                  </InputGroup>
-                </GridItem>
-                <GridItem colSpan={[12, 6, 3]}>
-                  <Select
-                    value={filterStatus}
-                    onChange={(e) => setFilterStatus(e.target.value as Todo['status'] | 'all')}
-                    variant="filled"
-                    size="md"
-                    icon={<HamburgerIcon color={secondaryTextColor} />}
-                    borderRadius="full"
-                    color={textColor}
-                  >
-                    <option value="all">All Status</option>
-                    <option value="pending">Pending</option>
-                    <option value="in-progress">In Progress</option>
-                    <option value="completed">Completed</option>
-                  </Select>
-                </GridItem>
-                <GridItem colSpan={[12, 6, 3]}>
-                  <Select
-                    value={filterPriority}
-                    onChange={(e) => setFilterPriority(e.target.value as Todo['priority'] | 'all')}
-                    variant="filled"
-                    size="md"
-                    icon={<WarningIcon color={secondaryTextColor} />}
-                    borderRadius="full"
-                    color={textColor}
-                  >
-                    <option value="all">All Priority</option>
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                  </Select>
-                </GridItem>
-              </Grid>
-
-              <Box>
-                <AnimatePresence mode="wait">
-                  {isListView ? (
-                    <VStack spacing={4} align="stretch" as={motion.div} layout>
-                      {todos.map(todo => (
-                        <SortableCard
-                          key={todo.id}
-                          todo={todo}
-                          isDragging={false}
-                          onEdit={(todo) => {
-                            setEditingTodo(todo);
-                            onEditModalOpen();
-                          }}
-                          onDelete={handleDeleteClick}
-                          onStatusChange={handleStatusChange}
+                    {searchQuery && (
+                      <InputRightElement>
+                        <IconButton
+                          aria-label="Clear search"
+                          icon={<CloseIcon />}
+                          size="sm"
+                          variant="ghost"
+                          colorScheme="gray"
+                          onClick={() => setSearchQuery('')}
                         />
-                      ))}
-                    </VStack>
-                  ) : (
-                    renderBoardView()
-                  )}
-                </AnimatePresence>
-              </Box>
+                      </InputRightElement>
+                    )}
+                  </InputGroup>
+
+                  <HStack spacing={4} align="center">
+                    <Menu closeOnSelect={false}>
+                      <MenuButton
+                        as={Button}
+                        rightIcon={<ChevronDownIcon />}
+                        variant="outline"
+                        colorScheme={!filterStatus.has('all') ? 'blue' : 'gray'}
+                        borderRadius="full"
+                        px={6}
+                        fontWeight={!filterStatus.has('all') ? 'bold' : 'normal'}
+                      >
+                        <HStack spacing={2}>
+                          <Icon as={HamburgerIcon} />
+                          <Text>Status</Text>
+                          {!filterStatus.has('all') && (
+                            <Tag size="sm" colorScheme="blue" borderRadius="full">
+                              {filterStatus.size}
+                            </Tag>
+                          )}
+                        </HStack>
+                      </MenuButton>
+                      <MenuList>
+                        <MenuItem
+                          onClick={() => handleStatusFilter('all' as StatusType)}
+                          closeOnSelect={false}
+                        >
+                          <Flex justify="space-between" align="center" width="100%">
+                            <Text>All Status</Text>
+                            {filterStatus.has('all' as StatusType) && <CheckIcon color="blue.500" />}
+                          </Flex>
+                        </MenuItem>
+                        <MenuItem
+                          onClick={() => handleStatusFilter('pending' as StatusType)}
+                          closeOnSelect={false}
+                        >
+                          <Flex justify="space-between" align="center" width="100%">
+                            <HStack>
+                              <Icon as={WarningIcon} color="gray.500" />
+                              <Text>Pending</Text>
+                            </HStack>
+                            {filterStatus.has('pending' as StatusType) && <CheckIcon color="blue.500" />}
+                          </Flex>
+                        </MenuItem>
+                        <MenuItem
+                          onClick={() => handleStatusFilter('in-progress' as StatusType)}
+                          closeOnSelect={false}
+                        >
+                          <Flex justify="space-between" align="center" width="100%">
+                            <HStack>
+                              <Icon as={TimeIcon} color="blue.500" />
+                              <Text>In Progress</Text>
+                            </HStack>
+                            {filterStatus.has('in-progress' as StatusType) && <CheckIcon color="blue.500" />}
+                          </Flex>
+                        </MenuItem>
+                        <MenuItem
+                          onClick={() => handleStatusFilter('completed' as StatusType)}
+                          closeOnSelect={false}
+                        >
+                          <Flex justify="space-between" align="center" width="100%">
+                            <HStack>
+                              <Icon as={CheckIcon} color="green.500" />
+                              <Text>Completed</Text>
+                            </HStack>
+                            {filterStatus.has('completed' as StatusType) && <CheckIcon color="blue.500" />}
+                          </Flex>
+                        </MenuItem>
+                      </MenuList>
+                    </Menu>
+
+                    <Menu closeOnSelect={false}>
+                      <MenuButton
+                        as={Button}
+                        rightIcon={<ChevronDownIcon />}
+                        variant="outline"
+                        colorScheme={!filterPriority.has('all') ? 'blue' : 'gray'}
+                        borderRadius="full"
+                        px={6}
+                        fontWeight={!filterPriority.has('all') ? 'bold' : 'normal'}
+                      >
+                        <HStack spacing={2}>
+                          <Icon as={WarningIcon} />
+                          <Text>Priority</Text>
+                          {!filterPriority.has('all') && (
+                            <Tag size="sm" colorScheme="blue" borderRadius="full">
+                              {filterPriority.size}
+                            </Tag>
+                          )}
+                        </HStack>
+                      </MenuButton>
+                      <MenuList>
+                        <MenuItem
+                          onClick={() => handlePriorityFilter('all' as PriorityType)}
+                          closeOnSelect={false}
+                        >
+                          <Flex justify="space-between" align="center" width="100%">
+                            <Text>All Priority</Text>
+                            {filterPriority.has('all' as PriorityType) && <CheckIcon color="blue.500" />}
+                          </Flex>
+                        </MenuItem>
+                        <MenuItem
+                          onClick={() => handlePriorityFilter('low' as PriorityType)}
+                          closeOnSelect={false}
+                        >
+                          <Flex justify="space-between" align="center" width="100%">
+                            <HStack>
+                              <Icon as={WarningIcon} color="green.500" />
+                              <Text>Low</Text>
+                            </HStack>
+                            {filterPriority.has('low' as PriorityType) && <CheckIcon color="blue.500" />}
+                          </Flex>
+                        </MenuItem>
+                        <MenuItem
+                          onClick={() => handlePriorityFilter('medium' as PriorityType)}
+                          closeOnSelect={false}
+                        >
+                          <Flex justify="space-between" align="center" width="100%">
+                            <HStack>
+                              <Icon as={WarningIcon} color="yellow.500" />
+                              <Text>Medium</Text>
+                            </HStack>
+                            {filterPriority.has('medium' as PriorityType) && <CheckIcon color="blue.500" />}
+                          </Flex>
+                        </MenuItem>
+                        <MenuItem
+                          onClick={() => handlePriorityFilter('high' as PriorityType)}
+                          closeOnSelect={false}
+                        >
+                          <Flex justify="space-between" align="center" width="100%">
+                            <HStack>
+                              <Icon as={WarningIcon} color="red.500" />
+                              <Text>High</Text>
+                            </HStack>
+                            {filterPriority.has('high' as PriorityType) && <CheckIcon color="blue.500" />}
+                          </Flex>
+                        </MenuItem>
+                      </MenuList>
+                    </Menu>
+
+                    {hasActiveFilters && (
+                      <Tooltip label="Clear all filters" hasArrow>
+                        <IconButton
+                          aria-label="Clear filters"
+                          icon={<RepeatIcon />}
+                          variant="ghost"
+                          colorScheme="blue"
+                          onClick={clearFilters}
+                        />
+                      </Tooltip>
+                    )}
+                  </HStack>
+                </Flex>
+
+                {hasActiveFilters && (
+                  <Flex gap={2} flexWrap="wrap">
+                    {searchQuery && (
+                      <Tag
+                        size="md"
+                        borderRadius="full"
+                        variant="subtle"
+                        colorScheme="blue"
+                      >
+                        <TagLeftIcon as={SearchIcon} boxSize="12px" />
+                        <TagLabel>Search: {searchQuery}</TagLabel>
+                        <TagCloseButton onClick={() => setSearchQuery('')} />
+                      </Tag>
+                    )}
+                    
+                    {!filterStatus.has('all') && Array.from(filterStatus).map((status: StatusType) => (
+                      <Tag
+                        key={status}
+                        size="md"
+                        borderRadius="full"
+                        variant="subtle"
+                        colorScheme="blue"
+                      >
+                        <TagLeftIcon as={HamburgerIcon} boxSize="12px" />
+                        <TagLabel>Status: {status.replace('-', ' ')}</TagLabel>
+                        <TagCloseButton onClick={() => {
+                          const newFilterStatus = new Set(filterStatus);
+                          newFilterStatus.delete(status);
+                          if (newFilterStatus.size === 0) {
+                            newFilterStatus.add('all');
+                          }
+                          setFilterStatus(newFilterStatus);
+                        }} />
+                      </Tag>
+                    ))}
+                    
+                    {!filterPriority.has('all') && Array.from(filterPriority).map((priority: PriorityType) => (
+                      <Tag
+                        key={priority}
+                        size="md"
+                        borderRadius="full"
+                        variant="subtle"
+                        colorScheme="blue"
+                      >
+                        <TagLeftIcon as={WarningIcon} boxSize="12px" />
+                        <TagLabel>Priority: {priority}</TagLabel>
+                        <TagCloseButton onClick={() => {
+                          const newFilterPriority = new Set(filterPriority);
+                          newFilterPriority.delete(priority);
+                          if (newFilterPriority.size === 0) {
+                            newFilterPriority.add('all');
+                          }
+                          setFilterPriority(newFilterPriority);
+                        }} />
+                      </Tag>
+                    ))}
+                  </Flex>
+                )}
+
+                <Box>
+                  <AnimatePresence mode="wait">
+                    {isListView ? (
+                      <VStack spacing={4} align="stretch" as={motion.div} layout>
+                        {todos.map(todo => (
+                          <SortableCard
+                            key={todo.id}
+                            todo={todo}
+                            isDragging={false}
+                            onEdit={(todo) => {
+                              setEditingTodo(todo);
+                              onEditModalOpen();
+                            }}
+                            onDelete={handleDeleteClick}
+                            onStatusChange={handleStatusChange}
+                          />
+                        ))}
+                      </VStack>
+                    ) : (
+                      renderBoardView()
+                    )}
+                  </AnimatePresence>
+                </Box>
+              </VStack>
             </CardBody>
           </Card>
         </VStack>

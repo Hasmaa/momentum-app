@@ -1,7 +1,7 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
 import * as todoService from '../services/todoService';
-import { FilterOptions, SortOptions } from '../services/todoService';
+import { FilterOptions, SortOptions, Todo } from '../services/todoService';
 
 const router = express.Router();
 
@@ -20,7 +20,7 @@ const todoValidation = [
 ];
 
 // Get all todos
-router.get('/', async (req, res) => {
+router.get('/', async (req: Request, res: Response) => {
   try {
     const filters: FilterOptions = {};
     const sort: SortOptions = {
@@ -28,12 +28,22 @@ router.get('/', async (req, res) => {
       direction: (req.query.sortDirection as 'asc' | 'desc') || 'desc'
     };
 
+    // Handle multiple status values
     if (req.query.status) {
-      filters.status = req.query.status as Todo['status'];
+      const statusValues = Array.isArray(req.query.status) 
+        ? req.query.status as Todo['status'][]
+        : [req.query.status as Todo['status']];
+      filters.status = statusValues;
     }
+
+    // Handle multiple priority values
     if (req.query.priority) {
-      filters.priority = req.query.priority as Todo['priority'];
+      const priorityValues = Array.isArray(req.query.priority)
+        ? req.query.priority as Todo['priority'][]
+        : [req.query.priority as Todo['priority']];
+      filters.priority = priorityValues;
     }
+
     if (req.query.search) {
       filters.search = req.query.search as string;
     }

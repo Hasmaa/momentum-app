@@ -3,22 +3,22 @@
     {
       "title": "Make me a sandwich",
       "description": "I am really hungry and could use a sandwich",
-      "status": "in-progress",
+      "status": "pending",
       "priority": "high",
       "dueDate": "2025-03-12T00:00:00.000Z",
       "id": "1741682808996",
       "createdAt": "2025-03-11T08:46:48.996Z",
-      "updatedAt": "2025-03-11T09:52:15.770Z"
+      "updatedAt": "2025-03-11T09:58:01.986Z"
     },
     {
       "title": "Get drinks with friends",
       "description": "I need social activity",
-      "status": "completed",
+      "status": "in-progress",
       "priority": "medium",
       "dueDate": "2025-03-15T00:00:00.000Z",
       "id": "1741685448602",
       "createdAt": "2025-03-11T09:30:48.602Z",
-      "updatedAt": "2025-03-11T09:52:13.806Z"
+      "updatedAt": "2025-03-11T09:59:48.775Z"
     }
   ]
 }

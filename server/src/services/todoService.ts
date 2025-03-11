@@ -3,7 +3,7 @@ import path from 'path';
 
 const dataPath = path.join(__dirname, '../data/todos.json');
 
-interface Todo {
+export interface Todo {
   id: string;
   title: string;
   description: string;
@@ -18,13 +18,13 @@ interface TodoData {
   todos: Todo[];
 }
 
-interface FilterOptions {
-  status?: Todo['status'];
-  priority?: Todo['priority'];
+export interface FilterOptions {
+  status?: Todo['status'][];
+  priority?: Todo['priority'][];
   search?: string;
 }
 
-interface SortOptions {
+export interface SortOptions {
   field: keyof Todo;
   direction: 'asc' | 'desc';
 }
@@ -38,11 +38,11 @@ export async function readTodos(
 
   // Apply filters
   if (filters) {
-    if (filters.status) {
-      todos = todos.filter(todo => todo.status === filters.status);
+    if (filters.status && filters.status.length > 0) {
+      todos = todos.filter(todo => filters.status!.includes(todo.status));
     }
-    if (filters.priority) {
-      todos = todos.filter(todo => todo.priority === filters.priority);
+    if (filters.priority && filters.priority.length > 0) {
+      todos = todos.filter(todo => filters.priority!.includes(todo.priority));
     }
     if (filters.search) {
       const searchLower = filters.search.toLowerCase();
