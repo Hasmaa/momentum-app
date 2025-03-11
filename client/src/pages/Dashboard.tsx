@@ -1945,6 +1945,9 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     _onCreateModalOpen();
   };
 
+  const toastBgColor = useColorModeValue('white', 'gray.700');
+  const progressBgColor = useColorModeValue('gray.100', 'gray.600');
+  
   const handleTemplateSelect = async (template: TaskTemplate) => {
     setIsTemplateModalOpen(false);
     setIsSubmitting(true);
@@ -1953,9 +1956,17 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     const loadingToastId = toast({
       title: `Creating tasks from template "${template.name}"`,
       description: (
-        <Box>
-          <Progress size="sm" isIndeterminate colorScheme="blue" borderRadius="full" />
-          <Text mt={2} fontSize="sm">Setting up your workflow...</Text>
+        <Box p={3} borderRadius="md">
+          <VStack align="stretch" spacing={3}>
+            <Text fontSize="sm">Setting up your workflow...</Text>
+            <Progress 
+              size="sm" 
+              isIndeterminate 
+              colorScheme="blue"
+              borderRadius="full"
+              bg={progressBgColor}
+            />
+          </VStack>
         </Box>
       ),
       status: 'loading',
@@ -1985,16 +1996,24 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
         // Update progress toast
         toast.update(loadingToastId, {
           description: (
-            <Box>
-              <Progress 
-                size="sm" 
-                value={((i + 1) / template.tasks.length) * 100} 
-                colorScheme="blue" 
-                borderRadius="full" 
-              />
-              <Text mt={2} fontSize="sm">
-                Created {i + 1} of {template.tasks.length} tasks...
-              </Text>
+            <Box  borderRadius="md">
+              <VStack align="stretch" spacing={3}>
+                <Text fontSize="sm">
+                  Created {i + 1} of {template.tasks.length} tasks...
+                </Text>
+                <Progress 
+                  size="sm" 
+                  value={((i + 1) / template.tasks.length) * 100} 
+                  colorScheme="blue"
+                  borderRadius="full"
+                  bg={progressBgColor}
+                  sx={{
+                    '& > div': {
+                      transition: 'all 0.3s ease-in-out',
+                    }
+                  }}
+                />
+              </VStack>
             </Box>
           ),
         });
@@ -2010,23 +2029,28 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
       toast({
         title: 'Template tasks created!',
         description: (
-          <MotionBox
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ 
-              type: "spring",
-              stiffness: 260,
-              damping: 20
-            }}
+          <Box 
+            p={4} 
+            borderRadius="md" 
           >
-            <VStack align="start" spacing={2}>
-              <Text>Successfully created {template.tasks.length} tasks from "{template.name}"</Text>
-              <HStack spacing={2}>
-                <Icon as={CheckIcon} color="green.500" />
-                <Text fontSize="sm" color="green.500">Your workflow is ready to go!</Text>
-              </HStack>
-            </VStack>
-          </MotionBox>
+            <MotionBox
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ 
+                type: "spring",
+                stiffness: 260,
+                damping: 20
+              }}
+            >
+              <VStack align="start" spacing={3}>
+                <Text>Successfully created {template.tasks.length} tasks from "{template.name}"</Text>
+                <HStack spacing={2}>
+                  <Icon as={CheckIcon}  />
+                  <Text fontSize="sm" >Your workflow is ready to go!</Text>
+                </HStack>
+              </VStack>
+            </MotionBox>
+          </Box>
         ),
         status: 'success',
         duration: 5000,
@@ -2038,7 +2062,13 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
       toast.close(loadingToastId);
       toast({
         title: 'Error creating tasks',
-        description: error instanceof Error ? error.message : 'An unexpected error occurred',
+        description: (
+          <Box bg={toastBgColor} p={3} borderRadius="md">
+            <Text color="red.500">
+              {error instanceof Error ? error.message : 'An unexpected error occurred'}
+            </Text>
+          </Box>
+        ),
         status: 'error',
         duration: 5000,
         isClosable: true,
