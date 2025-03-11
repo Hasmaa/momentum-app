@@ -110,6 +110,8 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import type { FC, PropsWithChildren } from 'react';
 import SkeletonCard from '../components/SkeletonCard';
+import { PREDEFINED_TEMPLATES, TaskTemplate } from '../types/template';
+import TemplateModal from '../components/TemplateModal';
 
 const MotionBox = motion(Box);
 const MotionCard = motion(Card);
@@ -746,6 +748,8 @@ const Dashboard = () => {
     onOpen: onEditModalOpen, 
     onClose: onEditModalClose 
   } = useDisclosure();
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<TaskTemplate | null>(null);
 
   const mainBg = useColorModeValue('gray.50', 'gray.900');
   const cardBg = useColorModeValue('white', 'gray.800');
@@ -1841,6 +1845,47 @@ const Dashboard = () => {
     _onCreateModalOpen();
   };
 
+  const handleTemplateSelect = async (template: TaskTemplate) => {
+    setIsTemplateModalOpen(false);
+    setIsSubmitting(true);
+    
+    try {
+      // Create all tasks from the template
+      for (const task of template.tasks) {
+        const dueDate = new Date();
+        dueDate.setDate(dueDate.getDate() + task.dueDate);
+        
+        await fetch('http://localhost:5001/api/todos', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            ...task,
+            dueDate: dueDate.toISOString(),
+          }),
+        });
+      }
+      
+      fetchTodos();
+      onCreateModalClose();
+      
+      toast({
+        title: `Created ${template.tasks.length} tasks from template`,
+        status: 'success',
+        duration: 3000,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error creating tasks from template',
+        status: 'error',
+        duration: 3000,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <Box bg={mainBg} minH="100vh" transition="background-color 0.2s">
       <Container 
@@ -2436,7 +2481,6 @@ const Dashboard = () => {
                                     allowMultiple 
                                     as={motion.div} 
                                     layout
-                                    spacing={6}
                                   >
                                     {(['pending', 'in-progress', 'completed'] as const).map(status => {
                                       const statusTodos = todos.filter(todo => todo.status === status);
@@ -2444,6 +2488,7 @@ const Dashboard = () => {
                                         <Droppable id={`column-${status}`} key={status}>
                                           <AccordionItem
                                             border="none"
+                                            mb={status !== 'completed' ? 6 : 0}
                                           >
                                             <Card 
                                               bg={columnBg}
@@ -2648,6 +2693,7 @@ const Dashboard = () => {
                                   <Droppable id={`column-${status}`} key={status}>
                                     <AccordionItem
                                       border="none"
+                                      mb={status !== 'completed' ? 6 : 0}
                                     >
                                       <Card 
                                         bg={columnBg}
@@ -2851,7 +2897,9 @@ const Dashboard = () => {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -20, opacity: 0 }}
-            transition={{ type: "tween", duration: 0.2 }}
+            style={{
+              transition: 'all 0.3s ease-in-out'
+            }}
           >
             <FocusLock>
               <form onSubmit={handleSubmit}>
@@ -2859,6 +2907,21 @@ const Dashboard = () => {
                 <ModalCloseButton />
                 <ModalBody>
                   <VStack spacing={4}>
+                    <Button
+                      width="100%"
+                      height="auto"
+                      py={6}
+                      variant="outline"
+                      onClick={() => setIsTemplateModalOpen(true)}
+                      leftIcon={<Icon as={RepeatIcon} />}
+                    >
+                      <VStack spacing={1}>
+                        <Text>Use a Template</Text>
+                        <Text fontSize="sm" color={secondaryTextColor}>
+                          Quick-start with predefined task templates
+                        </Text>
+                      </VStack>
+                    </Button>
                     <InputGroup>
                       <InputLeftElement pointerEvents="none">
                         <AddIcon color="gray.400" />
@@ -3092,6 +3155,14 @@ const Dashboard = () => {
             </AlertDialogContent>
           </AlertDialogOverlay>
         </AlertDialog>
+
+        {/* Template Modal */}
+        <TemplateModal
+          isOpen={isTemplateModalOpen}
+          onClose={() => setIsTemplateModalOpen(false)}
+          templates={PREDEFINED_TEMPLATES}
+          onSelectTemplate={handleTemplateSelect}
+        />
       </Container>
     </Box>
   );
