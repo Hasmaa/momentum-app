@@ -95,6 +95,9 @@ import {
   CloseIcon,
   RepeatIcon,
   QuestionIcon,
+  FiRotateCcw,
+  FiRotateCw,
+  FiHelpCircle,
 } from '@chakra-ui/icons';
 import { format, isPast, isWithinInterval, addDays } from 'date-fns';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
@@ -124,6 +127,8 @@ import type { FC, PropsWithChildren } from 'react';
 import SkeletonCard from '../components/SkeletonCard';
 import { PREDEFINED_TEMPLATES } from '../types/template';
 import TemplateModal from '../components/TemplateModal';
+import { useTaskHistory } from '../hooks/useTaskHistory';
+import KeyboardShortcuts from '../components/KeyboardShortcuts';
 
 const MotionBox = motion(Box);
 const MotionCard = motion(Card);
@@ -297,11 +302,6 @@ const SortableCard = React.forwardRef<HTMLDivElement, {
   const descriptionColor = useColorModeValue('gray.600', 'gray.300');
   const borderColor = useColorModeValue('gray.100', 'gray.700');
   const hoverBg = useColorModeValue('gray.50', 'whiteAlpha.100');
-  const textColor = useColorModeValue('gray.700', 'gray.100');
-  const menuItemHoverBg = useColorModeValue('gray.100', 'whiteAlpha.200');
-  const menuBg = useColorModeValue('white', 'gray.700');
-  const ghostButtonHoverBg = useColorModeValue('blue.50', 'whiteAlpha.200');
-  const accentColor = useColorModeValue('blue.500', 'blue.200');
   const dragHandleColor = useColorModeValue('gray.400', 'gray.500');
 
   const isOverdue = isPast(new Date(todo.dueDate));
@@ -581,8 +581,6 @@ const SortableCard = React.forwardRef<HTMLDivElement, {
 
 SortableCard.displayName = 'SortableCard';
 
-// Add an enum or type for column IDs
-type ColumnId = 'column-pending' | 'column-in-progress' | 'column-completed';
 
 // Update the Droppable component usage
 const getStatusFromColumnId = (columnId: string): Task['status'] | null => {
@@ -600,7 +598,7 @@ const getStatusFromColumnId = (columnId: string): Task['status'] | null => {
 
 // Update the Droppable component
 const Droppable = React.forwardRef<HTMLDivElement, DroppableProps>(({ children, id }, ref) => {
-  const { setNodeRef, isOver, active } = useDroppable({
+  const { setNodeRef, isOver } = useDroppable({
     id,
     data: {
       type: id,
@@ -729,8 +727,17 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
+  const {
+    tasks: todos,
+    updateTasks: setTodos  } = useTaskHistory(initialTasks);
+  
+  const { 
+    isOpen: isShortcutsOpen, 
+    onOpen: onShortcutsOpen, 
+    onClose: onShortcutsClose 
+  } = useDisclosure();
+
   const { colorMode, toggleColorMode } = useColorMode();
-  const [todos, setTodos] = useState<Task[]>(initialTasks);
   const [title, setTitle] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [status, setStatus] = useState<TaskStatus>('pending');
@@ -792,9 +799,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
   const columnBg = useColorModeValue('gray.50', 'gray.800');
   const headerBg = useColorModeValue('blue.50', 'gray.800');
   const accentColor = useColorModeValue('blue.500', 'blue.200');
-  const descriptionColor = useColorModeValue('gray.600', 'gray.300');
   const secondaryTextColor = useColorModeValue('gray.500', 'gray.400');
-  const menuHoverBg = useColorModeValue('gray.100', 'whiteAlpha.200');
   const ghostButtonHoverBg = useColorModeValue('blue.50', 'whiteAlpha.200');
 
   const [todoToDelete, setTodoToDelete] = useState<Task | null>(null);
@@ -927,6 +932,18 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
       window.removeEventListener('keydown', handleKeyPress);
     };
   }, [handleKeyPress]);
+
+  // Add keyboard shortcut for showing shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === '?') {
+        onShortcutsOpen();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onShortcutsOpen]);
 
   // Bulk action handlers
   const handleBulkDelete = async () => {
@@ -1276,33 +1293,8 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     onEditModalClose();
   };
 
-  const toggleSort = (field: keyof Task) => {
-    if (sortConfig.field === field) {
-      setSortConfig(prev => ({ ...prev, direction: prev.direction === 'asc' ? 'desc' : 'asc' }));
-    } else {
-      setSortConfig(prev => ({ ...prev, field }));
-      setSortConfig(prev => ({ ...prev, direction: 'asc' }));
-    }
-  };
 
-  const getDueDateColor = (dueDate: string) => {
-    const date = new Date(dueDate);
-    const now = new Date();
-    if (isPast(date)) return 'red.500';
-    if (isWithinInterval(date, { start: now, end: addDays(now, 2) })) return 'orange.500';
-    return 'gray.500';
-  };
 
-  const getPriorityColor = (priority: Task['priority']) => {
-    switch (priority) {
-      case 'high':
-        return 'red';
-      case 'medium':
-        return 'yellow';
-      case 'low':
-        return 'green';
-    }
-  };
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as string);
@@ -1454,13 +1446,6 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     }
   };
 
-  const renderSkeletons = () => (
-    <VStack spacing={4} align="stretch" width="100%">
-      {[...Array(3)].map((_, index) => (
-        <SkeletonCard key={index} />
-      ))}
-    </VStack>
-  );
 
   const renderBoardView = () => {
     if (isLoading) {
@@ -2000,52 +1985,8 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     }
   };
 
-  const handleTemplateApply = async (template: TaskTemplate) => {
-    try {
-      setIsSubmitting(true);
-      const newTasks = template.tasks.map(task => ({
-        ...task,
-        dueDate: new Date(task.dueDate).toISOString().split('T')[0]
-      }));
-      
-      // Create all tasks from template
-      await Promise.all(newTasks.map(task => 
-        createTask(task as TaskCreationInput)
-      ));
-      
-      toast({
-        title: 'Template applied successfully',
-        status: 'success',
-        duration: 3000,
-        isClosable: true,
-      });
-    } catch (error) {
-      toast({
-        title: 'Error applying template',
-        description: error instanceof Error ? error.message : 'An unexpected error occurred',
-        status: 'error',
-        duration: 5000,
-        isClosable: true,
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   // Update sorting function to remove order property references
-  const sortTasks = useCallback((tasks: Task[], config: SortConfig) => {
-    return [...tasks].sort((a, b) => {
-      const aValue = a[config.field];
-      const bValue = b[config.field];
-      
-      if (aValue === bValue) {
-        return 0;
-      }
-      
-      const modifier = config.direction === 'asc' ? 1 : -1;
-      return aValue > bValue ? modifier : -modifier;
-    });
-  }, []);
 
   return (
     <Box bg={mainBg} minH="100vh" transition="background-color 0.2s">
@@ -3428,6 +3369,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
           onSelectTemplate={handleTemplateSelect}
         />
       </Container>
+      <KeyboardShortcuts isOpen={isShortcutsOpen} onClose={onShortcutsClose} />
     </Box>
   );
 };
