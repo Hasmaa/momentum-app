@@ -851,7 +851,13 @@ const Dashboard = () => {
       setIsListView(!isListView);
     }
 
-    // Command/Ctrl + A to toggle select mode
+    // Command/Ctrl + S to toggle select mode
+    if ((event.metaKey || event.ctrlKey) && event.key === 's') {
+      event.preventDefault();
+      setIsSelectMode(!isSelectMode);
+    }
+
+    // Command/Ctrl + A to toggle select all
     if ((event.metaKey || event.ctrlKey) && event.key === 'a') {
       event.preventDefault();
       setIsSelectMode(!isSelectMode);
@@ -1789,86 +1795,152 @@ const Dashboard = () => {
                         }}
                       />
                     </PopoverTrigger>
-                    <PopoverContent p={4} width="320px">
+                    <PopoverContent p={4} width="320px" boxShadow="lg">
                       <PopoverArrow />
                       <PopoverCloseButton />
                       <VStack spacing={4} align="stretch">
-                        <Heading size="sm">Keyboard Shortcuts</Heading>
-                        <VStack spacing={3} align="stretch">
-                          <HStack justify="space-between" 
-                            as={Button} 
-                            variant="ghost" 
-                            height="auto" 
-                            py={2}
-                            onClick={() => {
-                              const searchInput = document.querySelector('[placeholder="Search tasks..."]') as HTMLInputElement;
-                              if (searchInput) {
-                                searchInput.focus();
-                              }
-                            }}
-                          >
-                            <Text fontSize="sm">Search</Text>
-                            <Tag size="sm" variant="subtle" colorScheme="blue">⌘/Ctrl + K</Tag>
-                          </HStack>
-                          <HStack justify="space-between" 
-                            as={Button} 
-                            variant="ghost" 
-                            height="auto" 
-                            py={2}
-                            onClick={() => onCreateModalOpen()}
-                          >
-                            <Text fontSize="sm">New Task</Text>
-                            <Tag size="sm" variant="subtle" colorScheme="blue">⌘/Ctrl + N</Tag>
-                          </HStack>
-                          <HStack justify="space-between" 
-                            as={Button} 
-                            variant="ghost" 
-                            height="auto" 
-                            py={2}
-                            onClick={() => setIsListView(!isListView)}
-                          >
-                            <Text fontSize="sm">Toggle View</Text>
-                            <Tag size="sm" variant="subtle" colorScheme="blue">⌘/Ctrl + /</Tag>
-                          </HStack>
-                          <HStack justify="space-between" 
-                            as={Button} 
-                            variant="ghost" 
-                            height="auto" 
-                            py={2}
-                            onClick={() => {
-                              setIsSelectMode(!isSelectMode);
-                              if (!isSelectMode) {
-                                const visibleTodos = todos.filter(todo => {
-                                  const matchesStatus = filterStatus.has('all') || filterStatus.has(todo.status);
-                                  const matchesPriority = filterPriority.has('all') || filterPriority.has(todo.priority);
-                                  const matchesSearch = !searchQuery || 
-                                    todo.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                    (todo.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
-                                  return matchesStatus && matchesPriority && matchesSearch;
-                                });
-                                setSelectedTodos(new Set(visibleTodos.map(t => t.id)));
-                              } else {
+                        <Heading size="sm" mb={2}>Keyboard Shortcuts</Heading>
+                        <Box 
+                          borderWidth="1px" 
+                          borderRadius="md" 
+                          overflow="hidden"
+                        >
+                          <VStack spacing={0} align="stretch" divider={<Box borderBottomWidth="1px" />}>
+                            <HStack 
+                              justify="space-between" 
+                              p={3}
+                              bg={useColorModeValue('gray.50', 'whiteAlpha.50')}
+                              _hover={{
+                                bg: useColorModeValue('blue.50', 'whiteAlpha.100')
+                              }}
+                              as={Button}
+                              variant="ghost"
+                              height="auto"
+                              onClick={() => {
+                                const searchInput = document.querySelector('[placeholder="Search tasks..."]') as HTMLInputElement;
+                                if (searchInput) {
+                                  searchInput.focus();
+                                }
+                              }}
+                            >
+                              <HStack>
+                                <SearchIcon boxSize="3" />
+                                <Text fontSize="sm">Search</Text>
+                              </HStack>
+                              <Tag size="sm" variant="subtle" colorScheme="blue">⌘/Ctrl + K</Tag>
+                            </HStack>
+
+                            <HStack 
+                              justify="space-between" 
+                              p={3}
+                              _hover={{
+                                bg: useColorModeValue('blue.50', 'whiteAlpha.100')
+                              }}
+                              as={Button}
+                              variant="ghost"
+                              height="auto"
+                              onClick={() => onCreateModalOpen()}
+                            >
+                              <HStack>
+                                <AddIcon boxSize="3" />
+                                <Text fontSize="sm">New Task</Text>
+                              </HStack>
+                              <Tag size="sm" variant="subtle" colorScheme="blue">⌘/Ctrl + N</Tag>
+                            </HStack>
+
+                            <HStack 
+                              justify="space-between" 
+                              p={3}
+                              _hover={{
+                                bg: useColorModeValue('blue.50', 'whiteAlpha.100')
+                              }}
+                              as={Button}
+                              variant="ghost"
+                              height="auto"
+                              onClick={() => setIsListView(!isListView)}
+                            >
+                              <HStack>
+                                <ViewIcon boxSize="3" />
+                                <Text fontSize="sm">Toggle View</Text>
+                              </HStack>
+                              <Tag size="sm" variant="subtle" colorScheme="blue">⌘/Ctrl + /</Tag>
+                            </HStack>
+
+                            <HStack 
+                              justify="space-between" 
+                              p={3}
+                              _hover={{
+                                bg: useColorModeValue('blue.50', 'whiteAlpha.100')
+                              }}
+                              as={Button}
+                              variant="ghost"
+                              height="auto"
+                              onClick={() => {
+                                setIsSelectMode(!isSelectMode);
+                              }}
+                            >
+                              <HStack>
+                                <CheckIcon boxSize="3" />
+                                <Text fontSize="sm">Toggle Select Mode</Text>
+                              </HStack>
+                              <Tag size="sm" variant="subtle" colorScheme="blue">⌘/Ctrl + S</Tag>
+                            </HStack>
+
+                            <HStack 
+                              justify="space-between" 
+                              p={3}
+                              _hover={{
+                                bg: useColorModeValue('blue.50', 'whiteAlpha.100')
+                              }}
+                              as={Button}
+                              variant="ghost"
+                              height="auto"
+                              onClick={() => {
+                                setIsSelectMode(!isSelectMode);
+                                if (!isSelectMode) {
+                                  const visibleTodos = todos.filter(todo => {
+                                    const matchesStatus = filterStatus.has('all') || filterStatus.has(todo.status);
+                                    const matchesPriority = filterPriority.has('all') || filterPriority.has(todo.priority);
+                                    const matchesSearch = !searchQuery || 
+                                      todo.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                      (todo.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
+                                    return matchesStatus && matchesPriority && matchesSearch;
+                                  });
+                                  setSelectedTodos(new Set(visibleTodos.map(t => t.id)));
+                                } else {
+                                  setSelectedTodos(new Set());
+                                }
+                              }}
+                            >
+                              <HStack>
+                                <Icon as={HamburgerIcon} boxSize="3" />
+                                <Text fontSize="sm">Select All</Text>
+                              </HStack>
+                              <Tag size="sm" variant="subtle" colorScheme="blue">⌘/Ctrl + A</Tag>
+                            </HStack>
+
+                            <HStack 
+                              justify="space-between" 
+                              p={3}
+                              _hover={{
+                                bg: useColorModeValue('blue.50', 'whiteAlpha.100')
+                              }}
+                              as={Button}
+                              variant="ghost"
+                              height="auto"
+                              onClick={() => {
+                                setIsSelectMode(false);
                                 setSelectedTodos(new Set());
-                              }
-                            }}
-                          >
-                            <Text fontSize="sm">Select All</Text>
-                            <Tag size="sm" variant="subtle" colorScheme="blue">⌘/Ctrl + A</Tag>
-                          </HStack>
-                          <HStack justify="space-between" 
-                            as={Button} 
-                            variant="ghost" 
-                            height="auto" 
-                            py={2}
-                            onClick={() => {
-                              setIsSelectMode(false);
-                              setSelectedTodos(new Set());
-                            }}
-                          >
-                            <Text fontSize="sm">Clear Selection</Text>
-                            <Tag size="sm" variant="subtle" colorScheme="blue">Esc</Tag>
-                          </HStack>
-                        </VStack>
+                              }}
+                            >
+                              <HStack>
+                                <CloseIcon boxSize="3" />
+                                <Text fontSize="sm">Clear Selection</Text>
+                              </HStack>
+                              <Tag size="sm" variant="subtle" colorScheme="blue">Esc</Tag>
+                            </HStack>
+                          </VStack>
+                        </Box>
                       </VStack>
                     </PopoverContent>
                   </Popover>
