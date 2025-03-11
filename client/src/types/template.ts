@@ -16,116 +16,130 @@ export interface TaskTemplate {
 
 export const PREDEFINED_TEMPLATES: TaskTemplate[] = [
   {
-    id: 'plan-trip',
-    name: 'Plan a Trip',
-    description: 'Everything you need to organize a successful trip',
-    icon: '✈️',
+    id: 'new-patient',
+    name: 'New Patient Workflow',
+    description: 'Standard protocol for new patient intake and examination',
+    icon: '🐾',
     tasks: [
       {
-        title: 'Research Destination',
-        description: 'Look up potential destinations, costs, and best times to visit',
+        title: 'Initial Patient History',
+        description: 'Collect comprehensive medical history, vaccination records, and previous treatments',
         status: 'pending',
         priority: 'high',
         dueDate: 0
       },
       {
-        title: 'Book Flights',
-        description: 'Compare prices and book flights',
+        title: 'Physical Examination',
+        description: 'Conduct thorough physical exam including vitals, weight, and general health assessment',
+        status: 'pending',
+        priority: 'high',
+        dueDate: 0
+      },
+      {
+        title: 'Vaccination Review',
+        description: 'Check vaccination status and schedule necessary updates',
         status: 'pending',
         priority: 'high',
         dueDate: 1
       },
       {
-        title: 'Book Accommodation',
-        description: 'Find and reserve hotels or rentals',
+        title: 'Lab Work Orders',
+        description: 'Order and schedule required laboratory tests',
         status: 'pending',
-        priority: 'high',
+        priority: 'medium',
         dueDate: 2
       },
       {
-        title: 'Plan Activities',
-        description: 'Research and list activities and attractions to visit',
+        title: 'Treatment Plan',
+        description: 'Develop and document initial treatment plan',
         status: 'pending',
-        priority: 'medium',
+        priority: 'high',
+        dueDate: 2
+      }
+    ]
+  },
+  {
+    id: 'surgery-prep',
+    name: 'Surgery Preparation',
+    description: 'Pre-operative checklist and preparation tasks',
+    icon: '⚕️',
+    tasks: [
+      {
+        title: 'Pre-op Blood Work',
+        description: 'Complete blood count, chemistry panel, and other required tests',
+        status: 'pending',
+        priority: 'high',
         dueDate: 3
       },
       {
-        title: 'Pack Essentials',
-        description: 'Prepare packing list and pack bags',
-        status: 'pending',
-        priority: 'medium',
-        dueDate: 7
-      }
-    ]
-  },
-  {
-    id: 'project-setup',
-    name: 'Start a Project',
-    description: 'Initial setup tasks for starting a new project',
-    icon: '🚀',
-    tasks: [
-      {
-        title: 'Define Project Scope',
-        description: 'Outline project goals, requirements, and deliverables',
+        title: 'Patient Fasting Instructions',
+        description: 'Communicate fasting requirements to pet owners',
         status: 'pending',
         priority: 'high',
-        dueDate: 0
+        dueDate: 2
       },
       {
-        title: 'Create Project Timeline',
-        description: 'Set milestones and deadlines',
+        title: 'Surgery Equipment Check',
+        description: 'Verify all necessary surgical instruments and equipment',
         status: 'pending',
         priority: 'high',
         dueDate: 1
       },
       {
-        title: 'Assign Team Roles',
-        description: 'Define responsibilities and assign team members',
+        title: 'Anesthesia Plan',
+        description: 'Review patient history and develop anesthesia protocol',
         status: 'pending',
-        priority: 'medium',
-        dueDate: 2
+        priority: 'high',
+        dueDate: 1
       },
       {
-        title: 'Setup Project Tools',
-        description: 'Configure necessary software and tools',
+        title: 'Post-op Care Plan',
+        description: 'Prepare post-operative care instructions and medications',
         status: 'pending',
         priority: 'medium',
-        dueDate: 2
+        dueDate: 0
       }
     ]
   },
   {
-    id: 'weekly-review',
-    name: 'Weekly Review',
-    description: 'Tasks for conducting a productive weekly review',
-    icon: '📅',
+    id: 'dental-procedure',
+    name: 'Dental Procedure',
+    description: 'Dental cleaning and examination workflow',
+    icon: '🦷',
     tasks: [
       {
-        title: 'Review Last Week\'s Goals',
-        description: 'Evaluate progress on previous week\'s objectives',
+        title: 'Dental X-rays',
+        description: 'Take full mouth radiographs',
         status: 'pending',
         priority: 'high',
         dueDate: 0
       },
       {
-        title: 'Process Inbox',
-        description: 'Clear emails and messages, create action items',
-        status: 'pending',
-        priority: 'medium',
-        dueDate: 0
-      },
-      {
-        title: 'Update Task List',
-        description: 'Review and update all ongoing tasks',
-        status: 'pending',
-        priority: 'medium',
-        dueDate: 0
-      },
-      {
-        title: 'Plan Next Week',
-        description: 'Set goals and priorities for the coming week',
+        title: 'Scaling and Cleaning',
+        description: 'Perform thorough dental cleaning and scaling',
         status: 'pending',
         priority: 'high',
+        dueDate: 0
+      },
+      {
+        title: 'Dental Chart',
+        description: 'Complete detailed dental chart noting any abnormalities',
+        status: 'pending',
+        priority: 'medium',
+        dueDate: 0
+      },
+      {
+        title: 'Treatment Planning',
+        description: 'Document needed extractions or follow-up procedures',
+        status: 'pending',
+        priority: 'high',
+        dueDate: 0
+      },
+      {
+        title: 'Home Care Instructions',
+        description: 'Prepare dental home care instructions for pet owners',
+        status: 'pending',
+        priority: 'medium',
         dueDate: 0
       }
     ]
