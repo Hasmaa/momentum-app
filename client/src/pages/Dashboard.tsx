@@ -93,10 +93,14 @@ import {
   useSensor,
   PointerSensor,
   KeyboardSensor,
-  rectIntersection,
   DragStartEvent,
   DragEndEvent,
-  useDroppable
+  useDroppable,
+  pointerWithin,
+  getFirstCollision,
+  CollisionDetection,
+  DroppableContainer,
+  UniqueIdentifier,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -284,6 +288,7 @@ const SortableCard = React.forwardRef<HTMLDivElement, {
   const menuBg = useColorModeValue('white', 'gray.700');
   const ghostButtonHoverBg = useColorModeValue('blue.50', 'whiteAlpha.200');
   const accentColor = useColorModeValue('blue.500', 'blue.200');
+  const dragHandleColor = useColorModeValue('gray.400', 'gray.500');
 
   const isOverdue = isPast(new Date(todo.dueDate));
   const isDueSoon = isWithinInterval(new Date(todo.dueDate), {
@@ -314,6 +319,9 @@ const SortableCard = React.forwardRef<HTMLDivElement, {
           bg: hoverBg,
           transform: 'translateY(-2px)',
           boxShadow: 'md',
+          '.drag-handle': {
+            opacity: 1
+          }
         }}
         animate={{
           scale: isDragging ? 0.95 : 1,
@@ -380,9 +388,16 @@ const SortableCard = React.forwardRef<HTMLDivElement, {
                 justify="space-between" 
                 align="flex-start" 
                 gap={4}
-                {...listeners}
               >
-                <Box flex="1">
+                <Flex flex="1" align="center" gap={3} className="drag-handle" {...listeners}>
+                  <Icon 
+                    as={HamburgerIcon} 
+                    color={dragHandleColor}
+                    opacity={0.5}
+                    transition="all 0.2s"
+                    cursor="grab"
+                    _active={{ cursor: 'grabbing' }}
+                  />
                   <Heading 
                     size="sm" 
                     noOfLines={2}
@@ -390,10 +405,11 @@ const SortableCard = React.forwardRef<HTMLDivElement, {
                     lineHeight="tall"
                     cursor="grab"
                     _hover={{ color: 'blue.500' }}
+                    _active={{ cursor: 'grabbing' }}
                   >
                     {todo.title}
                   </Heading>
-                </Box>
+                </Flex>
                 <HStack spacing={2} flexShrink={0}>
                   <Menu>
                     <Tooltip 
@@ -475,7 +491,7 @@ const SortableCard = React.forwardRef<HTMLDivElement, {
             </Flex>
 
             {/* Description Section */}
-            <Box cursor="grab" {...listeners}>
+            <Box>
               {todo.description && (
                 <Text 
                   fontSize="sm" 
@@ -570,10 +586,10 @@ const getStatusFromColumnId = (columnId: string): Todo['status'] | null => {
 
 // Update the Droppable component
 const Droppable = React.forwardRef<HTMLDivElement, DroppableProps>(({ children, id }, ref) => {
-  const { setNodeRef, isOver } = useDroppable({
+  const { setNodeRef, isOver, active } = useDroppable({
     id,
     data: {
-      type: id, // Add the status type to the droppable data
+      type: id,
     }
   });
 
@@ -598,14 +614,21 @@ const Droppable = React.forwardRef<HTMLDivElement, DroppableProps>(({ children, 
       position="relative"
       role="region"
       aria-label={`${id} column`}
-      _before={{
-        content: '""',
-        position: 'absolute',
-        inset: 0,
-        borderRadius: 'lg',
-        bg: isOver ? 'blackAlpha.50' : 'transparent',
-        transition: 'all 0.2s',
-        pointerEvents: 'none',
+      sx={{
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          inset: '-2px',
+          borderRadius: 'lg',
+          bg: isOver ? 'blackAlpha.50' : 'transparent',
+          transition: 'all 0.2s',
+          pointerEvents: 'none',
+          zIndex: 1,
+        },
+        '& > *': {
+          position: 'relative',
+          zIndex: 2,
+        }
       }}
     >
       {children}
@@ -617,6 +640,74 @@ Droppable.displayName = 'Droppable';
 
 type StatusType = Todo['status'] | 'all';
 type PriorityType = Todo['priority'] | 'all';
+
+// Update the custom collision detection function to match the correct types
+const customCollisionDetection: CollisionDetection = ({
+  active,
+  collisionRect,
+  droppableRects,
+  droppableContainers,
+  pointerCoordinates,
+}) => {
+  if (!pointerCoordinates) return [];
+
+  // First, check for direct collisions with items
+  const pointerCollisions = pointerWithin({
+    active,
+    collisionRect,
+    droppableRects,
+    droppableContainers,
+    pointerCoordinates,
+  });
+
+  // Get all item collisions (non-column containers)
+  const itemCollisions = pointerCollisions.filter(collision => 
+    !collision.id.toString().startsWith('column-') && collision.id !== active.id
+  );
+
+  // Get all column collisions
+  const columnCollisions = pointerCollisions.filter(collision => 
+    collision.id.toString().startsWith('column-')
+  );
+
+  // If we have an item collision, prioritize it
+  if (itemCollisions.length > 0) {
+    return [itemCollisions[0]];
+  }
+
+  // If we have a column collision, use it
+  if (columnCollisions.length > 0) {
+    return [columnCollisions[0]];
+  }
+
+  // If no direct collisions, find the nearest column
+  const columnContainers = droppableContainers.filter(container => 
+    container.id.toString().startsWith('column-')
+  );
+
+  let closestColumn: DroppableContainer | null = null;
+  let minDistance = Infinity;
+
+  for (const container of columnContainers) {
+    const rect = droppableRects.get(container.id);
+    if (rect) {
+      // Calculate distance to the column's center
+      const columnCenterX = rect.left + rect.width / 2;
+      const columnCenterY = rect.top + rect.height / 2;
+      const distance = Math.sqrt(
+        Math.pow(pointerCoordinates.x - columnCenterX, 2) +
+        Math.pow(pointerCoordinates.y - columnCenterY, 2)
+      );
+
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestColumn = container;
+      }
+    }
+  }
+
+  return closestColumn ? [{ id: closestColumn.id }] : [];
+};
 
 const Dashboard = () => {
   const { colorMode, toggleColorMode } = useColorMode();
@@ -1178,7 +1269,7 @@ const Dashboard = () => {
   const handleDragEnd = async (event: DragEndEvent) => {
     console.log('Drag ended:', event);
     setActiveId(null);
-    const { active, over } = event;
+    const { active, over, activatorEvent, collisions } = event;
 
     if (!over) return;
 
@@ -1186,50 +1277,85 @@ const Dashboard = () => {
     const todo = todos.find(t => t.id === todoId);
     if (!todo) return;
 
-    // Get the container ID from either the over.data (for column drops) or from the current todo's status (for reordering)
-    const containerId = over.data.current?.type || `column-${todo.status}`;
-    const newStatus = getStatusFromColumnId(containerId);
+    // Get the container ID and determine if it's a column or item
+    const overId = over.id.toString();
+    const isColumn = overId.startsWith('column-');
     
-    if (!newStatus) {
-      console.error('Invalid column ID:', containerId);
-      return;
-    }
+    // Get the target status and calculate new order
+    let newStatus: Todo['status'];
+    let newOrder: number;
     
-    setUpdatingTodoIds(prev => new Set(prev).add(todoId));
-
-    try {
-      // Get all todos in the target status column and their current order
+    if (isColumn) {
+      // Dropping directly on a column
+      newStatus = getStatusFromColumnId(overId) || todo.status;
       const statusTodos = todos
         .filter(t => t.status === newStatus)
         .sort((a, b) => a.order - b.order);
-
-      // Find the position where the item was dropped
-      let newOrder: number;
       
-      if (over.id === todoId) {
-        // Dropped on itself, no change needed
-        newOrder = todo.order;
+      // Place at the end of the column
+      newOrder = statusTodos.length > 0 
+        ? Math.max(...statusTodos.map(t => t.order)) + 1 
+        : 0;
+    } else {
+      // Dropping on another item
+      const overTodo = todos.find(t => t.id === overId);
+      if (!overTodo) return;
+      
+      newStatus = overTodo.status;
+      const statusTodos = todos
+        .filter(t => t.status === newStatus)
+        .sort((a, b) => a.order - b.order);
+      
+      const overIndex = statusTodos.findIndex(t => t.id === overId);
+      if (overIndex === -1) return;
+
+      // Calculate the new order based on surrounding items
+      if (todo.status === newStatus) {
+        // Same column reordering
+        const currentIndex = statusTodos.findIndex(t => t.id === todoId);
+        if (currentIndex === -1) return;
+
+        if (currentIndex < overIndex) {
+          // Moving down
+          newOrder = overIndex === statusTodos.length - 1
+            ? overTodo.order + 1
+            : (overTodo.order + statusTodos[overIndex + 1].order) / 2;
+        } else {
+          // Moving up
+          newOrder = overIndex === 0
+            ? overTodo.order - 1
+            : (overTodo.order + statusTodos[overIndex - 1].order) / 2;
+        }
       } else {
-        const overTodo = todos.find(t => t.id === over.id);
-        if (overTodo) {
-          // If dropping onto another todo
-          if (todo.order < overTodo.order) {
-            // Dropping below - place after the target
-            newOrder = overTodo.order + 1;
+        // Cross-column drop on an item
+        // Calculate order based on drop position relative to the target item
+        const { y: pointerY } = activatorEvent as PointerEvent;
+        const overRect = over.rect;
+        
+        if (overRect) {
+          const overMiddleY = overRect.top + overRect.height / 2;
+          
+          if (pointerY < overMiddleY) {
+            // Dropping above the target item
+            newOrder = overIndex === 0
+              ? overTodo.order - 1
+              : (overTodo.order + statusTodos[overIndex - 1].order) / 2;
           } else {
-            // Dropping above - place before the target
-            newOrder = overTodo.order - 1;
+            // Dropping below the target item
+            newOrder = overIndex === statusTodos.length - 1
+              ? overTodo.order + 1
+              : (overTodo.order + statusTodos[overIndex + 1].order) / 2;
           }
         } else {
-          // Dropping at the end of the list
-          newOrder = statusTodos.length > 0 
-            ? Math.max(...statusTodos.map(t => t.order)) + 1 
-            : 0;
+          // Fallback if we can't determine position
+          newOrder = overTodo.order - 0.5;
         }
       }
+    }
 
-      console.log('Making API call with:', { todoId, newStatus, newOrder });
+    setUpdatingTodoIds(prev => new Set(prev).add(todoId));
 
+    try {
       // Optimistically update UI
       const updatedTodos = todos.map(t => 
         t.id === todoId 
@@ -1259,7 +1385,6 @@ const Dashboard = () => {
       const finalTodos = todos.map(t => 
         t.id === todoId ? updatedTodo : t
       );
-      console.log('Final todos state:', finalTodos);
       setTodos(finalTodos.sort((a, b) => a.order - b.order));
 
     } catch (error) {
@@ -1342,7 +1467,7 @@ const Dashboard = () => {
           <Box opacity={0.7}>
             <DndContext
               sensors={sensors}
-              collisionDetection={rectIntersection}
+              collisionDetection={customCollisionDetection}
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
             >
@@ -1490,7 +1615,7 @@ const Dashboard = () => {
     return (
       <DndContext
         sensors={sensors}
-        collisionDetection={rectIntersection}
+        collisionDetection={customCollisionDetection}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
@@ -2148,7 +2273,7 @@ const Dashboard = () => {
                             {isListView ? (
                               <DndContext
                                 sensors={sensors}
-                                collisionDetection={rectIntersection}
+                                collisionDetection={customCollisionDetection}
                                 onDragStart={handleDragStart}
                                 onDragEnd={handleDragEnd}
                               >
@@ -2349,7 +2474,7 @@ const Dashboard = () => {
                       isListView ? (
                         <DndContext
                           sensors={sensors}
-                          collisionDetection={rectIntersection}
+                          collisionDetection={customCollisionDetection}
                           onDragStart={handleDragStart}
                           onDragEnd={handleDragEnd}
                         >
