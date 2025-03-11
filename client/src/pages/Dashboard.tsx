@@ -1593,59 +1593,119 @@ const Dashboard = () => {
                                 />
                               ))
                             ) : (
-                              <Flex
+                              <MotionFlex
                                 direction="column"
                                 align="center"
                                 justify="center"
                                 py={8}
                                 px={4}
-                                borderRadius="lg"
+                                borderRadius="xl"
                                 borderWidth="2px"
                                 borderStyle="dashed"
                                 borderColor={useColorModeValue('gray.200', 'gray.600')}
                                 bg={useColorModeValue('gray.50', 'gray.700')}
-                                transition="all 0.2s"
-                                _hover={{
+                                transition="all 0.3s"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                whileHover={{ 
+                                  scale: 1.02,
                                   borderColor: status === 'completed' ? 'green.400' : status === 'in-progress' ? 'blue.400' : 'gray.400',
-                                  transform: 'translateY(-2px)',
-                                  boxShadow: 'sm'
+                                  boxShadow: 'lg'
                                 }}
                               >
-                                <VStack spacing={3}>
-                                  <Icon
-                                    as={getStatusIcon(status)}
-                                    boxSize="8"
-                                    color={`${status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}.400`}
-                                    opacity={0.7}
-                                  />
-                                  <Text 
-                                    color={secondaryTextColor} 
-                                    fontSize="sm"
-                                    textAlign="center"
-                                    fontWeight="medium"
-                                  >
-                                    {status === 'pending' ? (
-                                      "No pending tasks. Add one or drag tasks here to mark them as To Do"
-                                    ) : status === 'in-progress' ? (
-                                      "No tasks in progress. Add one or drag tasks here when you start working on them"
-                                    ) : (
-                                      "No completed tasks yet. Add one or drag tasks here when they're done"
-                                    )}
-                                  </Text>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
-                                    leftIcon={<AddIcon />}
-                                    onClick={() => {
-                                      setStatus(status);
-                                      _onCreateModalOpen();
+                                <VStack spacing={6} py={4}>
+                                  <MotionBox
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ 
+                                      type: "spring",
+                                      stiffness: 260,
+                                      damping: 20 
                                     }}
                                   >
-                                    Add a task
-                                  </Button>
+                                    <Icon
+                                      as={status === 'completed' ? CheckIcon : status === 'in-progress' ? TimeIcon : WarningIcon}
+                                      boxSize="12"
+                                      color={`${status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}.400`}
+                                      opacity={0.9}
+                                    />
+                                  </MotionBox>
+                                  <VStack spacing={3}>
+                                    <Heading 
+                                      size="md" 
+                                      textAlign="center"
+                                      color={status === 'completed' ? 'green.500' : status === 'in-progress' ? 'blue.500' : 'gray.500'}
+                                    >
+                                      {status === 'pending' ? (
+                                        "Ready to start something new?"
+                                      ) : status === 'in-progress' ? (
+                                        "Time to make progress!"
+                                      ) : (
+                                        "Achievement unlocked!"
+                                      )}
+                                    </Heading>
+                                    <Text 
+                                      color={secondaryTextColor} 
+                                      fontSize="sm"
+                                      textAlign="center"
+                                      maxW="sm"
+                                      lineHeight="tall"
+                                    >
+                                      {status === 'pending' ? (
+                                        "This is where your journey begins. Add your first task or drag existing tasks here to get started."
+                                      ) : status === 'in-progress' ? (
+                                        "Track your active tasks here. Drag tasks from 'Pending' when you start working on them."
+                                      ) : (
+                                        "This is where your completed tasks will shine. Drag tasks here when you've conquered them!"
+                                      )}
+                                    </Text>
+                                    <HStack spacing={2} pt={2}>
+                                      <Button
+                                        size="md"
+                                        colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
+                                        leftIcon={<AddIcon />}
+                                        onClick={() => {
+                                          setStatus(status);
+                                          _onCreateModalOpen();
+                                        }}
+                                        variant="solid"
+                                        px={6}
+                                        _hover={{
+                                          transform: 'translateY(-2px)',
+                                          boxShadow: 'md'
+                                        }}
+                                      >
+                                        {status === 'pending' ? (
+                                          "Add Your First Task"
+                                        ) : status === 'in-progress' ? (
+                                          "Start a New Task"
+                                        ) : (
+                                          "Add Completed Task"
+                                        )}
+                                      </Button>
+                                      <Tooltip
+                                        label={status === 'pending' ? (
+                                          "Or drag tasks here to mark as pending"
+                                        ) : status === 'in-progress' ? (
+                                          "Or drag tasks here to mark as in progress"
+                                        ) : (
+                                          "Or drag tasks here to mark as completed"
+                                        )}
+                                        placement="top"
+                                        hasArrow
+                                      >
+                                        <IconButton
+                                          aria-label="Drag hint"
+                                          icon={<HamburgerIcon />}
+                                          size="md"
+                                          variant="ghost"
+                                          colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
+                                        />
+                                      </Tooltip>
+                                    </HStack>
+                                  </VStack>
                                 </VStack>
-                              </Flex>
+                              </MotionFlex>
                             )}
                           </VStack>
                         </SortableContext>
@@ -1774,59 +1834,119 @@ const Dashboard = () => {
                             />
                           ))
                         ) : (
-                          <Flex
+                          <MotionFlex
                             direction="column"
                             align="center"
                             justify="center"
                             py={8}
                             px={4}
-                            borderRadius="lg"
+                            borderRadius="xl"
                             borderWidth="2px"
                             borderStyle="dashed"
                             borderColor={useColorModeValue('gray.200', 'gray.600')}
                             bg={useColorModeValue('gray.50', 'gray.700')}
-                            transition="all 0.2s"
-                            _hover={{
+                            transition="all 0.3s"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            whileHover={{ 
+                              scale: 1.02,
                               borderColor: status === 'completed' ? 'green.400' : status === 'in-progress' ? 'blue.400' : 'gray.400',
-                              transform: 'translateY(-2px)',
-                              boxShadow: 'sm'
+                              boxShadow: 'lg'
                             }}
                           >
-                            <VStack spacing={3}>
-                              <Icon
-                                as={getStatusIcon(status)}
-                                boxSize="8"
-                                color={`${status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}.400`}
-                                opacity={0.7}
-                              />
-                              <Text 
-                                color={secondaryTextColor} 
-                                fontSize="sm"
-                                textAlign="center"
-                                fontWeight="medium"
-                              >
-                                {status === 'pending' ? (
-                                  "No pending tasks. Add one or drag tasks here to mark them as To Do"
-                                ) : status === 'in-progress' ? (
-                                  "No tasks in progress. Add one or drag tasks here when you start working on them"
-                                ) : (
-                                  "No completed tasks yet. Add one or drag tasks here when they're done"
-                                )}
-                              </Text>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
-                                leftIcon={<AddIcon />}
-                                onClick={() => {
-                                  setStatus(status);
-                                  _onCreateModalOpen();
+                            <VStack spacing={6} py={4}>
+                              <MotionBox
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ 
+                                  type: "spring",
+                                  stiffness: 260,
+                                  damping: 20 
                                 }}
                               >
-                                Add a task
-                              </Button>
+                                <Icon
+                                  as={status === 'completed' ? CheckIcon : status === 'in-progress' ? TimeIcon : WarningIcon}
+                                  boxSize="12"
+                                  color={`${status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}.400`}
+                                  opacity={0.9}
+                                />
+                              </MotionBox>
+                              <VStack spacing={3}>
+                                <Heading 
+                                  size="md" 
+                                  textAlign="center"
+                                  color={status === 'completed' ? 'green.500' : status === 'in-progress' ? 'blue.500' : 'gray.500'}
+                                >
+                                  {status === 'pending' ? (
+                                    "Ready to start something new?"
+                                  ) : status === 'in-progress' ? (
+                                    "Time to make progress!"
+                                  ) : (
+                                    "Achievement unlocked!"
+                                  )}
+                                </Heading>
+                                <Text 
+                                  color={secondaryTextColor} 
+                                  fontSize="sm"
+                                  textAlign="center"
+                                  maxW="sm"
+                                  lineHeight="tall"
+                                >
+                                  {status === 'pending' ? (
+                                    "This is where your journey begins. Add your first task or drag existing tasks here to get started."
+                                  ) : status === 'in-progress' ? (
+                                    "Track your active tasks here. Drag tasks from 'Pending' when you start working on them."
+                                  ) : (
+                                    "This is where your completed tasks will shine. Drag tasks here when you've conquered them!"
+                                  )}
+                                </Text>
+                                <HStack spacing={2} pt={2}>
+                                  <Button
+                                    size="md"
+                                    colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
+                                    leftIcon={<AddIcon />}
+                                    onClick={() => {
+                                      setStatus(status);
+                                      _onCreateModalOpen();
+                                    }}
+                                    variant="solid"
+                                    px={6}
+                                    _hover={{
+                                      transform: 'translateY(-2px)',
+                                      boxShadow: 'md'
+                                    }}
+                                  >
+                                    {status === 'pending' ? (
+                                      "Add Your First Task"
+                                    ) : status === 'in-progress' ? (
+                                      "Start a New Task"
+                                    ) : (
+                                      "Add Completed Task"
+                                    )}
+                                  </Button>
+                                  <Tooltip
+                                    label={status === 'pending' ? (
+                                      "Or drag tasks here to mark as pending"
+                                    ) : status === 'in-progress' ? (
+                                      "Or drag tasks here to mark as in progress"
+                                    ) : (
+                                      "Or drag tasks here to mark as completed"
+                                    )}
+                                    placement="top"
+                                    hasArrow
+                                  >
+                                    <IconButton
+                                      aria-label="Drag hint"
+                                      icon={<HamburgerIcon />}
+                                      size="md"
+                                      variant="ghost"
+                                      colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
+                                    />
+                                  </Tooltip>
+                                </HStack>
+                              </VStack>
                             </VStack>
-                          </Flex>
+                          </MotionFlex>
                         )}
                       </VStack>
                     </SortableContext>
@@ -2636,59 +2756,119 @@ const Dashboard = () => {
                                                         />
                                                       ))
                                                     ) : (
-                                                      <Flex
+                                                      <MotionFlex
                                                         direction="column"
                                                         align="center"
                                                         justify="center"
                                                         py={8}
                                                         px={4}
-                                                        borderRadius="lg"
+                                                        borderRadius="xl"
                                                         borderWidth="2px"
                                                         borderStyle="dashed"
                                                         borderColor={useColorModeValue('gray.200', 'gray.600')}
                                                         bg={useColorModeValue('gray.50', 'gray.700')}
-                                                        transition="all 0.2s"
-                                                        _hover={{
+                                                        transition="all 0.3s"
+                                                        initial={{ opacity: 0, y: 20 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        whileHover={{ 
+                                                          scale: 1.02,
                                                           borderColor: status === 'completed' ? 'green.400' : status === 'in-progress' ? 'blue.400' : 'gray.400',
-                                                          transform: 'translateY(-2px)',
-                                                          boxShadow: 'sm'
+                                                          boxShadow: 'lg'
                                                         }}
                                                       >
-                                                        <VStack spacing={3}>
-                                                          <Icon
-                                                            as={getStatusIcon(status)}
-                                                            boxSize="8"
-                                                            color={`${status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}.400`}
-                                                            opacity={0.7}
-                                                          />
-                                                          <Text 
-                                                            color={secondaryTextColor} 
-                                                            fontSize="sm"
-                                                            textAlign="center"
-                                                            fontWeight="medium"
-                                                          >
-                                                            {status === 'pending' ? (
-                                                              "No pending tasks. Add one or drag tasks here to mark them as To Do"
-                                                            ) : status === 'in-progress' ? (
-                                                              "No tasks in progress. Add one or drag tasks here when you start working on them"
-                                                            ) : (
-                                                              "No completed tasks yet. Add one or drag tasks here when they're done"
-                                                            )}
-                                                          </Text>
-                                                          <Button
-                                                            size="sm"
-                                                            variant="ghost"
-                                                            colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
-                                                            leftIcon={<AddIcon />}
-                                                            onClick={() => {
-                                                              setStatus(status);
-                                                              onCreateModalOpen();
+                                                        <VStack spacing={6} py={4}>
+                                                          <MotionBox
+                                                            initial={{ scale: 0 }}
+                                                            animate={{ scale: 1 }}
+                                                            transition={{ 
+                                                              type: "spring",
+                                                              stiffness: 260,
+                                                              damping: 20 
                                                             }}
                                                           >
-                                                            Add a task
-                                                          </Button>
+                                                            <Icon
+                                                              as={status === 'completed' ? CheckIcon : status === 'in-progress' ? TimeIcon : WarningIcon}
+                                                              boxSize="12"
+                                                              color={`${status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}.400`}
+                                                              opacity={0.9}
+                                                            />
+                                                          </MotionBox>
+                                                          <VStack spacing={3}>
+                                                            <Heading 
+                                                              size="md" 
+                                                              textAlign="center"
+                                                              color={status === 'completed' ? 'green.500' : status === 'in-progress' ? 'blue.500' : 'gray.500'}
+                                                            >
+                                                              {status === 'pending' ? (
+                                                                "Ready to start something new?"
+                                                              ) : status === 'in-progress' ? (
+                                                                "Time to make progress!"
+                                                              ) : (
+                                                                "Achievement unlocked!"
+                                                              )}
+                                                            </Heading>
+                                                            <Text 
+                                                              color={secondaryTextColor} 
+                                                              fontSize="sm"
+                                                              textAlign="center"
+                                                              maxW="sm"
+                                                              lineHeight="tall"
+                                                            >
+                                                              {status === 'pending' ? (
+                                                                "This is where your journey begins. Add your first task or drag existing tasks here to get started."
+                                                              ) : status === 'in-progress' ? (
+                                                                "Track your active tasks here. Drag tasks from 'Pending' when you start working on them."
+                                                              ) : (
+                                                                "This is where your completed tasks will shine. Drag tasks here when you've conquered them!"
+                                                              )}
+                                                            </Text>
+                                                            <HStack spacing={2} pt={2}>
+                                                              <Button
+                                                                size="md"
+                                                                colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
+                                                                leftIcon={<AddIcon />}
+                                                                onClick={() => {
+                                                                  setStatus(status);
+                                                                  onCreateModalOpen();
+                                                                }}
+                                                                variant="solid"
+                                                                px={6}
+                                                                _hover={{
+                                                                  transform: 'translateY(-2px)',
+                                                                  boxShadow: 'md'
+                                                                }}
+                                                              >
+                                                                {status === 'pending' ? (
+                                                                  "Add Your First Task"
+                                                                ) : status === 'in-progress' ? (
+                                                                  "Start a New Task"
+                                                                ) : (
+                                                                  "Add Completed Task"
+                                                                )}
+                                                              </Button>
+                                                              <Tooltip
+                                                                label={status === 'pending' ? (
+                                                                  "Or drag tasks here to mark as pending"
+                                                                ) : status === 'in-progress' ? (
+                                                                  "Or drag tasks here to mark as in progress"
+                                                                ) : (
+                                                                  "Or drag tasks here to mark as completed"
+                                                                )}
+                                                                placement="top"
+                                                                hasArrow
+                                                              >
+                                                                <IconButton
+                                                                  aria-label="Drag hint"
+                                                                  icon={<HamburgerIcon />}
+                                                                  size="md"
+                                                                  variant="ghost"
+                                                                  colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
+                                                                />
+                                                              </Tooltip>
+                                                            </HStack>
+                                                          </VStack>
                                                         </VStack>
-                                                      </Flex>
+                                                      </MotionFlex>
                                                     )}
                                                   </VStack>
                                                 </SortableContext>
@@ -2841,59 +3021,119 @@ const Dashboard = () => {
                                                   />
                                                 ))
                                               ) : (
-                                                <Flex
+                                                <MotionFlex
                                                   direction="column"
                                                   align="center"
                                                   justify="center"
                                                   py={8}
                                                   px={4}
-                                                  borderRadius="lg"
+                                                  borderRadius="xl"
                                                   borderWidth="2px"
                                                   borderStyle="dashed"
                                                   borderColor={useColorModeValue('gray.200', 'gray.600')}
                                                   bg={useColorModeValue('gray.50', 'gray.700')}
-                                                  transition="all 0.2s"
-                                                  _hover={{
+                                                  transition="all 0.3s"
+                                                  initial={{ opacity: 0, y: 20 }}
+                                                  animate={{ opacity: 1, y: 0 }}
+                                                  whileHover={{ 
+                                                    scale: 1.02,
                                                     borderColor: status === 'completed' ? 'green.400' : status === 'in-progress' ? 'blue.400' : 'gray.400',
-                                                    transform: 'translateY(-2px)',
-                                                    boxShadow: 'sm'
+                                                    boxShadow: 'lg'
                                                   }}
                                                 >
-                                                  <VStack spacing={3}>
-                                                    <Icon
-                                                      as={getStatusIcon(status)}
-                                                      boxSize="8"
-                                                      color={`${status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}.400`}
-                                                      opacity={0.7}
-                                                    />
-                                                    <Text 
-                                                      color={secondaryTextColor} 
-                                                      fontSize="sm"
-                                                      textAlign="center"
-                                                      fontWeight="medium"
-                                                    >
-                                                      {status === 'pending' ? (
-                                                        "No pending tasks. Add one or drag tasks here to mark them as To Do"
-                                                      ) : status === 'in-progress' ? (
-                                                        "No tasks in progress. Add one or drag tasks here when you start working on them"
-                                                      ) : (
-                                                        "No completed tasks yet. Add one or drag tasks here when they're done"
-                                                      )}
-                                                    </Text>
-                                                    <Button
-                                                      size="sm"
-                                                      variant="ghost"
-                                                      colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
-                                                      leftIcon={<AddIcon />}
-                                                      onClick={() => {
-                                                        setStatus(status);
-                                                        onCreateModalOpen();
+                                                  <VStack spacing={6} py={4}>
+                                                    <MotionBox
+                                                      initial={{ scale: 0 }}
+                                                      animate={{ scale: 1 }}
+                                                      transition={{ 
+                                                        type: "spring",
+                                                        stiffness: 260,
+                                                        damping: 20 
                                                       }}
                                                     >
-                                                      Add a task
-                                                    </Button>
+                                                      <Icon
+                                                        as={status === 'completed' ? CheckIcon : status === 'in-progress' ? TimeIcon : WarningIcon}
+                                                        boxSize="12"
+                                                        color={`${status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}.400`}
+                                                        opacity={0.9}
+                                                      />
+                                                    </MotionBox>
+                                                    <VStack spacing={3}>
+                                                      <Heading 
+                                                        size="md" 
+                                                        textAlign="center"
+                                                        color={status === 'completed' ? 'green.500' : status === 'in-progress' ? 'blue.500' : 'gray.500'}
+                                                      >
+                                                        {status === 'pending' ? (
+                                                          "Ready to start something new?"
+                                                        ) : status === 'in-progress' ? (
+                                                          "Time to make progress!"
+                                                        ) : (
+                                                          "Achievement unlocked!"
+                                                        )}
+                                                      </Heading>
+                                                      <Text 
+                                                        color={secondaryTextColor} 
+                                                        fontSize="sm"
+                                                        textAlign="center"
+                                                        maxW="sm"
+                                                        lineHeight="tall"
+                                                      >
+                                                        {status === 'pending' ? (
+                                                          "This is where your journey begins. Add your first task or drag existing tasks here to get started."
+                                                        ) : status === 'in-progress' ? (
+                                                          "Track your active tasks here. Drag tasks from 'Pending' when you start working on them."
+                                                        ) : (
+                                                          "This is where your completed tasks will shine. Drag tasks here when you've conquered them!"
+                                                        )}
+                                                      </Text>
+                                                      <HStack spacing={2} pt={2}>
+                                                        <Button
+                                                          size="md"
+                                                          colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
+                                                          leftIcon={<AddIcon />}
+                                                          onClick={() => {
+                                                            setStatus(status);
+                                                            onCreateModalOpen();
+                                                          }}
+                                                          variant="solid"
+                                                          px={6}
+                                                          _hover={{
+                                                            transform: 'translateY(-2px)',
+                                                            boxShadow: 'md'
+                                                          }}
+                                                        >
+                                                          {status === 'pending' ? (
+                                                            "Add Your First Task"
+                                                          ) : status === 'in-progress' ? (
+                                                            "Start a New Task"
+                                                          ) : (
+                                                            "Add Completed Task"
+                                                          )}
+                                                        </Button>
+                                                        <Tooltip
+                                                          label={status === 'pending' ? (
+                                                            "Or drag tasks here to mark as pending"
+                                                          ) : status === 'in-progress' ? (
+                                                            "Or drag tasks here to mark as in progress"
+                                                          ) : (
+                                                            "Or drag tasks here to mark as completed"
+                                                          )}
+                                                          placement="top"
+                                                          hasArrow
+                                                        >
+                                                          <IconButton
+                                                            aria-label="Drag hint"
+                                                            icon={<HamburgerIcon />}
+                                                            size="md"
+                                                            variant="ghost"
+                                                            colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
+                                                          />
+                                                        </Tooltip>
+                                                      </HStack>
+                                                    </VStack>
                                                   </VStack>
-                                                </Flex>
+                                                </MotionFlex>
                                               )}
                                             </VStack>
                                           </SortableContext>
