@@ -850,6 +850,12 @@ const Dashboard = () => {
       _onCreateModalOpen();
     }
 
+    // Command/Ctrl + T to use template
+    if ((event.metaKey || event.ctrlKey) && event.key === 't') {
+      event.preventDefault();
+      setIsTemplateModalOpen(true);
+    }
+
     // Command/Ctrl + / to toggle view mode
     if ((event.metaKey || event.ctrlKey) && event.key === '/') {
       event.preventDefault();
@@ -1972,6 +1978,24 @@ const Dashboard = () => {
                                 <Text fontSize="sm">New Task</Text>
                               </HStack>
                               <Tag size="sm" variant="subtle" colorScheme="blue">⌘/Ctrl + N</Tag>
+                            </HStack>
+
+                            <HStack 
+                              justify="space-between" 
+                              p={3}
+                              _hover={{
+                                bg: useColorModeValue('blue.50', 'whiteAlpha.100')
+                              }}
+                              as={Button}
+                              variant="ghost"
+                              height="auto"
+                              onClick={() => setIsTemplateModalOpen(true)}
+                            >
+                              <HStack>
+                                <RepeatIcon boxSize="3" />
+                                <Text fontSize="sm">Use Template</Text>
+                              </HStack>
+                              <Tag size="sm" variant="subtle" colorScheme="blue">⌘/Ctrl + T</Tag>
                             </HStack>
 
                             <HStack 
