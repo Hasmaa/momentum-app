@@ -16,10 +16,7 @@ import {
   Container,
   Card,
   CardBody,
-  Badge,
-  Divider,
   useColorModeValue,
-  Collapse,
   Tooltip,
   Grid,
   GridItem,
@@ -27,7 +24,6 @@ import {
   TagLabel,
   TagLeftIcon,
   Flex,
-  Spacer,
   Menu,
   MenuButton,
   MenuList,
@@ -43,12 +39,11 @@ import {
   useDisclosure,
   FocusLock,
   Switch,
-  SimpleGrid,
-  Icon
+  Icon,
+  useColorMode
 } from '@chakra-ui/react';
 import { Todo } from '../types/todo';
 import { 
-  ChevronUpIcon, 
   ChevronDownIcon, 
   SearchIcon, 
   EditIcon, 
@@ -59,7 +54,9 @@ import {
   DeleteIcon,
   AddIcon,
   HamburgerIcon,
-  ViewIcon
+  ViewIcon,
+  SunIcon,
+  MoonIcon,
 } from '@chakra-ui/icons';
 import { format, isPast, isWithinInterval, addDays } from 'date-fns';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
@@ -81,7 +78,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { FC, ReactElement, PropsWithChildren } from 'react';
+import type { FC, PropsWithChildren } from 'react';
 
 const MotionBox = motion(Box);
 const MotionCard = motion(Card);
@@ -147,7 +144,7 @@ const DragOverlayCard = ({ todo }: { todo: Todo }) => {
         borderBottomLeftRadius="xl"
         bg={`${statusColors[todo.status]}.400`}
       />
-      <CardBody py={4} pl={6}>
+      <CardBody py={4} pl={6} >
         <VStack spacing={4} align="stretch">
           <Heading size="sm" noOfLines={1}>
             {todo.title}
@@ -502,6 +499,7 @@ const Droppable: FC<DroppableProps> = ({ children, id }) => {
 };
 
 const Dashboard = () => {
+  const { colorMode, toggleColorMode } = useColorMode();
   const [todos, setTodos] = useState<Todo[]>([]);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -533,12 +531,13 @@ const Dashboard = () => {
     onClose: onEditModalClose 
   } = useDisclosure();
 
-  const bgColor = useColorModeValue('white', 'gray.800');
+  const mainBg = useColorModeValue('gray.50', 'gray.900');
+  const cardBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
   const hoverBg = useColorModeValue('gray.50', 'gray.700');
   const textColor = useColorModeValue('gray.600', 'gray.200');
   const columnBg = useColorModeValue('gray.50', 'gray.700');
-  const headerBg = useColorModeValue('blue.50', 'gray.700');
+  const headerBg = useColorModeValue('blue.50', 'gray.800');
   const accentColor = useColorModeValue('blue.500', 'blue.300');
 
   const fetchTodos = async () => {
@@ -862,10 +861,10 @@ const Dashboard = () => {
                       top={0}
                       left={0}
                       right={0}
-                      h="2px"
+                      h="3px"
                       bg={status === 'completed' ? 'green.400' : status === 'in-progress' ? 'blue.400' : 'gray.400'}
                     />
-                    <CardBody py={3}>
+                    <CardBody py={4} px={6}>
                       <Flex align="center" justify="space-between">
                         <Heading size="md" textTransform="capitalize">
                           {status.replace('-', ' ')}
@@ -874,6 +873,9 @@ const Dashboard = () => {
                           colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
                           borderRadius="full"
                           variant="subtle"
+                          py={1}
+                          px={3}
+                          fontSize="sm"
                         >
                           {columns[status].length}
                         </Tag>
@@ -925,275 +927,305 @@ const Dashboard = () => {
   };
 
   return (
-    <Container maxW="container.xl" py={8}>
-      <VStack spacing={6} align="stretch">
-        <Card bg={headerBg} borderRadius="lg">
-          <CardBody>
-            <Flex justify="space-between" align="center">
-              <Heading size="lg" color={accentColor}>Tasks</Heading>
-              <HStack spacing={6}>
-                <HStack spacing={3}>
-                  <ViewIcon color={accentColor} />
-                  <Switch
-                    colorScheme="blue"
-                    isChecked={!isListView}
-                    onChange={() => setIsListView(!isListView)}
-                    sx={{
-                      '& .chakra-switch__track': {
-                        bg: isListView ? 'gray.300' : accentColor,
-                      }
+    <Box bg={mainBg} minH="100vh" transition="background-color 0.2s">
+      <Container maxW="container.xl" py={8}>
+        <VStack spacing={6} align="stretch">
+          <Card bg={headerBg} borderRadius="lg" borderColor={borderColor} borderWidth="1px">
+            <CardBody>
+              <Flex justify="space-between" align="center">
+                <Heading size="lg" color={accentColor}>Tasks</Heading>
+                <HStack spacing={6}>
+                  <HStack spacing={3}>
+                    <Icon 
+                      as={ViewIcon} 
+                      color={isListView ? accentColor : 'gray.400'}
+                      transition="all 0.2s"
+                      transform={isListView ? 'scale(1)' : 'scale(1)'}
+                    />
+                    <Switch
+                      colorScheme="blue"
+                      isChecked={!isListView}
+                      onChange={() => setIsListView(!isListView)}
+                      sx={{
+                        '& .chakra-switch__track': {
+                          bg: isListView ? 'gray.300' : accentColor,
+                        }
+                      }}
+                    />
+                    <Icon 
+                      as={ HamburgerIcon} 
+                      color={!isListView ? accentColor : 'gray.400'}
+                      opacity={0.5}
+                      transition="all 0.2s"
+                      transform={isListView ? 'rotate(0deg)' : 'rotate(90deg)'}
+                      
+                    />
+                  </HStack>
+                  <IconButton
+                    aria-label="Toggle color mode"
+                    icon={
+                      <MotionBox
+                        initial={{ rotate: 0 }}
+                        animate={{ rotate: colorMode === 'light' ? 0 : 180 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        {colorMode === 'light' ? <SunIcon /> : <MoonIcon />}
+                      </MotionBox>
+                    }
+                    variant="ghost"
+                    onClick={toggleColorMode}
+                    color={accentColor}
+                    _hover={{
+                      bg: useColorModeValue('blue.50', 'gray.700')
                     }}
                   />
-                  <Text fontSize="sm" color="gray.500" minW="70px" fontWeight="medium">
-                    {isListView ? 'List View' : 'Board View'}
-                  </Text>
-                </HStack>
-                <Button
-                  leftIcon={<AddIcon />}
-                  colorScheme="blue"
-                  onClick={onCreateModalOpen}
-                  size="md"
-                  borderRadius="full"
-                  px={6}
-                  _hover={{
-                    transform: 'translateY(-1px)',
-                    boxShadow: 'md',
-                  }}
-                >
-                  New Task
-                </Button>
-              </HStack>
-            </Flex>
-          </CardBody>
-        </Card>
-
-        <Card borderRadius="lg">
-          <CardBody>
-            <Grid templateColumns="repeat(12, 1fr)" gap={4} mb={6}>
-              <GridItem colSpan={[12, 12, 6]}>
-                <InputGroup size="md">
-                  <InputLeftElement pointerEvents="none">
-                    <SearchIcon color="gray.400" />
-                  </InputLeftElement>
-                  <Input
-                    placeholder="Search tasks..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    variant="filled"
+                  <Button
+                    leftIcon={<AddIcon />}
+                    colorScheme="blue"
+                    onClick={onCreateModalOpen}
+                    size="md"
                     borderRadius="full"
-                  />
-                </InputGroup>
-              </GridItem>
-              <GridItem colSpan={[12, 6, 3]}>
-                <Select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value as Todo['status'] | 'all')}
-                  variant="filled"
-                  size="md"
-                  icon={<HamburgerIcon />}
-                  borderRadius="full"
-                >
-                  <option value="all">All Status</option>
-                  <option value="pending">Pending</option>
-                  <option value="in-progress">In Progress</option>
-                  <option value="completed">Completed</option>
-                </Select>
-              </GridItem>
-              <GridItem colSpan={[12, 6, 3]}>
-                <Select
-                  value={filterPriority}
-                  onChange={(e) => setFilterPriority(e.target.value as Todo['priority'] | 'all')}
-                  variant="filled"
-                  size="md"
-                  icon={<WarningIcon />}
-                  borderRadius="full"
-                >
-                  <option value="all">All Priority</option>
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                </Select>
-              </GridItem>
-            </Grid>
+                    px={6}
+                    _hover={{
+                      transform: 'translateY(-1px)',
+                      boxShadow: 'md',
+                    }}
+                  >
+                    New Task
+                  </Button>
+                </HStack>
+              </Flex>
+            </CardBody>
+          </Card>
 
-            <Box>
-              <AnimatePresence mode="wait">
-                {isListView ? (
-                  <VStack spacing={4} align="stretch" as={motion.div} layout>
-                    {todos.map(todo => (
-                      <SortableCard
-                        key={todo.id}
-                        todo={todo}
-                        isDragging={false}
-                        onEdit={(todo) => {
-                          setEditingTodo(todo);
-                          onEditModalOpen();
-                        }}
-                        onDelete={handleDelete}
-                        onStatusChange={handleStatusChange}
-                      />
-                    ))}
-                  </VStack>
-                ) : (
-                  renderBoardView()
-                )}
-              </AnimatePresence>
-            </Box>
-          </CardBody>
-        </Card>
-      </VStack>
-
-      {/* Create Task Modal */}
-      <Modal isOpen={isCreateModalOpen} onClose={onCreateModalClose} size="xl">
-        <ModalOverlay />
-        <ModalContent>
-          <FocusLock>
-            <form onSubmit={handleSubmit}>
-              <ModalHeader>Create New Task</ModalHeader>
-              <ModalCloseButton />
-              <ModalBody>
-                <VStack spacing={4}>
-                  <InputGroup>
+          <Card borderRadius="lg" bg={cardBg} borderColor={borderColor} borderWidth="1px">
+            <CardBody>
+              <Grid templateColumns="repeat(12, 1fr)" gap={4} mb={6}>
+                <GridItem colSpan={[12, 12, 6]}>
+                  <InputGroup size="md">
                     <InputLeftElement pointerEvents="none">
-                      <AddIcon color="gray.400" />
+                      <SearchIcon color="gray.400" />
                     </InputLeftElement>
                     <Input
-                      placeholder="Task Title"
-                      value={title}
-                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="Search tasks..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      variant="filled"
+                      borderRadius="full"
+                    />
+                  </InputGroup>
+                </GridItem>
+                <GridItem colSpan={[12, 6, 3]}>
+                  <Select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value as Todo['status'] | 'all')}
+                    variant="filled"
+                    size="md"
+                    icon={<HamburgerIcon />}
+                    borderRadius="full"
+                  >
+                    <option value="all">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                  </Select>
+                </GridItem>
+                <GridItem colSpan={[12, 6, 3]}>
+                  <Select
+                    value={filterPriority}
+                    onChange={(e) => setFilterPriority(e.target.value as Todo['priority'] | 'all')}
+                    variant="filled"
+                    size="md"
+                    icon={<WarningIcon />}
+                    borderRadius="full"
+                  >
+                    <option value="all">All Priority</option>
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </Select>
+                </GridItem>
+              </Grid>
+
+              <Box>
+                <AnimatePresence mode="wait">
+                  {isListView ? (
+                    <VStack spacing={4} align="stretch" as={motion.div} layout>
+                      {todos.map(todo => (
+                        <SortableCard
+                          key={todo.id}
+                          todo={todo}
+                          isDragging={false}
+                          onEdit={(todo) => {
+                            setEditingTodo(todo);
+                            onEditModalOpen();
+                          }}
+                          onDelete={handleDelete}
+                          onStatusChange={handleStatusChange}
+                        />
+                      ))}
+                    </VStack>
+                  ) : (
+                    renderBoardView()
+                  )}
+                </AnimatePresence>
+              </Box>
+            </CardBody>
+          </Card>
+        </VStack>
+
+        {/* Create Task Modal */}
+        <Modal isOpen={isCreateModalOpen} onClose={onCreateModalClose} size="xl">
+          <ModalOverlay />
+          <ModalContent>
+            <FocusLock>
+              <form onSubmit={handleSubmit}>
+                <ModalHeader>Create New Task</ModalHeader>
+                <ModalCloseButton />
+                <ModalBody>
+                  <VStack spacing={4}>
+                    <InputGroup>
+                      <InputLeftElement pointerEvents="none">
+                        <AddIcon color="gray.400" />
+                      </InputLeftElement>
+                      <Input
+                        placeholder="Task Title"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                        required
+                        variant="filled"
+                        data-autofocus="true"
+                        autoFocus
+                      />
+                    </InputGroup>
+                    <Textarea
+                      placeholder="Task Description"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
                       required
                       variant="filled"
-                      data-autofocus="true"
-                      autoFocus
+                      rows={3}
                     />
-                  </InputGroup>
-                  <Textarea
-                    placeholder="Task Description"
-                    value={description}
-                    onChange={(e) => setDescription(e.target.value)}
-                    required
-                    variant="filled"
-                    rows={3}
-                  />
-                  <Grid templateColumns="repeat(2, 1fr)" gap={4} width="full">
-                    <GridItem>
-                      <Select 
-                        value={priority} 
-                        onChange={(e) => setPriority(e.target.value as Todo['priority'])}
-                        variant="filled"
-                        icon={<WarningIcon />}
-                      >
-                        <option value="low">Low Priority</option>
-                        <option value="medium">Medium Priority</option>
-                        <option value="high">High Priority</option>
-                      </Select>
-                    </GridItem>
-                    <GridItem>
-                      <InputGroup>
-                        <InputLeftElement pointerEvents="none">
-                          <CalendarIcon color="gray.400" />
-                        </InputLeftElement>
-                        <Input
-                          type="date"
-                          value={dueDate}
-                          onChange={(e) => setDueDate(e.target.value)}
-                          required
+                    <Grid templateColumns="repeat(2, 1fr)" gap={4} width="full">
+                      <GridItem>
+                        <Select 
+                          value={priority} 
+                          onChange={(e) => setPriority(e.target.value as Todo['priority'])}
                           variant="filled"
-                        />
-                      </InputGroup>
-                    </GridItem>
-                  </Grid>
-                </VStack>
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="ghost" mr={3} onClick={onCreateModalClose}>
-                  Cancel
-                </Button>
-                <Button type="submit" colorScheme="blue" leftIcon={<AddIcon />}>
-                  Create Task
-                </Button>
-              </ModalFooter>
-            </form>
-          </FocusLock>
-        </ModalContent>
-      </Modal>
-
-      {/* Edit Task Modal */}
-      <Modal isOpen={isEditModalOpen} onClose={cancelEdit} size="xl">
-        <ModalOverlay />
-        <ModalContent>
-          {editingTodo && (
-            <FocusLock>
-              <ModalHeader>Edit Task</ModalHeader>
-              <ModalCloseButton />
-              <ModalBody>
-                <VStack spacing={4}>
-                  <InputGroup>
-                    <InputLeftElement pointerEvents="none">
-                      <EditIcon color="gray.400" />
-                    </InputLeftElement>
-                    <Input
-                      value={editingTodo.title}
-                      onChange={(e) => setEditingTodo({ ...editingTodo, title: e.target.value })}
-                      variant="filled"
-                      size="lg"
-                      fontWeight="bold"
-                      data-autofocus="true"
-                      autoFocus
-                    />
-                  </InputGroup>
-                  <Textarea
-                    value={editingTodo.description}
-                    onChange={(e) => setEditingTodo({ ...editingTodo, description: e.target.value })}
-                    variant="filled"
-                    rows={3}
-                  />
-                  <Grid templateColumns="repeat(2, 1fr)" gap={4} width="full">
-                    <GridItem>
-                      <Select
-                        value={editingTodo.priority}
-                        onChange={(e) => setEditingTodo({ ...editingTodo, priority: e.target.value as Todo['priority'] })}
-                        variant="filled"
-                        icon={<WarningIcon />}
-                      >
-                        <option value="low">Low Priority</option>
-                        <option value="medium">Medium Priority</option>
-                        <option value="high">High Priority</option>
-                      </Select>
-                    </GridItem>
-                    <GridItem>
-                      <InputGroup>
-                        <InputLeftElement pointerEvents="none">
-                          <CalendarIcon color="gray.400" />
-                        </InputLeftElement>
-                        <Input
-                          type="date"
-                          value={new Date(editingTodo.dueDate).toISOString().split('T')[0]}
-                          onChange={(e) => setEditingTodo({ ...editingTodo, dueDate: new Date(e.target.value).toISOString() })}
-                          variant="filled"
-                        />
-                      </InputGroup>
-                    </GridItem>
-                  </Grid>
-                </VStack>
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="ghost" mr={3} onClick={cancelEdit}>
-                  Cancel
-                </Button>
-                <Button 
-                  colorScheme="green" 
-                  onClick={() => handleEdit(editingTodo)}
-                  leftIcon={<CheckIcon />}
-                >
-                  Save Changes
-                </Button>
-              </ModalFooter>
+                          icon={<WarningIcon />}
+                        >
+                          <option value="low">Low Priority</option>
+                          <option value="medium">Medium Priority</option>
+                          <option value="high">High Priority</option>
+                        </Select>
+                      </GridItem>
+                      <GridItem>
+                        <InputGroup>
+                          <InputLeftElement pointerEvents="none">
+                            <CalendarIcon color="gray.400" />
+                          </InputLeftElement>
+                          <Input
+                            type="date"
+                            value={dueDate}
+                            onChange={(e) => setDueDate(e.target.value)}
+                            required
+                            variant="filled"
+                          />
+                        </InputGroup>
+                      </GridItem>
+                    </Grid>
+                  </VStack>
+                </ModalBody>
+                <ModalFooter>
+                  <Button variant="ghost" mr={3} onClick={onCreateModalClose}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" colorScheme="blue" leftIcon={<AddIcon />}>
+                    Create Task
+                  </Button>
+                </ModalFooter>
+              </form>
             </FocusLock>
-          )}
-        </ModalContent>
-      </Modal>
-    </Container>
+          </ModalContent>
+        </Modal>
+
+        {/* Edit Task Modal */}
+        <Modal isOpen={isEditModalOpen} onClose={cancelEdit} size="xl">
+          <ModalOverlay />
+          <ModalContent>
+            {editingTodo && (
+              <FocusLock>
+                <ModalHeader>Edit Task</ModalHeader>
+                <ModalCloseButton />
+                <ModalBody>
+                  <VStack spacing={4}>
+                    <InputGroup>
+                      <InputLeftElement pointerEvents="none">
+                        <EditIcon color="gray.400" />
+                      </InputLeftElement>
+                      <Input
+                        value={editingTodo.title}
+                        onChange={(e) => setEditingTodo({ ...editingTodo, title: e.target.value })}
+                        variant="filled"
+                        size="lg"
+                        fontWeight="bold"
+                        data-autofocus="true"
+                        autoFocus
+                      />
+                    </InputGroup>
+                    <Textarea
+                      value={editingTodo.description}
+                      onChange={(e) => setEditingTodo({ ...editingTodo, description: e.target.value })}
+                      variant="filled"
+                      rows={3}
+                    />
+                    <Grid templateColumns="repeat(2, 1fr)" gap={4} width="full">
+                      <GridItem>
+                        <Select
+                          value={editingTodo.priority}
+                          onChange={(e) => setEditingTodo({ ...editingTodo, priority: e.target.value as Todo['priority'] })}
+                          variant="filled"
+                          icon={<WarningIcon />}
+                        >
+                          <option value="low">Low Priority</option>
+                          <option value="medium">Medium Priority</option>
+                          <option value="high">High Priority</option>
+                        </Select>
+                      </GridItem>
+                      <GridItem>
+                        <InputGroup>
+                          <InputLeftElement pointerEvents="none">
+                            <CalendarIcon color="gray.400" />
+                          </InputLeftElement>
+                          <Input
+                            type="date"
+                            value={new Date(editingTodo.dueDate).toISOString().split('T')[0]}
+                            onChange={(e) => setEditingTodo({ ...editingTodo, dueDate: new Date(e.target.value).toISOString() })}
+                            variant="filled"
+                          />
+                        </InputGroup>
+                      </GridItem>
+                    </Grid>
+                  </VStack>
+                </ModalBody>
+                <ModalFooter>
+                  <Button variant="ghost" mr={3} onClick={cancelEdit}>
+                    Cancel
+                  </Button>
+                  <Button 
+                    colorScheme="green" 
+                    onClick={() => handleEdit(editingTodo)}
+                    leftIcon={<CheckIcon />}
+                  >
+                    Save Changes
+                  </Button>
+                </ModalFooter>
+              </FocusLock>
+            )}
+          </ModalContent>
+        </Modal>
+      </Container>
+    </Box>
   );
 };
 
