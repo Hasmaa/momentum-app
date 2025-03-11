@@ -101,7 +101,7 @@ const TemplateModal: React.FC<TemplateModalProps> = ({
               bg={modalBg}
               borderBottomWidth="1px"
               borderColor={borderColor}
-              px={6}
+              px={4}
               pt={2}
               pb={0}
               zIndex={1}
@@ -110,17 +110,17 @@ const TemplateModal: React.FC<TemplateModalProps> = ({
                 display="flex"
                 width="100%"
                 justifyContent="stretch"
-                gap={2}
+                gap={1}
               >
                 {categories.map(category => {
                   const info = getCategoryInfo(category);
                   return (
                     <Tab
                       key={category}
-                      py={3}
-                      px={4}
+                      py={2}
+                      px={2.5}
                       flex={1}
-                      borderRadius="lg"
+                      borderRadius="md"
                       transition="all 0.2s"
                       bg="transparent"
                       _selected={{ 
@@ -132,16 +132,35 @@ const TemplateModal: React.FC<TemplateModalProps> = ({
                       }}
                       color={textColor}
                     >
-                      <HStack spacing={2}>
-                        <Text fontSize="lg">{info.icon}</Text>
-                        <Text fontWeight="medium">{info.name}</Text>
+                      <HStack width="100%" justify="space-between" align="center" spacing={2}>
+                        <HStack spacing={2} flex={1} minW={0}>
+                          <Box 
+                            fontSize="md" 
+                            width="20px" 
+                            height="20px" 
+                            display="flex" 
+                            alignItems="center" 
+                            justifyContent="center"
+                          >
+                            {info.icon}
+                          </Box>
+                          <Text 
+                            fontWeight="medium" 
+                            fontSize="sm"
+                            isTruncated
+                          >
+                            {info.name}
+                          </Text>
+                        </HStack>
                         <Badge 
                           bg={badgeBg}
                           color={headingColor}
-                          fontSize="xs"
-                          px={2}
+                          fontSize="2xs"
+                          px={1.5}
                           py={0.5}
                           borderRadius="full"
+                          minW="1.5rem"
+                          textAlign="center"
                         >
                           {templatesByCategory[category].length}
                         </Badge>

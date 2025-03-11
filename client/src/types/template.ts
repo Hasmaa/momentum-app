@@ -20,22 +20,22 @@ export interface TaskTemplate {
 export const getCategoryInfo = (category: TaskTemplate['category']) => {
   const categories = {
     'patient-care': {
-      name: 'Patient Care Excellence',
+      name: 'Patient Care',
       description: 'Comprehensive workflows for exceptional patient care and treatment',
       icon: '🐾'
     },
     'clinical-operations': {
-      name: 'Clinical Operations',
+      name: 'Operations',
       description: 'Streamline your clinic\'s daily operations and management',
       icon: '🏥'
     },
     'staff-workflows': {
-      name: 'Staff Workflows',
+      name: 'Staff Tasks',
       description: 'Optimize team performance and daily responsibilities',
       icon: '👥'
     },
     'emergency-protocols': {
-      name: 'Emergency & Special Protocols',
+      name: 'Emergency',
       description: 'Critical care and specialized situation management',
       icon: '🚨'
     }
