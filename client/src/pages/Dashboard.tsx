@@ -570,7 +570,11 @@ const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<keyof Todo>('createdAt');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
-  const toast = useToast();
+  const toast = useToast({
+    position: 'top-right',
+    duration: 3000,
+    isClosable: true,
+  });
   const [isListView, setIsListView] = useState(true);
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(
