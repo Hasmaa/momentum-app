@@ -55,6 +55,7 @@ import {
   AccordionButton,
   AccordionPanel,
   AccordionIcon,
+  Spinner,
 } from '@chakra-ui/react';
 import { Todo } from '../types/todo';
 import { 
@@ -95,6 +96,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { FC, PropsWithChildren } from 'react';
+import SkeletonCard from '../components/SkeletonCard';
 
 const MotionBox = motion(Box);
 const MotionCard = motion(Card);
@@ -229,10 +231,11 @@ const DragOverlayCard = ({ todo }: { todo: Todo }) => {
 const SortableCard = React.forwardRef<HTMLDivElement, {
   todo: Todo;
   isDragging?: boolean;
+  isUpdating?: boolean;
   onEdit: (todo: Todo) => void;
   onDelete: (todo: Todo) => void;
   onStatusChange: (id: string, newStatus: Todo['status']) => void;
-}>(({ todo, isDragging, onEdit, onDelete, onStatusChange }, ref) => {
+}>(({ todo, isDragging, isUpdating, onEdit, onDelete, onStatusChange }, ref) => {
   const {
     attributes,
     listeners,
@@ -304,8 +307,9 @@ const SortableCard = React.forwardRef<HTMLDivElement, {
           scale: isDragging ? 0.95 : 1,
         }}
         transition={{
-          duration: 0.2,
-          ease: "easeInOut"
+          type: "spring",
+          bounce: 0.2,
+          duration: 0.6
         }}
       >
         {/* Status Indicator */}
@@ -320,6 +324,23 @@ const SortableCard = React.forwardRef<HTMLDivElement, {
           bg={`${statusColors[todo.status]}.400`}
           transition="all 0.2s"
         />
+
+        {/* Add loading overlay */}
+        {isUpdating && (
+          <Box
+            position="absolute"
+            inset={0}
+            borderRadius="xl"
+            bg="blackAlpha.50"
+            display="flex"
+            alignItems="center"
+            justifyContent="center"
+            backdropFilter="blur(1px)"
+            zIndex={1}
+          >
+            <Spinner size="sm" color={`${statusColors[todo.status]}.400`} />
+          </Box>
+        )}
 
         <CardBody py={4} pl={6}>
           <VStack spacing={4} align="stretch">
@@ -660,8 +681,14 @@ const Dashboard = () => {
     setFilterPriority(newFilterPriority);
   };
 
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [updatingTodoIds, setUpdatingTodoIds] = useState<Set<string>>(new Set());
+
   const fetchTodos = async () => {
     try {
+      setIsLoading(true);
       const params = new URLSearchParams();
       
       if (!filterStatus.has('all')) {
@@ -689,6 +716,8 @@ const Dashboard = () => {
         status: 'error',
         duration: 3000,
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -710,6 +739,7 @@ const Dashboard = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       const response = await fetch('http://localhost:5001/api/todos', {
         method: 'POST',
@@ -746,6 +776,8 @@ const Dashboard = () => {
         status: 'error',
         duration: 3000,
       });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -756,6 +788,7 @@ const Dashboard = () => {
 
   const confirmDelete = async () => {
     if (!todoToDelete) return;
+    setIsDeleting(true);
     
     try {
       const response = await fetch(`http://localhost:5001/api/todos/${todoToDelete.id}`, {
@@ -779,6 +812,7 @@ const Dashboard = () => {
     } finally {
       setTodoToDelete(null);
       onDeleteAlertClose();
+      setIsDeleting(false);
     }
   };
 
@@ -891,7 +925,6 @@ const Dashboard = () => {
     setActiveId(null);
     const { active, over } = event;
 
-    // If no valid drop target or drop target is not a valid status, just return
     if (!over || !['pending', 'in-progress', 'completed'].includes(over.id as string)) {
       return;
     }
@@ -903,7 +936,18 @@ const Dashboard = () => {
     const newStatus = over.id as Todo['status'];
     if (todo.status === newStatus) return;
 
+    // Add todo to updating set
+    setUpdatingTodoIds(prev => new Set(prev).add(todoId));
+
     try {
+      // Optimistically update the UI
+      const newTodos = todos.map(t => 
+        t.id === todoId 
+          ? { ...t, status: newStatus }
+          : t
+      );
+      setTodos(newTodos);
+
       const response = await fetch(`http://localhost:5001/api/todos/${todoId}`, {
         method: 'PUT',
         headers: {
@@ -916,14 +960,6 @@ const Dashboard = () => {
       });
       
       if (!response.ok) throw new Error('Failed to update todo');
-      
-      // Optimistically update the UI
-      const newTodos = todos.map(t => 
-        t.id === todoId 
-          ? { ...t, status: newStatus }
-          : t
-      );
-      setTodos(newTodos);
 
       toast({
         title: 'Task moved successfully',
@@ -932,14 +968,31 @@ const Dashboard = () => {
         isClosable: true,
       });
     } catch (error) {
+      // Revert the optimistic update on error
       toast({
         title: 'Error moving task',
+        description: 'The task has been returned to its original position',
         status: 'error',
         duration: 3000,
       });
       fetchTodos();
+    } finally {
+      // Remove todo from updating set
+      setUpdatingTodoIds(prev => {
+        const next = new Set(prev);
+        next.delete(todoId);
+        return next;
+      });
     }
   };
+
+  const renderSkeletons = () => (
+    <VStack spacing={4} align="stretch" width="100%">
+      {[...Array(3)].map((_, index) => (
+        <SkeletonCard key={index} />
+      ))}
+    </VStack>
+  );
 
   const renderBoardView = () => {
     const columns = {
@@ -1027,6 +1080,7 @@ const Dashboard = () => {
                             key={todo.id}
                             todo={todo}
                             isDragging={activeId === todo.id}
+                            isUpdating={updatingTodoIds.has(todo.id)}
                             onEdit={(todo) => {
                               setEditingTodo(todo);
                               onEditModalOpen();
@@ -1632,6 +1686,7 @@ const Dashboard = () => {
                                                     key={todo.id}
                                                     todo={todo}
                                                     isDragging={activeId === todo.id}
+                                                    isUpdating={updatingTodoIds.has(todo.id)}
                                                     onEdit={(todo) => {
                                                       setEditingTodo(todo);
                                                       onEditModalOpen();
@@ -1685,9 +1740,23 @@ const Dashboard = () => {
         </VStack>
 
         {/* Create Task Modal */}
-        <Modal isOpen={isCreateModalOpen} onClose={onCreateModalClose} size="xl">
-          <ModalOverlay />
-          <ModalContent>
+        <Modal 
+          isOpen={isCreateModalOpen} 
+          onClose={onCreateModalClose} 
+          size="xl"
+          motionPreset="slideInBottom"
+        >
+          <ModalOverlay 
+            bg="blackAlpha.300"
+            backdropFilter="blur(10px)"
+          />
+          <ModalContent
+            as={motion.div}
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -20, opacity: 0 }}
+            transition={{ type: "tween", duration: 0.2 }}
+          >
             <FocusLock>
               <form onSubmit={handleSubmit}>
                 <ModalHeader>Create New Task</ModalHeader>
@@ -1756,10 +1825,21 @@ const Dashboard = () => {
                   </VStack>
                 </ModalBody>
                 <ModalFooter>
-                  <Button variant="ghost" mr={3} onClick={onCreateModalClose}>
+                  <Button 
+                    variant="ghost" 
+                    mr={3} 
+                    onClick={onCreateModalClose}
+                    isDisabled={isSubmitting}
+                  >
                     Cancel
                   </Button>
-                  <Button type="submit" colorScheme="blue" leftIcon={<AddIcon />}>
+                  <Button 
+                    type="submit" 
+                    colorScheme="blue" 
+                    leftIcon={<AddIcon />}
+                    isLoading={isSubmitting}
+                    loadingText="Creating..."
+                  >
                     Create Task
                   </Button>
                 </ModalFooter>
@@ -1849,9 +1929,16 @@ const Dashboard = () => {
           isOpen={isDeleteAlertOpen}
           leastDestructiveRef={cancelDeleteRef}
           onClose={onDeleteAlertClose}
+          motionPreset="slideInBottom"
         >
           <AlertDialogOverlay>
-            <AlertDialogContent>
+            <AlertDialogContent
+              as={motion.div}
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: "tween", duration: 0.2 }}
+            >
               <AlertDialogHeader fontSize="lg" fontWeight="bold">
                 Delete Task
               </AlertDialogHeader>
@@ -1861,10 +1948,20 @@ const Dashboard = () => {
               </AlertDialogBody>
 
               <AlertDialogFooter>
-                <Button ref={cancelDeleteRef} onClick={onDeleteAlertClose}>
+                <Button 
+                  ref={cancelDeleteRef} 
+                  onClick={onDeleteAlertClose}
+                  isDisabled={isDeleting}
+                >
                   Cancel
                 </Button>
-                <Button colorScheme="red" onClick={confirmDelete} ml={3}>
+                <Button 
+                  colorScheme="red" 
+                  onClick={confirmDelete} 
+                  ml={3}
+                  isLoading={isDeleting}
+                  loadingText="Deleting..."
+                >
                   Delete
                 </Button>
               </AlertDialogFooter>

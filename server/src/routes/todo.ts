@@ -5,6 +5,9 @@ import { FilterOptions, SortOptions, Todo } from '../services/todoService';
 
 const router = express.Router();
 
+// Add delay function to simulate network latency
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 // Validation middleware
 const todoValidation = [
   body('title').trim().notEmpty().withMessage('Title is required'),
@@ -22,6 +25,9 @@ const todoValidation = [
 // Get all todos
 router.get('/', async (req: Request, res: Response) => {
   try {
+    // Add 2 second delay
+    await delay(2000);
+
     const filters: FilterOptions = {};
     const sort: SortOptions = {
       field: (req.query.sortField as keyof Todo) || 'createdAt',
@@ -59,6 +65,9 @@ router.get('/', async (req: Request, res: Response) => {
 // Create a todo
 router.post('/', todoValidation, async (req: Request<any, any, Partial<Todo>>, res: Response) => {
   try {
+    // Add 2 second delay
+    await delay(2000);
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
@@ -82,6 +91,9 @@ router.post('/', todoValidation, async (req: Request<any, any, Partial<Todo>>, r
 // Update a todo
 router.put('/:id', async (req, res) => {
   try {
+    // Add 2 second delay
+    await delay(2000);
+
     const todo = await todoService.updateTodo(req.params.id, req.body);
     
     if (!todo) {
@@ -98,6 +110,9 @@ router.put('/:id', async (req, res) => {
 // Delete a todo
 router.delete('/:id', async (req, res) => {
   try {
+    // Add 2 second delay
+    await delay(2000);
+
     const deleted = await todoService.deleteTodo(req.params.id);
     
     if (!deleted) {
