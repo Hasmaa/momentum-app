@@ -73,6 +73,7 @@ import {
   closestCorners,
   DragStartEvent,
   DragEndEvent,
+  useDroppable
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -80,7 +81,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { FC, ReactElement } from 'react';
+import type { FC, ReactElement, PropsWithChildren } from 'react';
 
 const MotionBox = motion(Box);
 const MotionCard = motion(Card);
@@ -145,7 +146,6 @@ const SortableCard = ({ todo, isDragging, onEdit, onDelete, onStatusChange }: {
       ref={setNodeRef}
       style={style}
       {...attributes}
-      {...listeners}
       role="article"
       aria-label={`Task: ${todo.title}`}
     >
@@ -166,6 +166,7 @@ const SortableCard = ({ todo, isDragging, onEdit, onDelete, onStatusChange }: {
           transform: 'translateY(-2px)',
           boxShadow: 'md',
         }}
+        {...listeners}
       >
         {/* Status Indicator */}
         <Box
@@ -193,7 +194,7 @@ const SortableCard = ({ todo, isDragging, onEdit, onDelete, onStatusChange }: {
                 {todo.title}
               </Heading>
               
-              <HStack spacing={3}>
+              <HStack spacing={3} onClick={e => e.stopPropagation()}>
                 <Menu>
                   <Tooltip 
                     label={`Click to change status. Current: ${todo.status.replace('-', ' ')}`}
@@ -220,17 +221,13 @@ const SortableCard = ({ todo, isDragging, onEdit, onDelete, onStatusChange }: {
                       variant="ghost"
                       colorScheme={statusColors[todo.status]}
                       aria-label="Change task status"
-                      onClick={(e) => e.stopPropagation()}
                     />
                   </Tooltip>
                   <Portal>
                     <MenuList>
                       <MenuItem
                         icon={<Icon as={WarningIcon} color="gray.400" />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onStatusChange(todo.id, 'pending');
-                        }}
+                        onClick={() => onStatusChange(todo.id, 'pending')}
                         color={statusColors.pending + '.600'}
                         isDisabled={todo.status === 'pending'}
                       >
@@ -238,10 +235,7 @@ const SortableCard = ({ todo, isDragging, onEdit, onDelete, onStatusChange }: {
                       </MenuItem>
                       <MenuItem
                         icon={<Icon as={TimeIcon} color="blue.400" />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onStatusChange(todo.id, 'in-progress');
-                        }}
+                        onClick={() => onStatusChange(todo.id, 'in-progress')}
                         color={statusColors['in-progress'] + '.600'}
                         isDisabled={todo.status === 'in-progress'}
                       >
@@ -249,10 +243,7 @@ const SortableCard = ({ todo, isDragging, onEdit, onDelete, onStatusChange }: {
                       </MenuItem>
                       <MenuItem
                         icon={<Icon as={CheckIcon} color="green.400" />}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onStatusChange(todo.id, 'completed');
-                        }}
+                        onClick={() => onStatusChange(todo.id, 'completed')}
                         color={statusColors.completed + '.600'}
                         isDisabled={todo.status === 'completed'}
                       >
@@ -269,10 +260,7 @@ const SortableCard = ({ todo, isDragging, onEdit, onDelete, onStatusChange }: {
                     size="sm"
                     variant="ghost"
                     colorScheme="blue"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEdit(todo);
-                    }}
+                    onClick={() => onEdit(todo)}
                     _hover={{
                       bg: 'blue.50',
                       color: 'blue.600'
@@ -286,10 +274,7 @@ const SortableCard = ({ todo, isDragging, onEdit, onDelete, onStatusChange }: {
                     size="sm"
                     variant="ghost"
                     colorScheme="red"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(todo.id);
-                    }}
+                    onClick={() => onDelete(todo.id)}
                     _hover={{
                       bg: 'red.50',
                       color: 'red.600'
@@ -367,6 +352,29 @@ const SortableCard = ({ todo, isDragging, onEdit, onDelete, onStatusChange }: {
           </VStack>
         </CardBody>
       </Card>
+    </Box>
+  );
+};
+
+// Add the Droppable component definition
+interface DroppableProps extends PropsWithChildren {
+  id: string;
+}
+
+const Droppable: FC<DroppableProps> = ({ children, id }) => {
+  const { setNodeRef, isOver } = useDroppable({
+    id
+  });
+
+  return (
+    <Box 
+      ref={setNodeRef} 
+      height="100%"
+      transition="all 0.2s"
+      bg={isOver ? 'rgba(66, 153, 225, 0.08)' : 'transparent'}
+      borderRadius="lg"
+    >
+      {children}
     </Box>
   );
 };
@@ -626,7 +634,10 @@ const Dashboard = () => {
     setActiveId(null);
     const { active, over } = event;
 
-    if (!over) return;
+    // If no valid drop target or drop target is not a valid status, just return
+    if (!over || !['pending', 'in-progress', 'completed'].includes(over.id as string)) {
+      return;
+    }
 
     const todoId = active.id as string;
     const todo = todos.find(t => t.id === todoId);
@@ -674,13 +685,15 @@ const Dashboard = () => {
   };
 
   const renderBoardView = () => {
-    const columns: { [key in Todo['status']]: Todo[] } = {
+    type StatusType = Todo['status'];
+    const columns = {
       'pending': todos.filter(todo => todo.status === 'pending'),
       'in-progress': todos.filter(todo => todo.status === 'in-progress'),
       'completed': todos.filter(todo => todo.status === 'completed')
-    };
+    } as const;
 
     const activeTodo = activeId ? todos.find(t => t.id === activeId) : null;
+    const statuses: StatusType[] = ['pending', 'in-progress', 'completed'];
 
     return (
       <DndContext
@@ -689,86 +702,94 @@ const Dashboard = () => {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <Grid templateColumns="repeat(3, 1fr)" gap={6} minH="300px">
+        <Grid 
+          templateColumns="repeat(3, 1fr)" 
+          gap={6} 
+          minH="300px"
+          position="relative"
+          overflow="hidden"
+        >
           <LayoutGroup>
-            {(Object.entries(columns) as [Todo['status'], Todo[]][]).map(([status, todos]) => (
-              <MotionBox
-                key={status}
-                layout
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-              >
-                <Card 
-                  bg={columnBg}
-                  mb={4}
-                  borderRadius="lg"
-                  boxShadow="sm"
-                  position="relative"
-                  overflow="hidden"
-                  borderWidth={2}
-                  borderStyle="dashed"
-                  borderColor="transparent"
-                  transition="all 0.2s"
-                  _hover={{
-                    borderColor: 'gray.200'
-                  }}
-                  data-droppable={status}
+            {statuses.map((status) => (
+              <Droppable key={status} id={status}>
+                <MotionBox
+                  layout
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  height="100%"
                 >
-                  <Box
-                    position="absolute"
-                    top={0}
-                    left={0}
-                    right={0}
-                    h="2px"
-                    bg={status === 'completed' ? 'green.400' : status === 'in-progress' ? 'blue.400' : 'gray.400'}
-                  />
-                  <CardBody py={3}>
-                    <Flex align="center" justify="space-between">
-                      <Heading size="md" textTransform="capitalize">
-                        {status.replace('-', ' ')}
-                      </Heading>
-                      <Tag
-                        colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
-                        borderRadius="full"
-                        variant="subtle"
-                      >
-                        {todos.length}
-                      </Tag>
-                    </Flex>
-                  </CardBody>
-                </Card>
-                <VStack 
-                  spacing={4} 
-                  align="stretch" 
-                  minH="200px"
-                  borderRadius="lg"
-                  p={2}
-                  transition="all 0.2s"
-                  id={status}
-                >
-                  <SortableContext 
-                    items={todos.map(t => t.id)}
-                    strategy={verticalListSortingStrategy}
+                  <Card 
+                    bg={columnBg}
+                    mb={4}
+                    borderRadius="lg"
+                    boxShadow="sm"
+                    position="relative"
+                    overflow="hidden"
+                    borderWidth={2}
+                    borderStyle="dashed"
+                    borderColor="transparent"
+                    transition="all 0.2s"
+                    _hover={{
+                      borderColor: 'gray.200'
+                    }}
+                    data-droppable={status}
                   >
-                    <AnimatePresence>
-                      {todos.map(todo => (
-                        <SortableCard
-                          key={todo.id}
-                          todo={todo}
-                          isDragging={activeId === todo.id}
-                          onEdit={(todo) => {
-                            setEditingTodo(todo);
-                            onEditModalOpen();
-                          }}
-                          onDelete={handleDelete}
-                          onStatusChange={handleStatusChange}
-                        />
-                      ))}
-                    </AnimatePresence>
-                  </SortableContext>
-                </VStack>
-              </MotionBox>
+                    <Box
+                      position="absolute"
+                      top={0}
+                      left={0}
+                      right={0}
+                      h="2px"
+                      bg={status === 'completed' ? 'green.400' : status === 'in-progress' ? 'blue.400' : 'gray.400'}
+                    />
+                    <CardBody py={3}>
+                      <Flex align="center" justify="space-between">
+                        <Heading size="md" textTransform="capitalize">
+                          {status.replace('-', ' ')}
+                        </Heading>
+                        <Tag
+                          colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
+                          borderRadius="full"
+                          variant="subtle"
+                        >
+                          {columns[status].length}
+                        </Tag>
+                      </Flex>
+                    </CardBody>
+                  </Card>
+                  <VStack 
+                    spacing={4} 
+                    align="stretch" 
+                    minH="200px"
+                    borderRadius="lg"
+                    p={2}
+                    transition="all 0.2s"
+                    id={status}
+                  >
+                    <SortableContext 
+                      items={columns[status].map(t => t.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      <AnimatePresence>
+                        {columns[status].map(todo => (
+                          <SortableCard
+                            key={todo.id}
+                            todo={todo}
+                            isDragging={activeId === todo.id}
+                            onEdit={(todo) => {
+                              setEditingTodo(todo);
+                              onEditModalOpen();
+                            }}
+                            onDelete={handleDelete}
+                            onStatusChange={handleStatusChange}
+                          />
+                        ))}
+                      </AnimatePresence>
+                    </SortableContext>
+                  </VStack>
+                </MotionBox>
+              </Droppable>
             ))}
           </LayoutGroup>
         </Grid>
