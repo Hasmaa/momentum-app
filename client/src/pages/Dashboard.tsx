@@ -1669,7 +1669,7 @@ const Dashboard = () => {
                                           _onCreateModalOpen();
                                         }}
                                         variant="solid"
-                                        px={6}
+                                        px={8}
                                         _hover={{
                                           transform: 'translateY(-2px)',
                                           boxShadow: 'md'
@@ -1683,25 +1683,6 @@ const Dashboard = () => {
                                           "Add Completed Task"
                                         )}
                                       </Button>
-                                      <Tooltip
-                                        label={status === 'pending' ? (
-                                          "Or drag tasks here to mark as pending"
-                                        ) : status === 'in-progress' ? (
-                                          "Or drag tasks here to mark as in progress"
-                                        ) : (
-                                          "Or drag tasks here to mark as completed"
-                                        )}
-                                        placement="top"
-                                        hasArrow
-                                      >
-                                        <IconButton
-                                          aria-label="Drag hint"
-                                          icon={<HamburgerIcon />}
-                                          size="md"
-                                          variant="ghost"
-                                          colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
-                                        />
-                                      </Tooltip>
                                     </HStack>
                                   </VStack>
                                 </VStack>
@@ -1910,7 +1891,7 @@ const Dashboard = () => {
                                       _onCreateModalOpen();
                                     }}
                                     variant="solid"
-                                    px={6}
+                                    px={8}
                                     _hover={{
                                       transform: 'translateY(-2px)',
                                       boxShadow: 'md'
@@ -1924,25 +1905,7 @@ const Dashboard = () => {
                                       "Add Completed Task"
                                     )}
                                   </Button>
-                                  <Tooltip
-                                    label={status === 'pending' ? (
-                                      "Or drag tasks here to mark as pending"
-                                    ) : status === 'in-progress' ? (
-                                      "Or drag tasks here to mark as in progress"
-                                    ) : (
-                                      "Or drag tasks here to mark as completed"
-                                    )}
-                                    placement="top"
-                                    hasArrow
-                                  >
-                                    <IconButton
-                                      aria-label="Drag hint"
-                                      icon={<HamburgerIcon />}
-                                      size="md"
-                                      variant="ghost"
-                                      colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
-                                    />
-                                  </Tooltip>
+                                  
                                 </HStack>
                               </VStack>
                             </VStack>
@@ -2846,25 +2809,6 @@ const Dashboard = () => {
                                                                   "Add Completed Task"
                                                                 )}
                                                               </Button>
-                                                              <Tooltip
-                                                                label={status === 'pending' ? (
-                                                                  "Or drag tasks here to mark as pending"
-                                                                ) : status === 'in-progress' ? (
-                                                                  "Or drag tasks here to mark as in progress"
-                                                                ) : (
-                                                                  "Or drag tasks here to mark as completed"
-                                                                )}
-                                                                placement="top"
-                                                                hasArrow
-                                                              >
-                                                                <IconButton
-                                                                  aria-label="Drag hint"
-                                                                  icon={<HamburgerIcon />}
-                                                                  size="md"
-                                                                  variant="ghost"
-                                                                  colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
-                                                                />
-                                                              </Tooltip>
                                                             </HStack>
                                                           </VStack>
                                                         </VStack>
@@ -3111,25 +3055,7 @@ const Dashboard = () => {
                                                             "Add Completed Task"
                                                           )}
                                                         </Button>
-                                                        <Tooltip
-                                                          label={status === 'pending' ? (
-                                                            "Or drag tasks here to mark as pending"
-                                                          ) : status === 'in-progress' ? (
-                                                            "Or drag tasks here to mark as in progress"
-                                                          ) : (
-                                                            "Or drag tasks here to mark as completed"
-                                                          )}
-                                                          placement="top"
-                                                          hasArrow
-                                                        >
-                                                          <IconButton
-                                                            aria-label="Drag hint"
-                                                            icon={<HamburgerIcon />}
-                                                            size="md"
-                                                            variant="ghost"
-                                                            colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
-                                                          />
-                                                        </Tooltip>
+                                                        
                                                       </HStack>
                                                     </VStack>
                                                   </VStack>
