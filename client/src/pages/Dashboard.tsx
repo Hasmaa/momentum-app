@@ -59,6 +59,11 @@ import {
   Skeleton,
   Checkbox,
   MenuDivider,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverArrow,
+  PopoverCloseButton,
 } from '@chakra-ui/react';
 import { Todo } from '../types/todo';
 import { 
@@ -1655,49 +1660,103 @@ const Dashboard = () => {
               <Flex justify="space-between" align="center">
                 <HStack spacing={2}>
                   <Heading size="lg" color={textColor}>Tasks</Heading>
-                  <Tooltip
-                    label={
-                      <VStack align="start" spacing={2} p={2}>
-                        <Text fontWeight="bold">Keyboard Shortcuts:</Text>
-                        <HStack>
-                          <Tag size="sm" variant="subtle" colorScheme="gray">⌘/Ctrl + K</Tag>
-                          <Text>Search</Text>
-                        </HStack>
-                        <HStack>
-                          <Tag size="sm" variant="subtle" colorScheme="gray">⌘/Ctrl + N</Tag>
-                          <Text>New Task</Text>
-                        </HStack>
-                        <HStack>
-                          <Tag size="sm" variant="subtle" colorScheme="gray">⌘/Ctrl + /</Tag>
-                          <Text>Toggle View</Text>
-                        </HStack>
-                        <HStack>
-                          <Tag size="sm" variant="subtle" colorScheme="gray">⌘/Ctrl + A</Tag>
-                          <Text>Select All</Text>
-                        </HStack>
-                        <HStack>
-                          <Tag size="sm" variant="subtle" colorScheme="gray">Esc</Tag>
-                          <Text>Clear Selection</Text>
-                        </HStack>
+                  <Popover placement="bottom-start">
+                    <PopoverTrigger>
+                      <IconButton
+                        aria-label="Keyboard shortcuts"
+                        icon={<QuestionIcon />}
+                        size="sm"
+                        variant="ghost"
+                        color={secondaryTextColor}
+                        _hover={{
+                          color: accentColor,
+                          bg: ghostButtonHoverBg
+                        }}
+                      />
+                    </PopoverTrigger>
+                    <PopoverContent p={4} width="320px">
+                      <PopoverArrow />
+                      <PopoverCloseButton />
+                      <VStack spacing={4} align="stretch">
+                        <Heading size="sm">Keyboard Shortcuts</Heading>
+                        <VStack spacing={3} align="stretch">
+                          <HStack justify="space-between" 
+                            as={Button} 
+                            variant="ghost" 
+                            height="auto" 
+                            py={2}
+                            onClick={() => {
+                              const searchInput = document.querySelector('[placeholder="Search tasks..."]') as HTMLInputElement;
+                              if (searchInput) {
+                                searchInput.focus();
+                              }
+                            }}
+                          >
+                            <Text fontSize="sm">Search</Text>
+                            <Tag size="sm" variant="subtle" colorScheme="blue">⌘/Ctrl + K</Tag>
+                          </HStack>
+                          <HStack justify="space-between" 
+                            as={Button} 
+                            variant="ghost" 
+                            height="auto" 
+                            py={2}
+                            onClick={() => onCreateModalOpen()}
+                          >
+                            <Text fontSize="sm">New Task</Text>
+                            <Tag size="sm" variant="subtle" colorScheme="blue">⌘/Ctrl + N</Tag>
+                          </HStack>
+                          <HStack justify="space-between" 
+                            as={Button} 
+                            variant="ghost" 
+                            height="auto" 
+                            py={2}
+                            onClick={() => setIsListView(!isListView)}
+                          >
+                            <Text fontSize="sm">Toggle View</Text>
+                            <Tag size="sm" variant="subtle" colorScheme="blue">⌘/Ctrl + /</Tag>
+                          </HStack>
+                          <HStack justify="space-between" 
+                            as={Button} 
+                            variant="ghost" 
+                            height="auto" 
+                            py={2}
+                            onClick={() => {
+                              setIsSelectMode(!isSelectMode);
+                              if (!isSelectMode) {
+                                const visibleTodos = todos.filter(todo => {
+                                  const matchesStatus = filterStatus.has('all') || filterStatus.has(todo.status);
+                                  const matchesPriority = filterPriority.has('all') || filterPriority.has(todo.priority);
+                                  const matchesSearch = !searchQuery || 
+                                    todo.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                    (todo.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
+                                  return matchesStatus && matchesPriority && matchesSearch;
+                                });
+                                setSelectedTodos(new Set(visibleTodos.map(t => t.id)));
+                              } else {
+                                setSelectedTodos(new Set());
+                              }
+                            }}
+                          >
+                            <Text fontSize="sm">Select All</Text>
+                            <Tag size="sm" variant="subtle" colorScheme="blue">⌘/Ctrl + A</Tag>
+                          </HStack>
+                          <HStack justify="space-between" 
+                            as={Button} 
+                            variant="ghost" 
+                            height="auto" 
+                            py={2}
+                            onClick={() => {
+                              setIsSelectMode(false);
+                              setSelectedTodos(new Set());
+                            }}
+                          >
+                            <Text fontSize="sm">Clear Selection</Text>
+                            <Tag size="sm" variant="subtle" colorScheme="blue">Esc</Tag>
+                          </HStack>
+                        </VStack>
                       </VStack>
-                    }
-                    placement="bottom-start"
-                    hasArrow
-                    bg={cardBg}
-                    color={textColor}
-                  >
-                    <IconButton
-                      aria-label="Keyboard shortcuts"
-                      icon={<QuestionIcon />}
-                      size="sm"
-                      variant="ghost"
-                      color={secondaryTextColor}
-                      _hover={{
-                        color: accentColor,
-                        bg: ghostButtonHoverBg
-                      }}
-                    />
-                  </Tooltip>
+                    </PopoverContent>
+                  </Popover>
                 </HStack>
                 <HStack spacing={6}>
                   {/* Add bulk action buttons */}
