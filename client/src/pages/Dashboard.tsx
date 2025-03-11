@@ -1157,11 +1157,11 @@ const Dashboard = () => {
                               fontWeight="medium"
                             >
                               {status === 'pending' ? (
-                                "No pending tasks. Drag tasks here to mark them as To Do"
+                                "No pending tasks. Add one or drag tasks here to mark them as To Do"
                               ) : status === 'in-progress' ? (
-                                "No tasks in progress. Drag tasks here when you start working on them"
+                                "No tasks in progress. Add one or drag tasks here when you start working on them"
                               ) : (
-                                "No completed tasks yet. Drag tasks here when they're done"
+                                "No completed tasks yet. Add one or drag tasks here when they're done"
                               )}
                             </Text>
                             <Button
@@ -1169,7 +1169,10 @@ const Dashboard = () => {
                               variant="ghost"
                               colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
                               leftIcon={<AddIcon />}
-                              onClick={() => handleCreateFromColumn(status)}
+                              onClick={() => {
+                                setStatus(status);
+                                _onCreateModalOpen();
+                              }}
                             >
                               Add a task
                             </Button>
@@ -1747,10 +1750,48 @@ const Dashboard = () => {
                                                   borderWidth="2px"
                                                   borderStyle="dashed"
                                                   borderColor={useColorModeValue('gray.200', 'gray.600')}
+                                                  bg={useColorModeValue('gray.50', 'gray.700')}
+                                                  transition="all 0.2s"
+                                                  _hover={{
+                                                    borderColor: status === 'completed' ? 'green.400' : status === 'in-progress' ? 'blue.400' : 'gray.400',
+                                                    transform: 'translateY(-2px)',
+                                                    boxShadow: 'sm'
+                                                  }}
                                                 >
-                                                  <Text color={secondaryTextColor} fontSize="sm">
-                                                    Drop tasks here or use the menu to change their status
-                                                  </Text>
+                                                  <VStack spacing={3}>
+                                                    <Icon
+                                                      as={getStatusIcon(status)}
+                                                      boxSize="8"
+                                                      color={`${status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}.400`}
+                                                      opacity={0.7}
+                                                    />
+                                                    <Text 
+                                                      color={secondaryTextColor} 
+                                                      fontSize="sm"
+                                                      textAlign="center"
+                                                      fontWeight="medium"
+                                                    >
+                                                      {status === 'pending' ? (
+                                                        "No pending tasks. Add one or drag tasks here to mark them as To Do"
+                                                      ) : status === 'in-progress' ? (
+                                                        "No tasks in progress. Add one or drag tasks here when you start working on them"
+                                                      ) : (
+                                                        "No completed tasks yet. Add one or drag tasks here when they're done"
+                                                      )}
+                                                    </Text>
+                                                    <Button
+                                                      size="sm"
+                                                      variant="ghost"
+                                                      colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
+                                                      leftIcon={<AddIcon />}
+                                                      onClick={() => {
+                                                        setStatus(status);
+                                                        onCreateModalOpen();
+                                                      }}
+                                                    >
+                                                      Add a task
+                                                    </Button>
+                                                  </VStack>
                                                 </Flex>
                                               )}
                                             </VStack>
