@@ -65,7 +65,19 @@ import {
   PopoverArrow,
   PopoverCloseButton,
 } from '@chakra-ui/react';
-import { Todo } from '../types/todo';
+import {
+  Task,
+  TaskStatus,
+  TaskPriority,
+  TaskCreationInput,
+  TaskUpdateInput,
+  TaskFilters,
+  SortConfig,
+  TasksState,
+  ApiError,
+  TaskStatistics,
+  TaskTemplate
+} from '../types';
 import { 
   ChevronDownIcon, 
   SearchIcon, 
@@ -110,7 +122,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import type { FC, PropsWithChildren } from 'react';
 import SkeletonCard from '../components/SkeletonCard';
-import { PREDEFINED_TEMPLATES, TaskTemplate } from '../types/template';
+import { PREDEFINED_TEMPLATES } from '../types/template';
 import TemplateModal from '../components/TemplateModal';
 
 const MotionBox = motion(Box);
@@ -122,7 +134,7 @@ interface DroppableProps extends PropsWithChildren {
   id: string;
 }
 
-const getStatusIcon = (status: Todo['status']) => {
+const getStatusIcon = (status: Task['status']) => {
   switch (status) {
     case 'completed':
       return CheckIcon;
@@ -134,7 +146,7 @@ const getStatusIcon = (status: Todo['status']) => {
 };
 
 // Add a DragOverlayCard component for better drag visuals
-const DragOverlayCard = ({ todo }: { todo: Todo }) => {
+const DragOverlayCard = ({ todo }: { todo: Task }) => {
   const statusColors = {
     pending: 'gray',
     'in-progress': 'blue',
@@ -244,12 +256,12 @@ const DragOverlayCard = ({ todo }: { todo: Todo }) => {
 
 // Modify the SortableCard component to properly handle refs
 const SortableCard = React.forwardRef<HTMLDivElement, {
-  todo: Todo;
+  todo: Task;
   isDragging?: boolean;
   isUpdating?: boolean;
-  onEdit: (todo: Todo) => void;
-  onDelete: (todo: Todo) => void;
-  onStatusChange: (id: string, newStatus: Todo['status']) => void;
+  onEdit: (todo: Task) => void;
+  onDelete: (todo: Task) => void;
+  onStatusChange: (id: string, newStatus: Task['status']) => void;
   isSelected?: boolean;
   isSelectMode?: boolean;
   onToggleSelect?: (id: string) => void;
@@ -573,7 +585,7 @@ SortableCard.displayName = 'SortableCard';
 type ColumnId = 'column-pending' | 'column-in-progress' | 'column-completed';
 
 // Update the Droppable component usage
-const getStatusFromColumnId = (columnId: string): Todo['status'] | null => {
+const getStatusFromColumnId = (columnId: string): Task['status'] | null => {
   switch (columnId) {
     case 'column-pending':
       return 'pending';
@@ -641,8 +653,8 @@ const Droppable = React.forwardRef<HTMLDivElement, DroppableProps>(({ children, 
 
 Droppable.displayName = 'Droppable';
 
-type StatusType = Todo['status'] | 'all';
-type PriorityType = Todo['priority'] | 'all';
+type StatusType = Task['status'] | 'all';
+type PriorityType = Task['priority'] | 'all';
 
 // Update the custom collision detection function to match the correct types
 const customCollisionDetection: CollisionDetection = ({
@@ -712,20 +724,41 @@ const customCollisionDetection: CollisionDetection = ({
   return closestColumn ? [{ id: closestColumn.id }] : [];
 };
 
-const Dashboard = () => {
+interface DashboardProps {
+  initialTasks?: Task[];
+}
+
+const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
   const { colorMode, toggleColorMode } = useColorMode();
-  const [todos, setTodos] = useState<Todo[]>([]);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [status, setStatus] = useState<Todo['status']>('pending');
-  const [priority, setPriority] = useState<Todo['priority']>('medium');
-  const [dueDate, setDueDate] = useState(new Date().toISOString().split('T')[0]);
-  const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
-  const [filterStatus, setFilterStatus] = useState<Set<StatusType>>(new Set(['all']));
-  const [filterPriority, setFilterPriority] = useState<Set<PriorityType>>(new Set(['all']));
-  const [searchQuery, setSearchQuery] = useState('');
-  const [sortField, setSortField] = useState<keyof Todo>('createdAt');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [todos, setTodos] = useState<Task[]>(initialTasks);
+  const [title, setTitle] = useState<string>('');
+  const [description, setDescription] = useState<string>('');
+  const [status, setStatus] = useState<TaskStatus>('pending');
+  const [priority, setPriority] = useState<TaskPriority>('medium');
+  const [dueDate, setDueDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [editingTodo, setEditingTodo] = useState<Task | null>(null);
+  const [filterStatus, setFilterStatus] = useState<Set<TaskStatus | 'all'>>(new Set(['all']));
+  const [filterPriority, setFilterPriority] = useState<Set<TaskPriority | 'all'>>(new Set(['all']));
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    field: 'createdAt',
+    direction: 'desc'
+  });
+  const [selectedTodos, setSelectedTodos] = useState<Set<string>>(new Set());
+  const [updatingTodoIds, setUpdatingTodoIds] = useState<Set<string>>(new Set());
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  const [error, setError] = useState<ApiError | null>(null);
+  const [isSelectMode, setIsSelectMode] = useState<boolean>(false);
+  const [statistics, setStatistics] = useState<TaskStatistics>({
+    total: 0,
+    completed: 0,
+    inProgress: 0,
+    pending: 0,
+    overdue: 0,
+    completionRate: 0
+  });
   const toast = useToast({
     position: 'top-right',
     duration: 3000,
@@ -764,7 +797,7 @@ const Dashboard = () => {
   const menuHoverBg = useColorModeValue('gray.100', 'whiteAlpha.200');
   const ghostButtonHoverBg = useColorModeValue('blue.50', 'whiteAlpha.200');
 
-  const [todoToDelete, setTodoToDelete] = useState<Todo | null>(null);
+  const [todoToDelete, setTodoToDelete] = useState<Task | null>(null);
   const cancelDeleteRef = useRef<HTMLButtonElement>(null);
   const { 
     isOpen: isDeleteAlertOpen, 
@@ -818,16 +851,8 @@ const Dashboard = () => {
     setFilterPriority(newFilterPriority);
   };
 
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [updatingTodoIds, setUpdatingTodoIds] = useState<Set<string>>(new Set());
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // Add new state for bulk actions
-  const [selectedTodos, setSelectedTodos] = useState<Set<string>>(new Set());
-  const [isSelectMode, setIsSelectMode] = useState(false);
-  
   // Keyboard shortcut handler
   const handleKeyPress = useCallback((event: KeyboardEvent) => {
     // Don't trigger shortcuts when typing in input fields
@@ -945,7 +970,7 @@ const Dashboard = () => {
     }
   };
 
-  const handleBulkStatusChange = async (newStatus: Todo['status']) => {
+  const handleBulkStatusChange = async (newStatus: Task['status']) => {
     if (selectedTodos.size === 0) return;
     
     try {
@@ -1051,8 +1076,8 @@ const Dashboard = () => {
       }
       
       if (searchQuery) params.append('search', searchQuery);
-      params.append('sortField', sortField);
-      params.append('sortDirection', sortDirection);
+      params.append('sortField', sortConfig.field);
+      params.append('sortDirection', sortConfig.direction);
 
       const response = await fetch(`http://localhost:5001/api/todos?${params}`);
       if (!response.ok) {
@@ -1075,7 +1100,7 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchTodos();
-  }, [filterStatus, filterPriority, searchQuery, sortField, sortDirection]);
+  }, [filterStatus, filterPriority, searchQuery, sortConfig]);
 
   useEffect(() => {
     if (isCreateModalOpen || isEditModalOpen) {
@@ -1133,7 +1158,7 @@ const Dashboard = () => {
     }
   };
 
-  const handleDeleteClick = async (todo: Todo) => {
+  const handleDeleteClick = async (todo: Task) => {
     setTodoToDelete(todo);
     onDeleteAlertOpen();
   };
@@ -1168,7 +1193,7 @@ const Dashboard = () => {
     }
   };
 
-  const handleStatusChange = async (id: string, newStatus: Todo['status']) => {
+  const handleStatusChange = async (id: string, newStatus: Task['status']) => {
     setUpdatingTodoIds(prev => new Set(prev).add(id));
     try {
       const response = await fetch(`http://localhost:5001/api/todos/${id}`, {
@@ -1205,7 +1230,7 @@ const Dashboard = () => {
     }
   };
 
-  const handleEdit = async (todo: Todo) => {
+  const handleEdit = async (todo: Task) => {
     if (!editingTodo) {
       setEditingTodo(todo);
       onEditModalOpen();
@@ -1251,12 +1276,12 @@ const Dashboard = () => {
     onEditModalClose();
   };
 
-  const toggleSort = (field: keyof Todo) => {
-    if (sortField === field) {
-      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+  const toggleSort = (field: keyof Task) => {
+    if (sortConfig.field === field) {
+      setSortConfig(prev => ({ ...prev, direction: prev.direction === 'asc' ? 'desc' : 'asc' }));
     } else {
-      setSortField(field);
-      setSortDirection('asc');
+      setSortConfig(prev => ({ ...prev, field }));
+      setSortConfig(prev => ({ ...prev, direction: 'asc' }));
     }
   };
 
@@ -1268,7 +1293,7 @@ const Dashboard = () => {
     return 'gray.500';
   };
 
-  const getPriorityColor = (priority: Todo['priority']) => {
+  const getPriorityColor = (priority: Task['priority']) => {
     switch (priority) {
       case 'high':
         return 'red';
@@ -1299,7 +1324,7 @@ const Dashboard = () => {
     const isColumn = overId.startsWith('column-');
     
     // Get the target status and calculate new order
-    let newStatus: Todo['status'];
+    let newStatus: Task['status'];
     let newOrder: number;
     
     if (isColumn) {
@@ -1927,7 +1952,7 @@ const Dashboard = () => {
   };
 
   // Add a wrapper for onCreateModalOpen that can handle initial status
-  const onCreateModalOpen = (initialStatus?: Todo['status']) => {
+  const onCreateModalOpen = (initialStatus?: Task['status']) => {
     if (initialStatus) {
       setStatus(initialStatus);
     }
@@ -1974,6 +1999,53 @@ const Dashboard = () => {
       setIsSubmitting(false);
     }
   };
+
+  const handleTemplateApply = async (template: TaskTemplate) => {
+    try {
+      setIsSubmitting(true);
+      const newTasks = template.tasks.map(task => ({
+        ...task,
+        dueDate: new Date(task.dueDate).toISOString().split('T')[0]
+      }));
+      
+      // Create all tasks from template
+      await Promise.all(newTasks.map(task => 
+        createTask(task as TaskCreationInput)
+      ));
+      
+      toast({
+        title: 'Template applied successfully',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error applying template',
+        description: error instanceof Error ? error.message : 'An unexpected error occurred',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Update sorting function to remove order property references
+  const sortTasks = useCallback((tasks: Task[], config: SortConfig) => {
+    return [...tasks].sort((a, b) => {
+      const aValue = a[config.field];
+      const bValue = b[config.field];
+      
+      if (aValue === bValue) {
+        return 0;
+      }
+      
+      const modifier = config.direction === 'asc' ? 1 : -1;
+      return aValue > bValue ? modifier : -modifier;
+    });
+  }, []);
 
   return (
     <Box bg={mainBg} minH="100vh" transition="background-color 0.2s">
@@ -3139,7 +3211,7 @@ const Dashboard = () => {
                       <GridItem>
                         <Select 
                           value={priority} 
-                          onChange={(e) => setPriority(e.target.value as Todo['priority'])}
+                          onChange={(e) => setPriority(e.target.value as TaskPriority)}
                           variant="filled"
                           icon={<WarningIcon />}
                         >
@@ -3151,7 +3223,7 @@ const Dashboard = () => {
                       <GridItem>
                         <Select 
                           value={status} 
-                          onChange={(e) => setStatus(e.target.value as Todo['status'])}
+                          onChange={(e) => setStatus(e.target.value as TaskStatus)}
                           variant="filled"
                           icon={<Icon as={getStatusIcon(status)} />}
                         >
@@ -3242,7 +3314,7 @@ const Dashboard = () => {
                         <GridItem>
                           <Select
                             value={editingTodo.priority}
-                            onChange={(e) => setEditingTodo({ ...editingTodo, priority: e.target.value as Todo['priority'] })}
+                            onChange={(e) => setEditingTodo({ ...editingTodo, priority: e.target.value as TaskPriority })}
                             variant="filled"
                             icon={<WarningIcon />}
                           >
@@ -3254,7 +3326,7 @@ const Dashboard = () => {
                         <GridItem>
                           <Select
                             value={editingTodo.status}
-                            onChange={(e) => setEditingTodo({ ...editingTodo, status: e.target.value as Todo['status'] })}
+                            onChange={(e) => setEditingTodo({ ...editingTodo, status: e.target.value as TaskStatus })}
                             variant="filled"
                             icon={<Icon as={getStatusIcon(editingTodo.status)} />}
                           >
