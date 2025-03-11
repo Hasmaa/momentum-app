@@ -96,6 +96,7 @@ import {
   CloseIcon,
   RepeatIcon,
   QuestionIcon,
+  ChevronRightIcon,
   FiRotateCcw,
   FiRotateCw,
   FiHelpCircle,
@@ -2101,8 +2102,44 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
           <Card bg={headerBg} borderRadius="lg" borderColor={borderColor} borderWidth="1px" flexShrink={0}>
             <CardBody>
               <Flex justify="space-between" align="center">
-                <HStack spacing={2}>
-                  <Heading size="lg" color={textColor}>Tasks</Heading>
+                <VStack spacing={1} align="flex-start">
+                  <HStack spacing={3} align="center">
+                    <Box>
+                      <VStack gap={-5} pt={5}>
+                        <Icon
+                          as={ChevronRightIcon}
+                          boxSize={8}
+                          color={accentColor}
+                          transform="rotate(-90deg)"
+                          mt={-4}
+                        />
+                        <Icon
+                          as={ChevronRightIcon}
+                          boxSize={8}
+                          color={accentColor}
+                          opacity={0.7}
+                          transform="rotate(-90deg)"
+                          mt={-4}
+                        />
+                        <Icon
+                          as={ChevronRightIcon}
+                          boxSize={8}
+                          color={accentColor}
+                          opacity={0.4}
+                          transform="rotate(-90deg)"
+                          mt={-4}
+                        />
+                      </VStack>
+                    </Box>
+                    <VStack spacing={0} align="flex-start">
+                      <Heading size="lg" color={textColor}>Momentum</Heading>
+                      <Text color={secondaryTextColor} fontSize="sm">
+                        Keep Your Progress Moving
+                      </Text>
+                    </VStack>
+                  </HStack>
+                </VStack>
+                <HStack spacing={6}>
                   <Popover placement="bottom-start">
                     <PopoverTrigger>
                       <IconButton
@@ -2284,8 +2321,6 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                       </VStack>
                     </PopoverContent>
                   </Popover>
-                </HStack>
-                <HStack spacing={6}>
                   {/* Add bulk action buttons */}
                   {isSelectMode && selectedTodos.size > 0 && (
                     <HStack spacing={2}>
