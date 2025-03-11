@@ -331,7 +331,7 @@ const SortableCard = ({ todo, isDragging, onEdit, onDelete, onStatusChange }: {
                     <MenuButton
                       as={IconButton}
                       icon={
-                        <HStack spacing={2}>
+                        <HStack spacing={2} padding={2}>
                           <Icon 
                             as={getStatusIcon(todo.status)} 
                             color={`${statusColors[todo.status]}.400`}
