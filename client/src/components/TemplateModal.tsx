@@ -197,6 +197,19 @@ const TemplateModal: React.FC<TemplateModalProps> = ({
                               _hover={{ bg: hoverBg }}
                               position="relative"
                               overflow="hidden"
+                              onClick={() => onSelectTemplate(template)}
+                              role="button"
+                              tabIndex={0}
+                              _focus={{
+                                boxShadow: "outline",
+                                outline: "none"
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.preventDefault();
+                                  onSelectTemplate(template);
+                                }
+                              }}
                             >
                               <CardBody p={4}>
                                 <VStack align="start" spacing={3}>
@@ -243,10 +256,12 @@ const TemplateModal: React.FC<TemplateModalProps> = ({
                                     colorScheme="blue"
                                     size="sm"
                                     width="100%"
-                                    onClick={() => onSelectTemplate(template)}
                                     borderRadius="md"
                                     fontWeight="medium"
                                     mt={1}
+                                    pointerEvents="none"
+                                    opacity={0.9}
+                                    _hover={{ opacity: 0.9 }}
                                   >
                                     Use Template
                                   </Button>
