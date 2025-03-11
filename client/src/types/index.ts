@@ -19,6 +19,7 @@ export interface Task extends BaseTask {
   createdAt: string;
   updatedAt: string;
   completedAt?: string;
+  order: number;
 }
 
 // Task Template Interface
