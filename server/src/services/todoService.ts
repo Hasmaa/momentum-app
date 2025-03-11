@@ -105,6 +105,25 @@ export async function updateTodo(id: string, updates: Partial<Todo>): Promise<To
   const index = todos.findIndex(todo => todo.id === id);
   
   if (index === -1) return null;
+
+  const oldTodo = todos[index];
+  
+  // If status is changing, handle the order
+  if (updates.status && updates.status !== oldTodo.status) {
+    const statusTodos = todos.filter(t => t.status === updates.status);
+    const newOrder = statusTodos.length > 0 
+      ? Math.max(...statusTodos.map(t => t.order)) + 1 
+      : 0;
+    
+    // Update orders for old status
+    todos.forEach(t => {
+      if (t.status === oldTodo.status && t.order > oldTodo.order) {
+        t.order -= 1;
+      }
+    });
+    
+    updates.order = newOrder;
+  }
   
   todos[index] = {
     ...todos[index],

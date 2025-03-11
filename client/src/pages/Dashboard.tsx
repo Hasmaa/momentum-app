@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   Box,
   VStack,
@@ -57,6 +57,8 @@ import {
   AccordionIcon,
   Spinner,
   Skeleton,
+  Checkbox,
+  MenuDivider,
 } from '@chakra-ui/react';
 import { Todo } from '../types/todo';
 import { 
@@ -75,6 +77,7 @@ import {
   MoonIcon,
   CloseIcon,
   RepeatIcon,
+  QuestionIcon,
 } from '@chakra-ui/icons';
 import { format, isPast, isWithinInterval, addDays } from 'date-fns';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
@@ -236,7 +239,10 @@ const SortableCard = React.forwardRef<HTMLDivElement, {
   onEdit: (todo: Todo) => void;
   onDelete: (todo: Todo) => void;
   onStatusChange: (id: string, newStatus: Todo['status']) => void;
-}>(({ todo, isDragging, isUpdating, onEdit, onDelete, onStatusChange }, ref) => {
+  isSelected?: boolean;
+  isSelectMode?: boolean;
+  onToggleSelect?: (id: string) => void;
+}>(({ todo, isDragging, isUpdating, onEdit, onDelete, onStatusChange, isSelected = false, isSelectMode = false, onToggleSelect }, ref) => {
   const {
     attributes,
     listeners,
@@ -296,7 +302,7 @@ const SortableCard = React.forwardRef<HTMLDivElement, {
         mb={4}
         opacity={isDragging ? 0.4 : 1}
         borderWidth="1px"
-        borderColor={borderColor}
+        borderColor={isSelected ? 'blue.500' : borderColor}
         position="relative"
         overflow="visible"
         _hover={{
@@ -313,6 +319,25 @@ const SortableCard = React.forwardRef<HTMLDivElement, {
           duration: 0.6
         }}
       >
+        {/* Add selection checkbox */}
+        {isSelectMode && (
+          <Box
+            position="absolute"
+            left="-8px"
+            top="50%"
+            transform="translateY(-50%)"
+            zIndex={1}
+          >
+            <Checkbox
+              isChecked={isSelected}
+              onChange={() => onToggleSelect?.(todo.id)}
+              colorScheme="blue"
+              size="lg"
+              borderColor="blue.500"
+            />
+          </Box>
+        )}
+        
         {/* Status Indicator */}
         <Box
           position="absolute"
@@ -708,6 +733,203 @@ const Dashboard = () => {
   const [updatingTodoIds, setUpdatingTodoIds] = useState<Set<string>>(new Set());
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
+  // Add new state for bulk actions
+  const [selectedTodos, setSelectedTodos] = useState<Set<string>>(new Set());
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  
+  // Keyboard shortcut handler
+  const handleKeyPress = useCallback((event: KeyboardEvent) => {
+    // Don't trigger shortcuts when typing in input fields
+    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
+      return;
+    }
+
+    // Command/Ctrl + K to focus search
+    if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+      event.preventDefault();
+      const searchInput = document.querySelector('[placeholder="Search tasks..."]') as HTMLInputElement;
+      if (searchInput) {
+        searchInput.focus();
+      }
+    }
+
+    // Command/Ctrl + N to create new task
+    if ((event.metaKey || event.ctrlKey) && event.key === 'n') {
+      event.preventDefault();
+      _onCreateModalOpen();
+    }
+
+    // Command/Ctrl + / to toggle view mode
+    if ((event.metaKey || event.ctrlKey) && event.key === '/') {
+      event.preventDefault();
+      setIsListView(!isListView);
+    }
+
+    // Command/Ctrl + A to toggle select mode
+    if ((event.metaKey || event.ctrlKey) && event.key === 'a') {
+      event.preventDefault();
+      setIsSelectMode(!isSelectMode);
+      if (!isSelectMode) {
+        // Select all visible todos
+        const visibleTodos = todos.filter(todo => {
+          const matchesStatus = filterStatus.has('all') || filterStatus.has(todo.status);
+          const matchesPriority = filterPriority.has('all') || filterPriority.has(todo.priority);
+          const matchesSearch = !searchQuery || 
+            todo.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (todo.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
+          return matchesStatus && matchesPriority && matchesSearch;
+        });
+        setSelectedTodos(new Set(visibleTodos.map(t => t.id)));
+      } else {
+        setSelectedTodos(new Set());
+      }
+    }
+
+    // Escape to clear selection
+    if (event.key === 'Escape') {
+      setIsSelectMode(false);
+      setSelectedTodos(new Set());
+    }
+  }, [isListView, isSelectMode, todos, filterStatus, filterPriority, searchQuery, _onCreateModalOpen]);
+
+  // Add keyboard event listener
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyPress);
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [handleKeyPress]);
+
+  // Bulk action handlers
+  const handleBulkDelete = async () => {
+    if (selectedTodos.size === 0) return;
+    
+    setIsDeleting(true);
+    try {
+      const response = await fetch('http://localhost:5001/api/todos/bulk/delete', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          todoIds: Array.from(selectedTodos)
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete tasks');
+      }
+
+      const result = await response.json();
+      fetchTodos();
+      setSelectedTodos(new Set());
+      setIsSelectMode(false);
+      
+      toast({
+        title: result.message,
+        status: 'success',
+        duration: 3000,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error deleting tasks',
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        status: 'error',
+        duration: 3000,
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleBulkStatusChange = async (newStatus: Todo['status']) => {
+    if (selectedTodos.size === 0) return;
+    
+    try {
+      const response = await fetch('http://localhost:5001/api/todos/bulk/update', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          todoIds: Array.from(selectedTodos),
+          updates: { status: newStatus }
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update tasks');
+      }
+
+      const result = await response.json();
+      fetchTodos();
+      setSelectedTodos(new Set());
+      setIsSelectMode(false);
+      
+      toast({
+        title: result.message,
+        status: 'success',
+        duration: 3000,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error updating tasks',
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        status: 'error',
+        duration: 3000,
+      });
+    }
+  };
+
+  const handleBulkCapitalize = async () => {
+    if (selectedTodos.size === 0) return;
+    
+    try {
+      const response = await fetch('http://localhost:5001/api/todos/bulk/capitalize', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          todoIds: Array.from(selectedTodos)
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to capitalize tasks');
+      }
+
+      const result = await response.json();
+      fetchTodos();
+      setSelectedTodos(new Set());
+      setIsSelectMode(false);
+      
+      toast({
+        title: result.message,
+        status: 'success',
+        duration: 3000,
+      });
+    } catch (error) {
+      toast({
+        title: 'Error capitalizing tasks',
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        status: 'error',
+        duration: 3000,
+      });
+    }
+  };
+
+  // Toggle selection of a single todo
+  const toggleTodoSelection = (todoId: string) => {
+    const newSelection = new Set(selectedTodos);
+    if (newSelection.has(todoId)) {
+      newSelection.delete(todoId);
+    } else {
+      newSelection.add(todoId);
+    }
+    setSelectedTodos(newSelection);
+  };
+
   const fetchTodos = async () => {
     try {
       setIsLoading(true);
@@ -730,11 +952,15 @@ const Dashboard = () => {
       params.append('sortDirection', sortDirection);
 
       const response = await fetch(`http://localhost:5001/api/todos?${params}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch tasks');
+      }
       const data = await response.json();
       setTodos(data);
     } catch (error) {
       toast({
-        title: 'Error fetching todos',
+        title: 'Error fetching tasks',
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
         status: 'error',
         duration: 3000,
       });
@@ -804,7 +1030,7 @@ const Dashboard = () => {
     }
   };
 
-  const handleDeleteClick = (todo: Todo) => {
+  const handleDeleteClick = async (todo: Todo) => {
     setTodoToDelete(todo);
     onDeleteAlertOpen();
   };
@@ -840,11 +1066,7 @@ const Dashboard = () => {
   };
 
   const handleStatusChange = async (id: string, newStatus: Todo['status']) => {
-    if (!id) {
-      console.error('No todo id provided');
-      return;
-    }
-
+    setUpdatingTodoIds(prev => new Set(prev).add(id));
     try {
       const response = await fetch(`http://localhost:5001/api/todos/${id}`, {
         method: 'PUT',
@@ -853,15 +1075,29 @@ const Dashboard = () => {
         },
         body: JSON.stringify({ status: newStatus }),
       });
-      
-      if (!response.ok) throw new Error('Failed to update todo');
-      
-      fetchTodos();
+
+      if (!response.ok) {
+        throw new Error('Failed to update task status');
+      }
+
+      await fetchTodos();
+      toast({
+        title: 'Task status updated',
+        status: 'success',
+        duration: 3000,
+      });
     } catch (error) {
       toast({
-        title: 'Error updating todo',
+        title: 'Error updating task status',
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
         status: 'error',
         duration: 3000,
+      });
+    } finally {
+      setUpdatingTodoIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(id);
+        return newSet;
       });
     }
   };
@@ -1180,6 +1416,9 @@ const Dashboard = () => {
                                   }}
                                   onDelete={handleDeleteClick}
                                   onStatusChange={handleStatusChange}
+                                  isSelected={selectedTodos.has(todo.id)}
+                                  isSelectMode={isSelectMode}
+                                  onToggleSelect={toggleTodoSelection}
                                 />
                               ))
                             ) : (
@@ -1325,6 +1564,9 @@ const Dashboard = () => {
                             }}
                             onDelete={handleDeleteClick}
                             onStatusChange={handleStatusChange}
+                            isSelected={selectedTodos.has(todo.id)}
+                            isSelectMode={isSelectMode}
+                            onToggleSelect={toggleTodoSelection}
                           />
                         ))
                       ) : (
@@ -1411,8 +1653,105 @@ const Dashboard = () => {
           <Card bg={headerBg} borderRadius="lg" borderColor={borderColor} borderWidth="1px">
             <CardBody>
               <Flex justify="space-between" align="center">
-                <Heading size="lg" color={textColor}>Tasks</Heading>
+                <HStack spacing={2}>
+                  <Heading size="lg" color={textColor}>Tasks</Heading>
+                  <Tooltip
+                    label={
+                      <VStack align="start" spacing={2} p={2}>
+                        <Text fontWeight="bold">Keyboard Shortcuts:</Text>
+                        <HStack>
+                          <Tag size="sm" variant="subtle" colorScheme="gray">⌘/Ctrl + K</Tag>
+                          <Text>Search</Text>
+                        </HStack>
+                        <HStack>
+                          <Tag size="sm" variant="subtle" colorScheme="gray">⌘/Ctrl + N</Tag>
+                          <Text>New Task</Text>
+                        </HStack>
+                        <HStack>
+                          <Tag size="sm" variant="subtle" colorScheme="gray">⌘/Ctrl + /</Tag>
+                          <Text>Toggle View</Text>
+                        </HStack>
+                        <HStack>
+                          <Tag size="sm" variant="subtle" colorScheme="gray">⌘/Ctrl + A</Tag>
+                          <Text>Select All</Text>
+                        </HStack>
+                        <HStack>
+                          <Tag size="sm" variant="subtle" colorScheme="gray">Esc</Tag>
+                          <Text>Clear Selection</Text>
+                        </HStack>
+                      </VStack>
+                    }
+                    placement="bottom-start"
+                    hasArrow
+                    bg={cardBg}
+                    color={textColor}
+                  >
+                    <IconButton
+                      aria-label="Keyboard shortcuts"
+                      icon={<QuestionIcon />}
+                      size="sm"
+                      variant="ghost"
+                      color={secondaryTextColor}
+                      _hover={{
+                        color: accentColor,
+                        bg: ghostButtonHoverBg
+                      }}
+                    />
+                  </Tooltip>
+                </HStack>
                 <HStack spacing={6}>
+                  {/* Add bulk action buttons */}
+                  {isSelectMode && selectedTodos.size > 0 && (
+                    <HStack spacing={2}>
+                      <Text fontSize="sm" color={textColor}>
+                        {selectedTodos.size} selected
+                      </Text>
+                      <Menu>
+                        <MenuButton
+                          as={Button}
+                          size="sm"
+                          colorScheme="blue"
+                          variant="outline"
+                        >
+                          Bulk Actions
+                        </MenuButton>
+                        <MenuList>
+                          <MenuItem onClick={() => handleBulkStatusChange('pending')}>
+                            Mark as Pending
+                          </MenuItem>
+                          <MenuItem onClick={() => handleBulkStatusChange('in-progress')}>
+                            Mark as In Progress
+                          </MenuItem>
+                          <MenuItem onClick={() => handleBulkStatusChange('completed')}>
+                            Mark as Completed
+                          </MenuItem>
+                          <MenuDivider />
+                          <MenuItem onClick={handleBulkCapitalize}>
+                            Title Case
+                          </MenuItem>
+                          <MenuDivider />
+                          <MenuItem
+                            onClick={handleBulkDelete}
+                            color="red.500"
+                          >
+                            Delete Selected
+                          </MenuItem>
+                        </MenuList>
+                      </Menu>
+                      <IconButton
+                        aria-label="Clear selection"
+                        icon={<CloseIcon />}
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
+                          setIsSelectMode(false);
+                          setSelectedTodos(new Set());
+                        }}
+                      />
+                    </HStack>
+                  )}
+                  
+                  {/* Keep existing buttons */}
                   <HStack spacing={3}>
                     <Icon 
                       as={HamburgerIcon} 
@@ -1475,7 +1814,7 @@ const Dashboard = () => {
               </Flex>
             </CardBody>
           </Card>
-
+          
           <Card borderRadius="lg" bg={cardBg} borderColor={borderColor} borderWidth="1px">
             <CardBody>
               <VStack spacing={4} align="stretch">
@@ -1877,6 +2216,9 @@ const Dashboard = () => {
                                                           }}
                                                           onDelete={handleDeleteClick}
                                                           onStatusChange={handleStatusChange}
+                                                          isSelected={selectedTodos.has(todo.id)}
+                                                          isSelectMode={isSelectMode}
+                                                          onToggleSelect={toggleTodoSelection}
                                                         />
                                                       ))
                                                     ) : (
@@ -2153,6 +2495,9 @@ const Dashboard = () => {
                                                       }}
                                                       onDelete={handleDeleteClick}
                                                       onStatusChange={handleStatusChange}
+                                                      isSelected={selectedTodos.has(todo.id)}
+                                                      isSelectMode={isSelectMode}
+                                                      onToggleSelect={toggleTodoSelection}
                                                     />
                                                   ))
                                                 ) : (

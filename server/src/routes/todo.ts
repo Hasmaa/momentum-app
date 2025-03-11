@@ -166,4 +166,185 @@ router.put('/:id/move', async (req, res) => {
   }
 });
 
+// Bulk update todos
+router.put('/bulk/update', async (req, res) => {
+  try {
+    // Add 600ms delay
+    await delay(600);
+
+    const { todoIds, updates } = req.body;
+
+    if (!Array.isArray(todoIds) || todoIds.length === 0) {
+      return res.status(400).json({ message: 'todoIds must be a non-empty array' });
+    }
+
+    // Read all todos once
+    const todos = await todoService.readTodos();
+    const updatedTodos: typeof todos = [];
+    let maxOrderByStatus: Record<string, number> = {};
+
+    // First pass: calculate max order for each status
+    if (updates.status) {
+      todos.forEach(todo => {
+        if (!maxOrderByStatus[todo.status]) {
+          maxOrderByStatus[todo.status] = todo.order;
+        } else {
+          maxOrderByStatus[todo.status] = Math.max(maxOrderByStatus[todo.status], todo.order);
+        }
+      });
+    }
+
+    // Second pass: update todos
+    todos.forEach(todo => {
+      if (todoIds.includes(todo.id)) {
+        // If we're changing status, assign new order
+        if (updates.status && updates.status !== todo.status) {
+          maxOrderByStatus[updates.status] = (maxOrderByStatus[updates.status] || 0) + 1;
+          updatedTodos.push({
+            ...todo,
+            ...updates,
+            order: maxOrderByStatus[updates.status],
+            updatedAt: new Date().toISOString()
+          });
+        } else {
+          // No status change, keep same order
+          updatedTodos.push({
+            ...todo,
+            ...updates,
+            updatedAt: new Date().toISOString()
+          });
+        }
+      } else {
+        // Not being updated, but might need order adjustment
+        if (updates.status && todo.status === updates.status) {
+          // This todo is in the target status column, keep its order
+          updatedTodos.push(todo);
+        } else {
+          updatedTodos.push(todo);
+        }
+      }
+    });
+
+    // Write all updates at once
+    await todoService.writeTodos(updatedTodos);
+
+    const successfulUpdates = updatedTodos.filter(todo => todoIds.includes(todo.id));
+
+    if (successfulUpdates.length === 0) {
+      return res.status(404).json({ message: 'No todos were found to update' });
+    }
+
+    res.json({
+      message: `Successfully updated ${successfulUpdates.length} todos`,
+      todos: successfulUpdates
+    });
+  } catch (error) {
+    console.error('Error bulk updating todos:', error);
+    res.status(500).json({ message: 'Error bulk updating todos' });
+  }
+});
+
+// Bulk delete todos
+router.delete('/bulk/delete', async (req, res) => {
+  try {
+    // Add 600ms delay
+    await delay(600);
+
+    const { todoIds } = req.body;
+
+    if (!Array.isArray(todoIds) || todoIds.length === 0) {
+      return res.status(400).json({ message: 'todoIds must be a non-empty array' });
+    }
+
+    // Read all todos once
+    const todos = await todoService.readTodos();
+    
+    // Filter out todos to be deleted and adjust orders
+    const todosToKeep = todos.filter(todo => !todoIds.includes(todo.id));
+    
+    // Recalculate orders for each status
+    const statusGroups = new Map<Todo['status'], Todo[]>();
+    
+    // Group todos by status
+    todosToKeep.forEach(todo => {
+      if (!statusGroups.has(todo.status)) {
+        statusGroups.set(todo.status, []);
+      }
+      statusGroups.get(todo.status)!.push(todo);
+    });
+    
+    // Reorder todos within each status group
+    statusGroups.forEach(todos => {
+      todos.sort((a, b) => a.order - b.order);
+      todos.forEach((todo, index) => {
+        todo.order = index;
+      });
+    });
+
+    // Write the remaining todos back to storage
+    await todoService.writeTodos(todosToKeep);
+
+    const deletedCount = todos.length - todosToKeep.length;
+
+    if (deletedCount === 0) {
+      return res.status(404).json({ message: 'No todos were found to delete' });
+    }
+
+    res.json({
+      message: `Successfully deleted ${deletedCount} todos`,
+      deletedCount
+    });
+  } catch (error) {
+    console.error('Error bulk deleting todos:', error);
+    res.status(500).json({ message: 'Error bulk deleting todos' });
+  }
+});
+
+// Bulk capitalize todos
+router.put('/bulk/capitalize', async (req, res) => {
+  try {
+    // Add 600ms delay
+    await delay(600);
+
+    const { todoIds } = req.body;
+
+    if (!Array.isArray(todoIds) || todoIds.length === 0) {
+      return res.status(400).json({ message: 'todoIds must be a non-empty array' });
+    }
+
+    // Read all todos once
+    const todos = await todoService.readTodos();
+    const updatedTodos = todos.map(todo => {
+      if (todoIds.includes(todo.id)) {
+        return {
+          ...todo,
+          title: todo.title
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+            .join(' '),
+          updatedAt: new Date().toISOString()
+        };
+      }
+      return todo;
+    });
+
+    // Write all updates at once
+    await todoService.writeTodos(updatedTodos);
+
+    const successfulUpdates = updatedTodos.filter(todo => todoIds.includes(todo.id));
+
+    if (successfulUpdates.length === 0) {
+      return res.status(404).json({ message: 'No todos were found to update' });
+    }
+
+    res.json({
+      message: `Successfully title-cased ${successfulUpdates.length} todos`,
+      todos: successfulUpdates
+    });
+  } catch (error) {
+    console.error('Error capitalizing todos:', error);
+    res.status(500).json({ message: 'Error capitalizing todos' });
+  }
+});
+
 export default router; 
