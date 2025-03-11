@@ -531,10 +531,30 @@ const SortableCard = React.forwardRef<HTMLDivElement, {
 
 SortableCard.displayName = 'SortableCard';
 
+// Add an enum or type for column IDs
+type ColumnId = 'column-pending' | 'column-in-progress' | 'column-completed';
+
+// Update the Droppable component usage
+const getStatusFromColumnId = (columnId: string): Todo['status'] | null => {
+  switch (columnId) {
+    case 'column-pending':
+      return 'pending';
+    case 'column-in-progress':
+      return 'in-progress';
+    case 'column-completed':
+      return 'completed';
+    default:
+      return null;
+  }
+};
+
 // Update the Droppable component
 const Droppable = React.forwardRef<HTMLDivElement, DroppableProps>(({ children, id }, ref) => {
   const { setNodeRef, isOver } = useDroppable({
-    id
+    id,
+    data: {
+      type: id, // Add the status type to the droppable data
+    }
   });
 
   const bg = useColorModeValue('gray.50', 'gray.700');
@@ -925,47 +945,94 @@ const Dashboard = () => {
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
+    console.log('Drag ended:', event);
     setActiveId(null);
     const { active, over } = event;
 
-    if (!over || !['pending', 'in-progress', 'completed'].includes(over.id as string)) {
-      return;
-    }
+    if (!over) return;
 
     const todoId = active.id as string;
     const todo = todos.find(t => t.id === todoId);
     if (!todo) return;
 
-    const newStatus = over.id as Todo['status'];
-    if (todo.status === newStatus) return;
-
-    // Add todo to updating set
+    // Get the container ID from either the over.data (for column drops) or from the current todo's status (for reordering)
+    const containerId = over.data.current?.type || `column-${todo.status}`;
+    const newStatus = getStatusFromColumnId(containerId);
+    
+    if (!newStatus) {
+      console.error('Invalid column ID:', containerId);
+      return;
+    }
+    
     setUpdatingTodoIds(prev => new Set(prev).add(todoId));
 
     try {
-      // Optimistically update the UI
-      const newTodos = todos.map(t => 
+      // Get all todos in the target status column and their current order
+      const statusTodos = todos
+        .filter(t => t.status === newStatus)
+        .sort((a, b) => a.order - b.order);
+
+      // Find the position where the item was dropped
+      let newOrder: number;
+      
+      if (over.id === todoId) {
+        // Dropped on itself, no change needed
+        newOrder = todo.order;
+      } else {
+        const overTodo = todos.find(t => t.id === over.id);
+        if (overTodo) {
+          // If dropping onto another todo
+          if (todo.order < overTodo.order) {
+            // Dropping below - place after the target
+            newOrder = overTodo.order + 1;
+          } else {
+            // Dropping above - place before the target
+            newOrder = overTodo.order - 1;
+          }
+        } else {
+          // Dropping at the end of the list
+          newOrder = statusTodos.length > 0 
+            ? Math.max(...statusTodos.map(t => t.order)) + 1 
+            : 0;
+        }
+      }
+
+      console.log('Making API call with:', { todoId, newStatus, newOrder });
+
+      // Optimistically update UI
+      const updatedTodos = todos.map(t => 
         t.id === todoId 
-          ? { ...t, status: newStatus }
+          ? { ...t, status: newStatus, order: newOrder }
           : t
       );
-      setTodos(newTodos);
+      setTodos(updatedTodos.sort((a, b) => a.order - b.order));
 
-      const response = await fetch(`http://localhost:5001/api/todos/${todoId}`, {
+      // Make the API call
+      const response = await fetch(`http://localhost:5001/api/todos/${todoId}/move`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
-          ...todo,
-          status: newStatus 
+          newOrder,
+          status: newStatus
         }),
       });
       
       if (!response.ok) throw new Error('Failed to update todo');
 
+      const updatedTodo = await response.json();
+      console.log('Server response:', updatedTodo);
+
+      // Update local state with the server response
+      const finalTodos = todos.map(t => 
+        t.id === todoId ? updatedTodo : t
+      );
+      console.log('Final todos state:', finalTodos);
+      setTodos(finalTodos.sort((a, b) => a.order - b.order));
+
     } catch (error) {
-      // Revert the optimistic update on error
+      console.error('Error moving todo:', error);
       toast({
         title: 'Error moving task',
         description: 'The task has been returned to its original position',
@@ -974,7 +1041,6 @@ const Dashboard = () => {
       });
       fetchTodos();
     } finally {
-      // Remove todo from updating set
       setUpdatingTodoIds(prev => {
         const next = new Set(prev);
         next.delete(todoId);
@@ -1052,7 +1118,7 @@ const Dashboard = () => {
               <Grid templateColumns="repeat(3, 1fr)" gap={6} minH="calc(100vh - 300px)" position="relative" overflow="visible">
                 {['pending', 'in-progress', 'completed'].map((status) => (
                   <GridItem key={status} display="flex" flexDirection="column" height="100%">
-                    <Droppable id={status}>
+                    <Droppable id={`column-${status}`}>
                       <Card 
                         bg={columnBg}
                         mb={4}
@@ -1195,9 +1261,9 @@ const Dashboard = () => {
         onDragEnd={handleDragEnd}
       >
         <Grid templateColumns="repeat(3, 1fr)" gap={6} minH="calc(100vh - 300px)" position="relative" overflow="visible">
-          {['pending', 'in-progress', 'completed'].map((status) => (
+          {(['pending', 'in-progress', 'completed'] as const).map((status) => (
             <GridItem key={status} display="flex" flexDirection="column" height="100%">
-              <Droppable id={status}>
+              <Droppable id={`column-${status}`}>
                 <Card 
                   bg={columnBg}
                   mb={4}
@@ -1708,7 +1774,7 @@ const Dashboard = () => {
                                     {(['pending', 'in-progress', 'completed'] as const).map(status => {
                                       const statusTodos = todos.filter(todo => todo.status === status);
                                       return (
-                                        <Droppable id={status} key={status}>
+                                        <Droppable id={`column-${status}`} key={status}>
                                           <AccordionItem
                                             border="none"
                                           >
@@ -1984,7 +2050,7 @@ const Dashboard = () => {
                                   const statusTodos = todos.filter(todo => todo.status === status);
                                   
                                   return (
-                                    <Droppable id={status} key={status}>
+                                    <Droppable id={`column-${status}`} key={status}>
                                       <AccordionItem
                                         border="none"
                                       >

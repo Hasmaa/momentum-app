@@ -12,6 +12,7 @@ export interface Todo {
   dueDate: string;
   createdAt: string;
   updatedAt: string;
+  order: number;
 }
 
 interface TodoData {
@@ -79,13 +80,19 @@ export async function writeTodos(todos: Todo[]): Promise<void> {
   await fs.writeFile(dataPath, JSON.stringify({ todos }, null, 2));
 }
 
-export async function createTodo(todoData: Omit<Todo, 'id' | 'createdAt' | 'updatedAt'>): Promise<Todo> {
+export async function createTodo(todoData: Omit<Todo, 'id' | 'createdAt' | 'updatedAt' | 'order'>): Promise<Todo> {
   const todos = await readTodos();
+  const statusTodos = todos.filter(t => t.status === todoData.status);
+  const order = statusTodos.length > 0 
+    ? Math.max(...statusTodos.map(t => t.order)) + 1 
+    : 0;
+
   const newTodo: Todo = {
     ...todoData,
     id: Date.now().toString(),
     createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    order
   };
   
   todos.push(newTodo);
@@ -117,4 +124,57 @@ export async function deleteTodo(id: string): Promise<boolean> {
   
   await writeTodos(filteredTodos);
   return true;
+}
+
+export async function moveTodo(id: string, newStatus: Todo['status'], newOrder: number): Promise<Todo | null> {
+  const todos = await readTodos();
+  const todoIndex = todos.findIndex(todo => todo.id === id);
+  
+  if (todoIndex === -1) return null;
+  
+  const todo = todos[todoIndex];
+  const oldOrder = todo.order;
+  const oldStatus = todo.status;
+
+  // If status is changing, handle reordering for both statuses
+  if (newStatus !== oldStatus) {
+    // Remove from old status list and update orders
+    todos.forEach(t => {
+      if (t.status === oldStatus && t.order > oldOrder) {
+        t.order -= 1;
+      }
+    });
+
+    // Make space in new status list
+    todos.forEach(t => {
+      if (t.status === newStatus && t.order >= newOrder) {
+        t.order += 1;
+      }
+    });
+
+    // Update the todo
+    todos[todoIndex] = {
+      ...todo,
+      status: newStatus,
+      order: newOrder,
+      updatedAt: new Date().toISOString()
+    };
+  } else {
+    // Same status, just reorder
+    todos.forEach(t => {
+      if (t.status === newStatus) {
+        if (oldOrder < newOrder && t.order <= newOrder && t.order > oldOrder) {
+          t.order -= 1;
+        }
+        if (oldOrder > newOrder && t.order >= newOrder && t.order < oldOrder) {
+          t.order += 1;
+        }
+      }
+    });
+    todos[todoIndex].order = newOrder;
+    todos[todoIndex].updatedAt = new Date().toISOString();
+  }
+
+  await writeTodos(todos);
+  return todos[todoIndex];
 } 

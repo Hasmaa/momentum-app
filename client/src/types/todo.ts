@@ -7,4 +7,5 @@ export interface Todo {
   dueDate: string;
   createdAt: string;
   updatedAt: string;
+  order: number;
 } 

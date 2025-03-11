@@ -22,6 +22,24 @@ const todoValidation = [
     .withMessage('Invalid priority')
 ];
 
+// In-memory storage
+let todos: Todo[] = [];
+
+// Helper function to get the next order number
+const getNextOrder = (status: Todo['status']): number => {
+  const statusTodos = todos.filter(t => t.status === status);
+  if (statusTodos.length === 0) return 0;
+  return Math.max(...statusTodos.map(t => t.order)) + 1;
+};
+
+// Helper function to reorder todos
+const reorderTodos = (status: Todo['status'], startOrder: number) => {
+  const statusTodos = todos.filter(t => t.status === status && t.order >= startOrder);
+  statusTodos.forEach(todo => {
+    todo.order += 1;
+  });
+};
+
 // Get all todos
 router.get('/', async (req: Request, res: Response) => {
   try {
@@ -123,6 +141,28 @@ router.delete('/:id', async (req, res) => {
   } catch (error) {
     console.error('Error deleting todo:', error);
     res.status(500).json({ message: 'Error deleting todo' });
+  }
+});
+
+// PUT /api/todos/:id/move
+router.put('/:id/move', async (req, res) => {
+  try {
+    // Add 600ms delay
+    await delay(600);
+
+    const { id } = req.params;
+    const { newOrder, status } = req.body;
+
+    const todo = await todoService.moveTodo(id, status, newOrder);
+    
+    if (!todo) {
+      return res.status(404).json({ message: 'Todo not found' });
+    }
+
+    res.json(todo);
+  } catch (error) {
+    console.error('Error moving todo:', error);
+    res.status(500).json({ message: 'Error moving todo' });
   }
 });
 
