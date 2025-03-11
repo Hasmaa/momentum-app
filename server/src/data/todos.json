@@ -1,34 +1,14 @@
 {
   "todos": [
     {
-      "title": "Make love",
-      "description": "",
-      "status": "in-progress",
-      "priority": "medium",
-      "dueDate": "2025-03-11T00:00:00.000Z",
-      "id": "1741691219967",
-      "createdAt": "2025-03-11T11:06:59.967Z",
-      "updatedAt": "2025-03-11T11:13:08.212Z"
-    },
-    {
-      "title": "Super nice!",
-      "description": "",
-      "status": "pending",
-      "priority": "medium",
-      "dueDate": "2025-03-11T00:00:00.000Z",
-      "id": "1741691361768",
-      "createdAt": "2025-03-11T11:09:21.768Z",
-      "updatedAt": "2025-03-11T11:14:42.996Z"
-    },
-    {
-      "title": "Get some weed!",
+      "title": "asdas",
       "description": "",
       "status": "completed",
       "priority": "medium",
       "dueDate": "2025-03-11T00:00:00.000Z",
-      "id": "1741691596429",
-      "createdAt": "2025-03-11T11:13:16.429Z",
-      "updatedAt": "2025-03-11T11:13:16.429Z"
+      "id": "1741691848751",
+      "createdAt": "2025-03-11T11:17:28.751Z",
+      "updatedAt": "2025-03-11T11:19:08.410Z"
     }
   ]
 }

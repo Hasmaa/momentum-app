@@ -56,6 +56,7 @@ import {
   AccordionPanel,
   AccordionIcon,
   Spinner,
+  Skeleton,
 } from '@chakra-ui/react';
 import { Todo } from '../types/todo';
 import { 
@@ -995,6 +996,40 @@ const Dashboard = () => {
   );
 
   const renderBoardView = () => {
+    if (isLoading) {
+      return (
+        <Grid templateColumns="repeat(3, 1fr)" gap={6}>
+          {['pending', 'in-progress', 'completed'].map((status) => (
+            <GridItem key={status}>
+              <Card bg={columnBg} mb={4} borderRadius="lg" boxShadow="sm">
+                <Box
+                  position="absolute"
+                  top={0}
+                  left={0}
+                  right={0}
+                  h="3px"
+                  bg={status === 'completed' ? 'green.400' : status === 'in-progress' ? 'blue.400' : 'gray.400'}
+                />
+                <CardBody py={4} px={6}>
+                  <Flex align="center" justify="space-between">
+                    <Heading size="md" textTransform="capitalize">
+                      {status.replace('-', ' ')}
+                    </Heading>
+                    <Skeleton height="20px" width="30px" borderRadius="full" />
+                  </Flex>
+                </CardBody>
+              </Card>
+              <VStack spacing={4} align="stretch">
+                {[...Array(3)].map((_, index) => (
+                  <SkeletonCard key={index} />
+                ))}
+              </VStack>
+            </GridItem>
+          ))}
+        </Grid>
+      );
+    }
+
     const columns = {
       'pending': todos.filter(todo => todo.status === 'pending'),
       'in-progress': todos.filter(todo => todo.status === 'in-progress'),
@@ -1495,7 +1530,13 @@ const Dashboard = () => {
 
                 <Box>
                   <AnimatePresence mode="wait">
-                    {isListView ? (
+                    {isLoading ? (
+                      <VStack spacing={4} align="stretch" width="100%">
+                        {[...Array(6)].map((_, index) => (
+                          <SkeletonCard key={index} />
+                        ))}
+                      </VStack>
+                    ) : isListView ? (
                       <DndContext
                         sensors={sensors}
                         collisionDetection={rectIntersection}
