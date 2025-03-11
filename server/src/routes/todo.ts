@@ -25,8 +25,8 @@ const todoValidation = [
 // Get all todos
 router.get('/', async (req: Request, res: Response) => {
   try {
-    // Add 2 second delay
-    await delay(2000);
+    // Add 600ms delay
+    await delay(600);
 
     const filters: FilterOptions = {};
     const sort: SortOptions = {
@@ -65,8 +65,8 @@ router.get('/', async (req: Request, res: Response) => {
 // Create a todo
 router.post('/', todoValidation, async (req: Request<any, any, Partial<Todo>>, res: Response) => {
   try {
-    // Add 2 second delay
-    await delay(2000);
+    // Add 600ms delay
+    await delay(600);
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -91,8 +91,8 @@ router.post('/', todoValidation, async (req: Request<any, any, Partial<Todo>>, r
 // Update a todo
 router.put('/:id', async (req, res) => {
   try {
-    // Add 2 second delay
-    await delay(2000);
+    // Add 600ms delay
+    await delay(600);
 
     const todo = await todoService.updateTodo(req.params.id, req.body);
     
@@ -110,8 +110,8 @@ router.put('/:id', async (req, res) => {
 // Delete a todo
 router.delete('/:id', async (req, res) => {
   try {
-    // Add 2 second delay
-    await delay(2000);
+    // Add 600ms delay
+    await delay(600);
 
     const deleted = await todoService.deleteTodo(req.params.id);
     

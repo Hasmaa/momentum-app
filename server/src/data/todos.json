@@ -8,17 +8,27 @@
       "dueDate": "2025-03-11T00:00:00.000Z",
       "id": "1741691219967",
       "createdAt": "2025-03-11T11:06:59.967Z",
-      "updatedAt": "2025-03-11T11:12:32.287Z"
+      "updatedAt": "2025-03-11T11:13:08.212Z"
     },
     {
       "title": "Super nice!",
       "description": "",
-      "status": "in-progress",
+      "status": "pending",
       "priority": "medium",
       "dueDate": "2025-03-11T00:00:00.000Z",
       "id": "1741691361768",
       "createdAt": "2025-03-11T11:09:21.768Z",
-      "updatedAt": "2025-03-11T11:12:30.422Z"
+      "updatedAt": "2025-03-11T11:14:42.996Z"
+    },
+    {
+      "title": "Get some weed!",
+      "description": "",
+      "status": "completed",
+      "priority": "medium",
+      "dueDate": "2025-03-11T00:00:00.000Z",
+      "id": "1741691596429",
+      "createdAt": "2025-03-11T11:13:16.429Z",
+      "updatedAt": "2025-03-11T11:13:16.429Z"
     }
   ]
 }
