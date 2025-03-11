@@ -49,6 +49,7 @@ import {
   AlertDialogHeader,
   AlertDialogContent,
   AlertDialogOverlay,
+  useMergeRefs,
 } from '@chakra-ui/react';
 import { Todo } from '../types/todo';
 import { 
@@ -77,7 +78,7 @@ import {
   useSensor,
   PointerSensor,
   KeyboardSensor,
-  closestCorners,
+  rectIntersection,
   DragStartEvent,
   DragEndEvent,
   useDroppable
@@ -93,6 +94,11 @@ import type { FC, PropsWithChildren } from 'react';
 const MotionBox = motion(Box);
 const MotionCard = motion(Card);
 const MotionFlex = motion(Flex);
+
+// Add the DroppableProps interface definition
+interface DroppableProps extends PropsWithChildren {
+  id: string;
+}
 
 const getStatusIcon = (status: Todo['status']) => {
   switch (status) {
@@ -214,14 +220,14 @@ const DragOverlayCard = ({ todo }: { todo: Todo }) => {
   );
 };
 
-// Modify the SortableCard component to add ghost effect
-const SortableCard = ({ todo, isDragging, onEdit, onDelete, onStatusChange }: { 
-  todo: Todo; 
+// Modify the SortableCard component to properly handle refs
+const SortableCard = React.forwardRef<HTMLDivElement, {
+  todo: Todo;
   isDragging?: boolean;
   onEdit: (todo: Todo) => void;
   onDelete: (todo: Todo) => void;
   onStatusChange: (id: string, newStatus: Todo['status']) => void;
-}) => {
+}>(({ todo, isDragging, onEdit, onDelete, onStatusChange }, ref) => {
   const {
     attributes,
     listeners,
@@ -267,7 +273,7 @@ const SortableCard = ({ todo, isDragging, onEdit, onDelete, onStatusChange }: {
 
   return (
     <Box
-      ref={setNodeRef}
+      ref={useMergeRefs(setNodeRef, ref)}
       style={style}
       {...attributes}
       role="article"
@@ -494,30 +500,53 @@ const SortableCard = ({ todo, isDragging, onEdit, onDelete, onStatusChange }: {
       </MotionCard>
     </Box>
   );
-};
+});
 
-// Add the Droppable component definition
-interface DroppableProps extends PropsWithChildren {
-  id: string;
-}
+SortableCard.displayName = 'SortableCard';
 
-const Droppable: FC<DroppableProps> = ({ children, id }) => {
+// Update the Droppable component
+const Droppable = React.forwardRef<HTMLDivElement, DroppableProps>(({ children, id }, ref) => {
   const { setNodeRef, isOver } = useDroppable({
     id
   });
 
+  const bg = useColorModeValue('gray.50', 'gray.700');
+  const hoverBg = useColorModeValue('blue.50', 'blue.700');
+  const borderColor = useColorModeValue('blue.200', 'blue.500');
+
   return (
     <Box 
-      ref={setNodeRef} 
+      ref={useMergeRefs(setNodeRef, ref)}
       height="100%"
+      minHeight="200px"
       transition="all 0.2s"
-      bg={isOver ? 'rgba(66, 153, 225, 0.08)' : 'transparent'}
+      bg={isOver ? hoverBg : bg}
       borderRadius="lg"
+      display="flex"
+      flexDirection="column"
+      flex="1"
+      borderWidth="2px"
+      borderStyle="dashed"
+      borderColor={isOver ? borderColor : 'transparent'}
+      position="relative"
+      role="region"
+      aria-label={`${id} column`}
+      _before={{
+        content: '""',
+        position: 'absolute',
+        inset: 0,
+        borderRadius: 'lg',
+        bg: isOver ? 'blackAlpha.50' : 'transparent',
+        transition: 'all 0.2s',
+        pointerEvents: 'none',
+      }}
     >
       {children}
     </Box>
   );
-};
+});
+
+Droppable.displayName = 'Droppable';
 
 type StatusType = Todo['status'] | 'all';
 type PriorityType = Todo['priority'] | 'all';
@@ -904,7 +933,6 @@ const Dashboard = () => {
   };
 
   const renderBoardView = () => {
-    type StatusType = Todo['status'];
     const columns = {
       'pending': todos.filter(todo => todo.status === 'pending'),
       'in-progress': todos.filter(todo => todo.status === 'in-progress'),
@@ -912,108 +940,92 @@ const Dashboard = () => {
     } as const;
 
     const activeTodo = activeId ? todos.find(t => t.id === activeId) : null;
-    const statuses: StatusType[] = ['pending', 'in-progress', 'completed'];
+    const statuses: Todo['status'][] = ['pending', 'in-progress', 'completed'];
 
     return (
       <DndContext
         sensors={sensors}
-        collisionDetection={closestCorners}
+        collisionDetection={rectIntersection}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
         <Grid 
           templateColumns="repeat(3, 1fr)" 
           gap={6} 
-          minH="300px"
+          minH="calc(100vh - 300px)"
           position="relative"
-          overflow="hidden"
+          overflow="visible"
         >
-          <LayoutGroup>
-            {statuses.map((status) => (
-              <Droppable key={status} id={status}>
-                <MotionBox
-                  layout
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  height="100%"
+          {statuses.map((status) => (
+            <GridItem key={status} display="flex" flexDirection="column" height="100%">
+              <Droppable id={status}>
+                <Card 
+                  bg={columnBg}
+                  mb={4}
+                  borderRadius="lg"
+                  boxShadow="sm"
+                  position="relative"
+                  overflow="hidden"
+                  width="100%"
                 >
-                  <Card 
-                    bg={columnBg}
-                    mb={4}
-                    borderRadius="lg"
-                    boxShadow="sm"
-                    position="relative"
-                    overflow="hidden"
-                    borderWidth={2}
-                    borderStyle="dashed"
-                    borderColor="transparent"
-                    transition="all 0.2s"
-                    _hover={{
-                      borderColor: 'gray.200'
-                    }}
-                    data-droppable={status}
+                  <Box
+                    position="absolute"
+                    top={0}
+                    left={0}
+                    right={0}
+                    h="3px"
+                    bg={status === 'completed' ? 'green.400' : status === 'in-progress' ? 'blue.400' : 'gray.400'}
+                  />
+                  <CardBody py={4} px={6}>
+                    <Flex align="center" justify="space-between">
+                      <Heading size="md" textTransform="capitalize">
+                        {status.replace('-', ' ')}
+                      </Heading>
+                      <Tag
+                        colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
+                        borderRadius="full"
+                        variant="subtle"
+                        py={1}
+                        px={3}
+                        fontSize="sm"
+                      >
+                        {columns[status].length}
+                      </Tag>
+                    </Flex>
+                  </CardBody>
+                </Card>
+                
+                <Box 
+                  flex="1"
+                  width="100%"
+                  overflowY="auto"
+                  px={2}
+                  py={2}
+                >
+                  <SortableContext 
+                    items={columns[status].map(t => t.id)}
+                    strategy={verticalListSortingStrategy}
                   >
-                    <Box
-                      position="absolute"
-                      top={0}
-                      left={0}
-                      right={0}
-                      h="3px"
-                      bg={status === 'completed' ? 'green.400' : status === 'in-progress' ? 'blue.400' : 'gray.400'}
-                    />
-                    <CardBody py={4} px={6}>
-                      <Flex align="center" justify="space-between">
-                        <Heading size="md" textTransform="capitalize">
-                          {status.replace('-', ' ')}
-                        </Heading>
-                        <Tag
-                          colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
-                          borderRadius="full"
-                          variant="subtle"
-                          py={1}
-                          px={3}
-                          fontSize="sm"
-                        >
-                          {columns[status].length}
-                        </Tag>
-                      </Flex>
-                    </CardBody>
-                  </Card>
-                  <VStack 
-                    spacing={4} 
-                    align="stretch" 
-                    minH="200px"
-                    borderRadius="lg"
-                    p={2}
-                    transition="all 0.2s"
-                    id={status}
-                  >
-                    <SortableContext 
-                      items={columns[status].map(t => t.id)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      <AnimatePresence mode="popLayout">
-                        {columns[status].map(todo => (
-                          <SortableCard
-                            key={todo.id}
-                            todo={todo}
-                            isDragging={activeId === todo.id}
-                            onEdit={(todo) => {
-                              setEditingTodo(todo);
-                              onEditModalOpen();
-                            }}
-                            onDelete={handleDeleteClick}
-                            onStatusChange={handleStatusChange}
-                          />
-                        ))}
-                      </AnimatePresence>
-                    </SortableContext>
-                  </VStack>
-                </MotionBox>
+                    <VStack spacing={4} align="stretch" width="100%">
+                      {columns[status].map(todo => (
+                        <SortableCard
+                          key={todo.id}
+                          todo={todo}
+                          isDragging={activeId === todo.id}
+                          onEdit={(todo) => {
+                            setEditingTodo(todo);
+                            onEditModalOpen();
+                          }}
+                          onDelete={handleDeleteClick}
+                          onStatusChange={handleStatusChange}
+                        />
+                      ))}
+                    </VStack>
+                  </SortableContext>
+                </Box>
               </Droppable>
-            ))}
-          </LayoutGroup>
+            </GridItem>
+          ))}
         </Grid>
         <DragOverlay dropAnimation={null}>
           {activeTodo ? (
