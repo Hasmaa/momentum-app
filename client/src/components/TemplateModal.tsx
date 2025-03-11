@@ -179,10 +179,13 @@ const TemplateModal: React.FC<TemplateModalProps> = ({
                               position="relative"
                               overflow="hidden"
                             >
-                              <CardBody p={6}>
-                                <VStack align="start" spacing={4}>
+                              <CardBody p={4}>
+                                <VStack align="start" spacing={3}>
                                   <HStack spacing={3} width="100%" justify="space-between">
-                                    <Box fontSize="2xl">{template.icon}</Box>
+                                    <HStack spacing={3}>
+                                      <Box fontSize="xl">{template.icon}</Box>
+                                      <Heading size="sm" color={headingColor}>{template.name}</Heading>
+                                    </HStack>
                                     <Badge
                                       bg={badgeBg}
                                       color={headingColor}
@@ -194,45 +197,40 @@ const TemplateModal: React.FC<TemplateModalProps> = ({
                                       {template.tasks.length} TASKS
                                     </Badge>
                                   </HStack>
-                                  <VStack align="start" spacing={2}>
-                                    <Heading size="md" color={headingColor}>{template.name}</Heading>
-                                    <Text fontSize="sm" color={textColor} lineHeight="tall">
-                                      {template.description}
+                                  <Text fontSize="sm" color={textColor} lineHeight="tall" noOfLines={2}>
+                                    {template.description}
+                                  </Text>
+                                  <Box width="100%">
+                                    <Text fontSize="sm" fontWeight="medium" color={headingColor} mb={2}>
+                                      Quick overview:
                                     </Text>
-                                  </VStack>
-                                  <VStack align="stretch" spacing={4} width="100%">
-                                    <Divider borderColor={borderColor} />
-                                    <Text fontSize="sm" fontWeight="medium" color={headingColor}>
-                                      Tasks included:
-                                    </Text>
-                                    {template.tasks.map((task, index) => (
-                                      <HStack key={index} spacing={3} align="start">
-                                        <Text fontSize="sm" color={textColor} pt={1}>
-                                          {index + 1}.
-                                        </Text>
-                                        <VStack align="start" spacing={1}>
-                                          <Text fontSize="sm" fontWeight="medium" color={headingColor}>
+                                    <VStack align="start" spacing={1}>
+                                      {template.tasks.slice(0, 3).map((task, index) => (
+                                        <HStack key={index} spacing={2} align="start">
+                                          <Text fontSize="xs" color={textColor}>•</Text>
+                                          <Text fontSize="sm" color={textColor} noOfLines={1}>
                                             {task.title}
                                           </Text>
-                                          {task.description && (
-                                            <Text fontSize="sm" color={textColor} lineHeight="tall">
-                                              {task.description}
-                                            </Text>
-                                          )}
-                                        </VStack>
-                                      </HStack>
-                                    ))}
-                                    <Button
-                                      colorScheme="blue"
-                                      size="md"
-                                      width="100%"
-                                      onClick={() => onSelectTemplate(template)}
-                                      borderRadius="lg"
-                                      fontWeight="medium"
-                                    >
-                                      Use This Template
-                                    </Button>
-                                  </VStack>
+                                        </HStack>
+                                      ))}
+                                      {template.tasks.length > 3 && (
+                                        <Text fontSize="sm" color={textColor} fontStyle="italic">
+                                          +{template.tasks.length - 3} more tasks
+                                        </Text>
+                                      )}
+                                    </VStack>
+                                  </Box>
+                                  <Button
+                                    colorScheme="blue"
+                                    size="sm"
+                                    width="100%"
+                                    onClick={() => onSelectTemplate(template)}
+                                    borderRadius="md"
+                                    fontWeight="medium"
+                                    mt={1}
+                                  >
+                                    Use Template
+                                  </Button>
                                 </VStack>
                               </CardBody>
                             </MotionCard>
