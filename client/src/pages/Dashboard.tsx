@@ -964,12 +964,6 @@ const Dashboard = () => {
       
       if (!response.ok) throw new Error('Failed to update todo');
 
-      toast({
-        title: 'Task moved successfully',
-        status: 'success',
-        duration: 2000,
-        isClosable: true,
-      });
     } catch (error) {
       // Revert the optimistic update on error
       toast({
