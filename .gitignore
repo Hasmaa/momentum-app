@@ -5,3 +5,5 @@
 /logs
 /temp
 /uploads
+/client/node_modules
+/server/node_modules

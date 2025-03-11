@@ -3,22 +3,22 @@
     {
       "title": "Make me a sandwich",
       "description": "I need a great sandwich be made",
-      "status": "completed",
+      "status": "1741680921979",
       "priority": "high",
       "dueDate": "2025-03-13T00:00:00.000Z",
       "id": "1741680634340",
       "createdAt": "2025-03-11T08:10:34.340Z",
-      "updatedAt": "2025-03-11T08:29:29.259Z"
+      "updatedAt": "2025-03-11T08:40:30.509Z"
     },
     {
-      "title": "Make me another sandwich",
-      "description": "Really hungry swear to god!\n\n....",
-      "status": "in-progress",
+      "title": "asdas",
+      "description": "dasdasdas",
+      "status": "pending",
       "priority": "medium",
-      "dueDate": "2025-03-13T00:00:00.000Z",
-      "id": "1741680921979",
-      "createdAt": "2025-03-11T08:15:21.979Z",
-      "updatedAt": "2025-03-11T08:29:31.475Z"
+      "dueDate": "2025-03-11T00:00:00.000Z",
+      "id": "1741682466019",
+      "createdAt": "2025-03-11T08:41:06.019Z",
+      "updatedAt": "2025-03-11T08:41:06.019Z"
     }
   ]
 }

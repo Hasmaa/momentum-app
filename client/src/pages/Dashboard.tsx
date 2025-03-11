@@ -85,41 +85,12 @@ const MotionBox = motion(Box);
 const MotionCard = motion(Card);
 const MotionFlex = motion(Flex);
 
-const renderTodoCard = (todo: Todo, isDragging: boolean = false) => {
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const priorityColors = {
-    low: 'green',
-    medium: 'yellow',
-    high: 'red'
-  };
-
-  return (
-    <Card
-      bg={cardBg}
-      boxShadow={isDragging ? 'lg' : 'sm'}
-      borderRadius="lg"
-      mb={4}
-      opacity={isDragging ? 0.6 : 1}
-      transform={isDragging ? 'scale(1.02)' : 'none'}
-      transition="all 0.2s"
-    >
-      <CardBody>
-        <Flex direction="column" gap={2}>
-          <Heading size="sm">{todo.title}</Heading>
-          <Tag
-            size="sm"
-            colorScheme={priorityColors[todo.priority]}
-            alignSelf="flex-start"
-          >
-            {todo.priority}
-          </Tag>
-        </Flex>
-      </CardBody>
-    </Card>
-  );
-};
-
-const SortableCard = ({ todo, isDragging }: { todo: Todo; isDragging?: boolean }) => {
+const SortableCard = ({ todo, isDragging, onEdit, onDelete }: { 
+  todo: Todo; 
+  isDragging?: boolean;
+  onEdit: (todo: Todo) => void;
+  onDelete: (id: string) => void;
+}) => {
   const {
     attributes,
     listeners,
@@ -140,7 +111,81 @@ const SortableCard = ({ todo, isDragging }: { todo: Todo; isDragging?: boolean }
       {...attributes}
       {...listeners}
     >
-      {renderTodoCard(todo, isDragging)}
+      <Card
+        bg={useColorModeValue('white', 'gray.800')}
+        boxShadow={isDragging ? 'lg' : 'sm'}
+        borderRadius="lg"
+        mb={4}
+        opacity={isDragging ? 0.6 : 1}
+        transform={isDragging ? 'scale(1.02)' : 'none'}
+        transition="all 0.2s"
+      >
+        <CardBody>
+          <VStack spacing={3} align="stretch">
+            <Flex justify="space-between" align="center">
+              <Heading size="sm">{todo.title}</Heading>
+              <HStack spacing={2}>
+                <IconButton
+                  aria-label="Edit todo"
+                  icon={<EditIcon />}
+                  size="sm"
+                  variant="ghost"
+                  colorScheme="blue"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(todo);
+                  }}
+                />
+                <IconButton
+                  aria-label="Delete todo"
+                  icon={<DeleteIcon />}
+                  size="sm"
+                  variant="ghost"
+                  colorScheme="red"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(todo.id);
+                  }}
+                />
+              </HStack>
+            </Flex>
+            
+            {todo.description && (
+              <Text fontSize="sm" color="gray.500" noOfLines={2}>
+                {todo.description}
+              </Text>
+            )}
+            
+            <Flex justify="space-between" align="center">
+              <Tag
+                size="sm"
+                colorScheme={{
+                  low: 'green',
+                  medium: 'yellow',
+                  high: 'red'
+                }[todo.priority]}
+                variant="subtle"
+              >
+                {todo.priority}
+              </Tag>
+              
+              <HStack spacing={2}>
+                <Tag size="sm" variant="subtle">
+                  <TagLeftIcon as={CalendarIcon} />
+                  <TagLabel>{format(new Date(todo.dueDate), 'MMM d')}</TagLabel>
+                </Tag>
+                <Tag 
+                  size="sm" 
+                  colorScheme={todo.status === 'completed' ? 'green' : todo.status === 'in-progress' ? 'blue' : 'gray'}
+                  variant="subtle"
+                >
+                  {todo.status}
+                </Tag>
+              </HStack>
+            </Flex>
+          </VStack>
+        </CardBody>
+      </Card>
     </Box>
   );
 };
@@ -514,7 +559,6 @@ const Dashboard = () => {
                         {status.replace('-', ' ')}
                       </Heading>
                       <Tag
-                        size="md"
                         colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
                         borderRadius="full"
                         variant="subtle"
@@ -543,6 +587,11 @@ const Dashboard = () => {
                           key={todo.id}
                           todo={todo}
                           isDragging={activeId === todo.id}
+                          onEdit={(todo) => {
+                            setEditingTodo(todo);
+                            onEditModalOpen();
+                          }}
+                          onDelete={handleDelete}
                         />
                       ))}
                     </AnimatePresence>
@@ -553,7 +602,17 @@ const Dashboard = () => {
           </LayoutGroup>
         </Grid>
         <DragOverlay dropAnimation={null}>
-          {activeTodo ? renderTodoCard(activeTodo, true) as React.ReactElement : null}
+          {activeTodo ? (
+            <SortableCard 
+              todo={activeTodo} 
+              isDragging={true}
+              onEdit={(todo) => {
+                setEditingTodo(todo);
+                onEditModalOpen();
+              }}
+              onDelete={handleDelete}
+            />
+          ) : null}
         </DragOverlay>
       </DndContext>
     );
@@ -651,11 +710,22 @@ const Dashboard = () => {
               </GridItem>
             </Grid>
 
-            <Box minH="300px">
+            <Box>
               <AnimatePresence mode="wait">
                 {isListView ? (
                   <VStack spacing={4} align="stretch" as={motion.div} layout>
-                    {todos.map(todo => renderTodoCard(todo))}
+                    {todos.map(todo => (
+                      <SortableCard
+                        key={todo.id}
+                        todo={todo}
+                        isDragging={false}
+                        onEdit={(todo) => {
+                          setEditingTodo(todo);
+                          onEditModalOpen();
+                        }}
+                        onDelete={handleDelete}
+                      />
+                    ))}
                   </VStack>
                 ) : (
                   renderBoardView()
