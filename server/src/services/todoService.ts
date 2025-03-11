@@ -6,7 +6,7 @@ const dataPath = path.join(__dirname, '../data/todos.json');
 export interface Todo {
   id: string;
   title: string;
-  description: string;
+  description?: string;
   status: 'pending' | 'in-progress' | 'completed';
   priority: 'low' | 'medium' | 'high';
   dueDate: string;
@@ -48,7 +48,7 @@ export async function readTodos(
       const searchLower = filters.search.toLowerCase();
       todos = todos.filter(todo =>
         todo.title.toLowerCase().includes(searchLower) ||
-        todo.description.toLowerCase().includes(searchLower)
+        todo.description?.toLowerCase().includes(searchLower)
       );
     }
   }
@@ -58,6 +58,11 @@ export async function readTodos(
     todos.sort((a, b) => {
       const aValue = a[sort.field];
       const bValue = b[sort.field];
+      
+      // Handle undefined values in comparison
+      if (aValue === undefined && bValue === undefined) return 0;
+      if (aValue === undefined) return 1;
+      if (bValue === undefined) return -1;
       
       if (sort.direction === 'asc') {
         return aValue < bValue ? -1 : aValue > bValue ? 1 : 0;

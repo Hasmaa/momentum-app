@@ -580,7 +580,7 @@ const Dashboard = () => {
 
   const { 
     isOpen: isCreateModalOpen, 
-    onOpen: onCreateModalOpen, 
+    onOpen: _onCreateModalOpen,
     onClose: onCreateModalClose 
   } = useDisclosure();
   const { 
@@ -947,6 +947,11 @@ const Dashboard = () => {
     const activeTodo = activeId ? todos.find(t => t.id === activeId) : null;
     const statuses: Todo['status'][] = ['pending', 'in-progress', 'completed'];
 
+    const handleCreateFromColumn = (columnStatus: Todo['status']) => {
+      setStatus(columnStatus);
+      _onCreateModalOpen();
+    };
+
     return (
       <DndContext
         sensors={sensors}
@@ -1012,19 +1017,72 @@ const Dashboard = () => {
                     strategy={verticalListSortingStrategy}
                   >
                     <VStack spacing={4} align="stretch" width="100%">
-                      {columns[status].map(todo => (
-                        <SortableCard
-                          key={todo.id}
-                          todo={todo}
-                          isDragging={activeId === todo.id}
-                          onEdit={(todo) => {
-                            setEditingTodo(todo);
-                            onEditModalOpen();
+                      {columns[status].length > 0 ? (
+                        columns[status].map(todo => (
+                          <SortableCard
+                            key={todo.id}
+                            todo={todo}
+                            isDragging={activeId === todo.id}
+                            onEdit={(todo) => {
+                              setEditingTodo(todo);
+                              onEditModalOpen();
+                            }}
+                            onDelete={handleDeleteClick}
+                            onStatusChange={handleStatusChange}
+                          />
+                        ))
+                      ) : (
+                        <Flex
+                          direction="column"
+                          align="center"
+                          justify="center"
+                          py={8}
+                          px={4}
+                          borderRadius="lg"
+                          borderWidth="2px"
+                          borderStyle="dashed"
+                          borderColor={useColorModeValue('gray.200', 'gray.600')}
+                          bg={useColorModeValue('gray.50', 'gray.700')}
+                          transition="all 0.2s"
+                          _hover={{
+                            borderColor: status === 'completed' ? 'green.400' : status === 'in-progress' ? 'blue.400' : 'gray.400',
+                            transform: 'translateY(-2px)',
+                            boxShadow: 'sm'
                           }}
-                          onDelete={handleDeleteClick}
-                          onStatusChange={handleStatusChange}
-                        />
-                      ))}
+                        >
+                          <VStack spacing={3}>
+                            <Icon
+                              as={getStatusIcon(status)}
+                              boxSize="8"
+                              color={`${status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}.400`}
+                              opacity={0.7}
+                            />
+                            <Text 
+                              color={secondaryTextColor} 
+                              fontSize="sm"
+                              textAlign="center"
+                              fontWeight="medium"
+                            >
+                              {status === 'pending' ? (
+                                "No pending tasks. Drag tasks here to mark them as To Do"
+                              ) : status === 'in-progress' ? (
+                                "No tasks in progress. Drag tasks here when you start working on them"
+                              ) : (
+                                "No completed tasks yet. Drag tasks here when they're done"
+                              )}
+                            </Text>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
+                              leftIcon={<AddIcon />}
+                              onClick={() => handleCreateFromColumn(status)}
+                            >
+                              Add a task
+                            </Button>
+                          </VStack>
+                        </Flex>
+                      )}
                     </VStack>
                   </SortableContext>
                 </Box>
@@ -1039,6 +1097,14 @@ const Dashboard = () => {
         </DragOverlay>
       </DndContext>
     );
+  };
+
+  // Add a wrapper for onCreateModalOpen that can handle initial status
+  const onCreateModalOpen = (initialStatus?: Todo['status']) => {
+    if (initialStatus) {
+      setStatus(initialStatus);
+    }
+    _onCreateModalOpen();
   };
 
   return (
@@ -1097,7 +1163,7 @@ const Dashboard = () => {
                   <Button
                     leftIcon={<AddIcon />}
                     colorScheme="blue"
-                    onClick={onCreateModalOpen}
+                    onClick={() => onCreateModalOpen()}
                     size="md"
                     borderRadius="full"
                     px={6}
@@ -1443,7 +1509,7 @@ const Dashboard = () => {
                                 <Button
                                   leftIcon={<AddIcon />}
                                   colorScheme="blue"
-                                  onClick={onCreateModalOpen}
+                                  onClick={() => onCreateModalOpen()}
                                   size="lg"
                                   borderRadius="full"
                                   px={8}
@@ -1642,7 +1708,6 @@ const Dashboard = () => {
                       placeholder="Task Description"
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
-                      required
                       variant="filled"
                       rows={3}
                     />
@@ -1660,20 +1725,30 @@ const Dashboard = () => {
                         </Select>
                       </GridItem>
                       <GridItem>
-                        <InputGroup>
-                          <InputLeftElement pointerEvents="none">
-                            <CalendarIcon color="gray.400" />
-                          </InputLeftElement>
-                          <Input
-                            type="date"
-                            value={dueDate}
-                            onChange={(e) => setDueDate(e.target.value)}
-                            required
-                            variant="filled"
-                          />
-                        </InputGroup>
+                        <Select 
+                          value={status} 
+                          onChange={(e) => setStatus(e.target.value as Todo['status'])}
+                          variant="filled"
+                          icon={<Icon as={getStatusIcon(status)} />}
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="in-progress">In Progress</option>
+                          <option value="completed">Completed</option>
+                        </Select>
                       </GridItem>
                     </Grid>
+                    <InputGroup>
+                      <InputLeftElement pointerEvents="none">
+                        <CalendarIcon color="gray.400" />
+                      </InputLeftElement>
+                      <Input
+                        type="date"
+                        value={dueDate}
+                        onChange={(e) => setDueDate(e.target.value)}
+                        required
+                        variant="filled"
+                      />
+                    </InputGroup>
                   </VStack>
                 </ModalBody>
                 <ModalFooter>
