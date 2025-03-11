@@ -375,113 +375,103 @@ const SortableCard = React.forwardRef<HTMLDivElement, {
 
         <CardBody py={4} pl={6}>
           <VStack spacing={4} align="stretch">
-            {/* Header Section */}
-            <Flex justify="space-between" align="center">
-              <Heading 
-                size="sm" 
-                noOfLines={1}
-                flex={1}
-                _hover={{ color: 'blue.500' }}
-                cursor="grab"
+            <Flex direction="column" gap={2}>
+              <Flex 
+                justify="space-between" 
+                align="flex-start" 
+                gap={4}
                 {...listeners}
               >
-                {todo.title}
-              </Heading>
-              
-              <HStack spacing={3}>
-                <Menu>
-                  <Tooltip 
-                    label={`Click to change status. Current: ${todo.status.replace('-', ' ')}`}
-                    placement="top"
-                    hasArrow
+                <Box flex="1">
+                  <Heading 
+                    size="sm" 
+                    noOfLines={2}
+                    wordBreak="break-word"
+                    lineHeight="tall"
+                    cursor="grab"
+                    _hover={{ color: 'blue.500' }}
                   >
-                    <MenuButton
-                      as={IconButton}
-                      icon={
-                        <HStack spacing={2} padding={2}>
-                          <Icon 
-                            as={getStatusIcon(todo.status)} 
-                            color={`${statusColors[todo.status]}.400`}
-                            boxSize={4}
-                          />
-                          <Icon 
-                            as={ChevronDownIcon} 
-                            color={`${statusColors[todo.status]}.400`}
-                            boxSize={3}
-                          />
-                        </HStack>
-                      }
+                    {todo.title}
+                  </Heading>
+                </Box>
+                <HStack spacing={2} flexShrink={0}>
+                  <Menu>
+                    <Tooltip 
+                      label={`Click to change status. Current: ${todo.status.replace('-', ' ')}`}
+                      placement="top"
+                      hasArrow
+                    >
+                      <MenuButton
+                        as={IconButton}
+                        icon={
+                          <HStack spacing={2} padding={2}>
+                            <Icon 
+                              as={getStatusIcon(todo.status)} 
+                              color={`${statusColors[todo.status]}.400`}
+                              boxSize={4}
+                            />
+                            <Icon 
+                              as={ChevronDownIcon} 
+                              color={`${statusColors[todo.status]}.400`}
+                              boxSize={3}
+                            />
+                          </HStack>
+                        }
+                        size="sm"
+                        variant="ghost"
+                        colorScheme={statusColors[todo.status]}
+                        aria-label="Change task status"
+                      />
+                    </Tooltip>
+                    <Portal>
+                      <MenuList>
+                        <MenuItem
+                          icon={<Icon as={WarningIcon} color="gray.400" />}
+                          onClick={() => onStatusChange(todo.id, 'pending')}
+                          isDisabled={todo.status === 'pending'}
+                        >
+                          Set to Pending
+                        </MenuItem>
+                        <MenuItem
+                          icon={<Icon as={TimeIcon} color="blue.400" />}
+                          onClick={() => onStatusChange(todo.id, 'in-progress')}
+                          isDisabled={todo.status === 'in-progress'}
+                        >
+                          Set to In Progress
+                        </MenuItem>
+                        <MenuItem
+                          icon={<Icon as={CheckIcon} color="green.400" />}
+                          onClick={() => onStatusChange(todo.id, 'completed')}
+                          isDisabled={todo.status === 'completed'}
+                        >
+                          Set to Completed
+                        </MenuItem>
+                      </MenuList>
+                    </Portal>
+                  </Menu>
+
+                  <Tooltip label="Edit task" placement="top" hasArrow>
+                    <IconButton
+                      aria-label="Edit todo"
+                      icon={<EditIcon />}
                       size="sm"
                       variant="ghost"
-                      colorScheme={statusColors[todo.status]}
-                      aria-label="Change task status"
+                      colorScheme="blue"
+                      onClick={() => onEdit(todo)}
                     />
                   </Tooltip>
-                  <Portal>
-                    <MenuList bg={menuBg} borderColor={borderColor}>
-                      <MenuItem
-                        icon={<Icon as={WarningIcon} color="gray.400" />}
-                        onClick={() => onStatusChange(todo.id, 'pending')}
-                        color={textColor}
-                        bg={menuBg}
-                        _hover={{ bg: menuItemHoverBg }}
-                        isDisabled={todo.status === 'pending'}
-                      >
-                        Set to Pending
-                      </MenuItem>
-                      <MenuItem
-                        icon={<Icon as={TimeIcon} color="blue.400" />}
-                        onClick={() => onStatusChange(todo.id, 'in-progress')}
-                        color={textColor}
-                        bg={menuBg}
-                        _hover={{ bg: menuItemHoverBg }}
-                        isDisabled={todo.status === 'in-progress'}
-                      >
-                        Set to In Progress
-                      </MenuItem>
-                      <MenuItem
-                        icon={<Icon as={CheckIcon} color="green.400" />}
-                        onClick={() => onStatusChange(todo.id, 'completed')}
-                        color={textColor}
-                        bg={menuBg}
-                        _hover={{ bg: menuItemHoverBg }}
-                        isDisabled={todo.status === 'completed'}
-                      >
-                        Set to Completed
-                      </MenuItem>
-                    </MenuList>
-                  </Portal>
-                </Menu>
-
-                <Tooltip label="Edit task" placement="top" hasArrow>
-                  <IconButton
-                    aria-label="Edit todo"
-                    icon={<EditIcon />}
-                    size="sm"
-                    variant="ghost"
-                    colorScheme="blue"
-                    onClick={() => onEdit(todo)}
-                    _hover={{
-                      bg: ghostButtonHoverBg,
-                      color: accentColor
-                    }}
-                  />
-                </Tooltip>
-                <Tooltip label="Delete task" placement="top" hasArrow>
-                  <IconButton
-                    aria-label="Delete todo"
-                    icon={<DeleteIcon />}
-                    size="sm"
-                    variant="ghost"
-                    colorScheme="red"
-                    onClick={() => onDelete(todo)}
-                    _hover={{
-                      bg: useColorModeValue('red.50', 'whiteAlpha.200'),
-                      color: useColorModeValue('red.600', 'red.300')
-                    }}
-                  />
-                </Tooltip>
-              </HStack>
+                  <Tooltip label="Delete task" placement="top" hasArrow>
+                    <IconButton
+                      aria-label="Delete todo"
+                      icon={<DeleteIcon />}
+                      size="sm"
+                      variant="ghost"
+                      colorScheme="red"
+                      onClick={() => onDelete(todo)}
+                    />
+                  </Tooltip>
+                </HStack>
+              </Flex>
             </Flex>
 
             {/* Description Section */}
