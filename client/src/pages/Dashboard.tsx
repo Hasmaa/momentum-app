@@ -686,6 +686,7 @@ const Dashboard = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [updatingTodoIds, setUpdatingTodoIds] = useState<Set<string>>(new Set());
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const fetchTodos = async () => {
     try {
@@ -719,6 +720,7 @@ const Dashboard = () => {
       });
     } finally {
       setIsLoading(false);
+      setIsInitialLoad(false);
     }
   };
 
@@ -997,52 +999,199 @@ const Dashboard = () => {
 
   const renderBoardView = () => {
     if (isLoading) {
+      if (isInitialLoad) {
+        return (
+          <Grid templateColumns="repeat(3, 1fr)" gap={6}>
+            {['pending', 'in-progress', 'completed'].map((status) => (
+              <GridItem key={status}>
+                <Card bg={columnBg} mb={4} borderRadius="lg" boxShadow="sm">
+                  <Box
+                    position="absolute"
+                    top={0}
+                    left={0}
+                    right={0}
+                    h="3px"
+                    bg={status === 'completed' ? 'green.400' : status === 'in-progress' ? 'blue.400' : 'gray.400'}
+                  />
+                  <CardBody py={4} px={6}>
+                    <Flex align="center" justify="space-between">
+                      <Heading size="md" textTransform="capitalize">
+                        {status.replace('-', ' ')}
+                      </Heading>
+                      <Skeleton height="20px" width="30px" borderRadius="full" />
+                    </Flex>
+                  </CardBody>
+                </Card>
+                <VStack spacing={4} align="stretch">
+                  {[...Array(3)].map((_, index) => (
+                    <SkeletonCard key={index} />
+                  ))}
+                </VStack>
+              </GridItem>
+            ))}
+          </Grid>
+        );
+      }
+
       return (
-        <Grid templateColumns="repeat(3, 1fr)" gap={6}>
-          {['pending', 'in-progress', 'completed'].map((status) => (
-            <GridItem key={status}>
-              <Card bg={columnBg} mb={4} borderRadius="lg" boxShadow="sm">
-                <Box
-                  position="absolute"
-                  top={0}
-                  left={0}
-                  right={0}
-                  h="3px"
-                  bg={status === 'completed' ? 'green.400' : status === 'in-progress' ? 'blue.400' : 'gray.400'}
-                />
-                <CardBody py={4} px={6}>
-                  <Flex align="center" justify="space-between">
-                    <Heading size="md" textTransform="capitalize">
-                      {status.replace('-', ' ')}
-                    </Heading>
-                    <Skeleton height="20px" width="30px" borderRadius="full" />
-                  </Flex>
-                </CardBody>
-              </Card>
-              <VStack spacing={4} align="stretch">
-                {[...Array(3)].map((_, index) => (
-                  <SkeletonCard key={index} />
+        <Box position="relative">
+          <Box
+            position="absolute"
+            top={0}
+            left={0}
+            right={0}
+            height="2px"
+            bg="blue.500"
+            zIndex={1}
+            as={motion.div}
+            initial={{ width: "0%" }}
+            animate={{ width: "100%" }}
+            transition={{ duration: 0.5 }}
+          />
+          <Box opacity={0.7}>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={rectIntersection}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+            >
+              <Grid templateColumns="repeat(3, 1fr)" gap={6} minH="calc(100vh - 300px)" position="relative" overflow="visible">
+                {['pending', 'in-progress', 'completed'].map((status) => (
+                  <GridItem key={status} display="flex" flexDirection="column" height="100%">
+                    <Droppable id={status}>
+                      <Card 
+                        bg={columnBg}
+                        mb={4}
+                        borderRadius="lg"
+                        boxShadow="sm"
+                        position="relative"
+                        overflow="hidden"
+                        width="100%"
+                      >
+                        <Box
+                          position="absolute"
+                          top={0}
+                          left={0}
+                          right={0}
+                          h="3px"
+                          bg={status === 'completed' ? 'green.400' : status === 'in-progress' ? 'blue.400' : 'gray.400'}
+                        />
+                        <CardBody py={4} px={6}>
+                          <Flex align="center" justify="space-between">
+                            <Heading size="md" textTransform="capitalize">
+                              {status.replace('-', ' ')}
+                            </Heading>
+                            <Tag
+                              colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
+                              borderRadius="full"
+                              variant="subtle"
+                              py={1}
+                              px={3}
+                              fontSize="sm"
+                            >
+                              {todos.filter(todo => todo.status === status).length}
+                            </Tag>
+                          </Flex>
+                        </CardBody>
+                      </Card>
+                      
+                      <Box 
+                        flex="1"
+                        width="100%"
+                        overflowY="auto"
+                        px={2}
+                        py={2}
+                      >
+                        <SortableContext 
+                          items={todos.filter(todo => todo.status === status).map(t => t.id)}
+                          strategy={verticalListSortingStrategy}
+                        >
+                          <VStack spacing={4} align="stretch" width="100%">
+                            {todos.filter(todo => todo.status === status).length > 0 ? (
+                              todos.filter(todo => todo.status === status).map(todo => (
+                                <SortableCard
+                                  key={todo.id}
+                                  todo={todo}
+                                  isDragging={activeId === todo.id}
+                                  isUpdating={updatingTodoIds.has(todo.id)}
+                                  onEdit={(todo) => {
+                                    setEditingTodo(todo);
+                                    onEditModalOpen();
+                                  }}
+                                  onDelete={handleDeleteClick}
+                                  onStatusChange={handleStatusChange}
+                                />
+                              ))
+                            ) : (
+                              <Flex
+                                direction="column"
+                                align="center"
+                                justify="center"
+                                py={8}
+                                px={4}
+                                borderRadius="lg"
+                                borderWidth="2px"
+                                borderStyle="dashed"
+                                borderColor={useColorModeValue('gray.200', 'gray.600')}
+                                bg={useColorModeValue('gray.50', 'gray.700')}
+                                transition="all 0.2s"
+                                _hover={{
+                                  borderColor: status === 'completed' ? 'green.400' : status === 'in-progress' ? 'blue.400' : 'gray.400',
+                                  transform: 'translateY(-2px)',
+                                  boxShadow: 'sm'
+                                }}
+                              >
+                                <VStack spacing={3}>
+                                  <Icon
+                                    as={getStatusIcon(status)}
+                                    boxSize="8"
+                                    color={`${status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}.400`}
+                                    opacity={0.7}
+                                  />
+                                  <Text 
+                                    color={secondaryTextColor} 
+                                    fontSize="sm"
+                                    textAlign="center"
+                                    fontWeight="medium"
+                                  >
+                                    {status === 'pending' ? (
+                                      "No pending tasks. Add one or drag tasks here to mark them as To Do"
+                                    ) : status === 'in-progress' ? (
+                                      "No tasks in progress. Add one or drag tasks here when you start working on them"
+                                    ) : (
+                                      "No completed tasks yet. Add one or drag tasks here when they're done"
+                                    )}
+                                  </Text>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
+                                    leftIcon={<AddIcon />}
+                                    onClick={() => {
+                                      setStatus(status);
+                                      _onCreateModalOpen();
+                                    }}
+                                  >
+                                    Add a task
+                                  </Button>
+                                </VStack>
+                              </Flex>
+                            )}
+                          </VStack>
+                        </SortableContext>
+                      </Box>
+                    </Droppable>
+                  </GridItem>
                 ))}
-              </VStack>
-            </GridItem>
-          ))}
-        </Grid>
+              </Grid>
+              <DragOverlay dropAnimation={null}>
+                {activeId ? <DragOverlayCard todo={todos.find(t => t.id === activeId)!} /> : null}
+              </DragOverlay>
+            </DndContext>
+          </Box>
+        </Box>
       );
     }
-
-    const columns = {
-      'pending': todos.filter(todo => todo.status === 'pending'),
-      'in-progress': todos.filter(todo => todo.status === 'in-progress'),
-      'completed': todos.filter(todo => todo.status === 'completed')
-    } as const;
-
-    const activeTodo = activeId ? todos.find(t => t.id === activeId) : null;
-    const statuses: Todo['status'][] = ['pending', 'in-progress', 'completed'];
-
-    const handleCreateFromColumn = (columnStatus: Todo['status']) => {
-      setStatus(columnStatus);
-      _onCreateModalOpen();
-    };
 
     return (
       <DndContext
@@ -1051,14 +1200,8 @@ const Dashboard = () => {
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
-        <Grid 
-          templateColumns="repeat(3, 1fr)" 
-          gap={6} 
-          minH="calc(100vh - 300px)"
-          position="relative"
-          overflow="visible"
-        >
-          {statuses.map((status) => (
+        <Grid templateColumns="repeat(3, 1fr)" gap={6} minH="calc(100vh - 300px)" position="relative" overflow="visible">
+          {['pending', 'in-progress', 'completed'].map((status) => (
             <GridItem key={status} display="flex" flexDirection="column" height="100%">
               <Droppable id={status}>
                 <Card 
@@ -1091,7 +1234,7 @@ const Dashboard = () => {
                         px={3}
                         fontSize="sm"
                       >
-                        {columns[status].length}
+                        {todos.filter(todo => todo.status === status).length}
                       </Tag>
                     </Flex>
                   </CardBody>
@@ -1105,12 +1248,12 @@ const Dashboard = () => {
                   py={2}
                 >
                   <SortableContext 
-                    items={columns[status].map(t => t.id)}
+                    items={todos.filter(todo => todo.status === status).map(t => t.id)}
                     strategy={verticalListSortingStrategy}
                   >
                     <VStack spacing={4} align="stretch" width="100%">
-                      {columns[status].length > 0 ? (
-                        columns[status].map(todo => (
+                      {todos.filter(todo => todo.status === status).length > 0 ? (
+                        todos.filter(todo => todo.status === status).map(todo => (
                           <SortableCard
                             key={todo.id}
                             todo={todo}
@@ -1187,9 +1330,7 @@ const Dashboard = () => {
           ))}
         </Grid>
         <DragOverlay dropAnimation={null}>
-          {activeTodo ? (
-            <DragOverlayCard todo={activeTodo} />
-          ) : null}
+          {activeId ? <DragOverlayCard todo={todos.find(t => t.id === activeId)!} /> : null}
         </DragOverlay>
       </DndContext>
     );
@@ -1534,285 +1675,291 @@ const Dashboard = () => {
                 <Box>
                   <AnimatePresence mode="wait">
                     {isLoading ? (
-                      <VStack spacing={4} align="stretch" width="100%">
-                        {[...Array(6)].map((_, index) => (
-                          <SkeletonCard key={index} />
-                        ))}
-                      </VStack>
-                    ) : isListView ? (
-                      <DndContext
-                        sensors={sensors}
-                        collisionDetection={rectIntersection}
-                        onDragStart={handleDragStart}
-                        onDragEnd={handleDragEnd}
-                      >
-                        {todos.length === 0 ? (
-                          <Flex
-                            direction="column"
-                            align="center"
-                            justify="center"
-                            py={12}
-                            px={4}
-                          >
-                            <VStack spacing={6}>
-                              <Box
-                                position="relative"
-                                width="200px"
-                                height="200px"
-                              >
-                                {/* Empty state illustration using boxes */}
-                                <Box
-                                  position="absolute"
-                                  top="50%"
-                                  left="50%"
-                                  transform="translate(-50%, -50%)"
-                                  width="160px"
-                                  height="120px"
-                                  borderWidth="3px"
-                                  borderStyle="dashed"
-                                  borderColor={useColorModeValue('blue.200', 'blue.500')}
-                                  borderRadius="xl"
-                                  opacity={0.5}
-                                />
-                                <Box
-                                  position="absolute"
-                                  top="40%"
-                                  left="45%"
-                                  transform="translate(-50%, -50%)"
-                                  width="160px"
-                                  height="120px"
-                                  borderWidth="3px"
-                                  borderStyle="dashed"
-                                  borderColor={useColorModeValue('green.200', 'green.500')}
-                                  borderRadius="xl"
-                                  opacity={0.5}
-                                />
-                                <Box
-                                  position="absolute"
-                                  top="45%"
-                                  left="55%"
-                                  transform="translate(-50%, -50%)"
-                                  width="160px"
-                                  height="120px"
-                                  borderWidth="3px"
-                                  borderStyle="dashed"
-                                  borderColor={useColorModeValue('purple.200', 'purple.500')}
-                                  borderRadius="xl"
-                                  opacity={0.5}
-                                />
-                              </Box>
-                              <VStack spacing={3}>
-                                <Heading size="lg" color={textColor}>
-                                  No tasks yet
-                                </Heading>
-                                <Text color={secondaryTextColor} textAlign="center">
-                                  Get started by creating your first task using the "New Task" button above
-                                </Text>
-                                <Button
-                                  leftIcon={<AddIcon />}
-                                  colorScheme="blue"
-                                  onClick={() => onCreateModalOpen()}
-                                  size="lg"
-                                  borderRadius="full"
-                                  px={8}
-                                  mt={4}
-                                >
-                                  Create Your First Task
-                                </Button>
-                              </VStack>
-                            </VStack>
-                          </Flex>
-                        ) : (
-                          <Accordion 
-                            defaultIndex={[0, 1, 2]} 
-                            allowMultiple 
-                            as={motion.div} 
-                            layout
-                          >
-                            <VStack spacing={6} align="stretch">
-                              {(['pending', 'in-progress', 'completed'] as const).map(status => {
-                                const statusTodos = todos.filter(todo => todo.status === status);
-                                
-                                return (
-                                  <Droppable id={status} key={status}>
-                                    <AccordionItem
-                                      border="none"
-                                    >
-                                      <Card 
-                                        bg={columnBg}
-                                        borderRadius="lg"
-                                        boxShadow="sm"
-                                        position="relative"
-                                        overflow="hidden"
-                                        width="100%"
-                                        transition="all 0.2s"
-                                        _hover={{
-                                          bg: hoverBg,
-                                        }}
-                                      >
-                                        <Box
-                                          position="absolute"
-                                          top={0}
-                                          left={0}
-                                          right={0}
-                                          h="3px"
-                                          bg={status === 'completed' ? 'green.400' : status === 'in-progress' ? 'blue.400' : 'gray.400'}
-                                        />
-                                        <AccordionButton 
-                                          py={4} 
-                                          px={6}
-                                          _hover={{ bg: 'transparent' }}
-                                          _expanded={{ bg: hoverBg }}
-                                        >
-                                          <Flex align="center" justify="space-between" flex="1">
-                                            <HStack spacing={3}>
-                                              <Icon 
-                                                as={getStatusIcon(status)}
-                                                color={`${status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}.400`}
-                                              />
-                                              <Heading size="md" textTransform="capitalize">
-                                                {status.replace('-', ' ')}
-                                              </Heading>
-                                            </HStack>
-                                            <HStack spacing={3}>
-                                              <Tag
-                                                colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
-                                                borderRadius="full"
-                                                variant="subtle"
-                                                py={1}
-                                                px={3}
-                                                fontSize="sm"
-                                              >
-                                                {statusTodos.length}
-                                              </Tag>
-                                              <AccordionIcon />
-                                            </HStack>
-                                          </Flex>
-                                        </AccordionButton>
-                                      </Card>
-                                      <AccordionPanel 
-                                        pb={4} 
-                                        pt={4} 
-                                        px={0}
-                                        as={motion.div}
-                                        initial={{ opacity: 0, height: 0 }}
-                                        animate={{ 
-                                          opacity: 1,
-                                          height: "auto",
-                                          transition: {
-                                            height: { type: "spring", bounce: 0.2, duration: 0.6 },
-                                            opacity: { duration: 0.25 }
-                                          }
-                                        }}
-                                        exit={{ 
-                                          opacity: 0,
-                                          height: 0,
-                                          transition: {
-                                            height: { type: "spring", bounce: 0, duration: 0.4 },
-                                            opacity: { duration: 0.15 }
-                                          }
-                                        }}
-                                      >
-                                        <Box 
-                                          minH="100px"
-                                          borderRadius="lg"
-                                          transition="all 0.2s"
-                                          p={4}
-                                        >
-                                          <SortableContext 
-                                            items={statusTodos.map(t => t.id)}
-                                            strategy={verticalListSortingStrategy}
-                                          >
-                                            <VStack spacing={4} align="stretch">
-                                              {statusTodos.length > 0 ? (
-                                                statusTodos.map(todo => (
-                                                  <SortableCard
-                                                    key={todo.id}
-                                                    todo={todo}
-                                                    isDragging={activeId === todo.id}
-                                                    isUpdating={updatingTodoIds.has(todo.id)}
-                                                    onEdit={(todo) => {
-                                                      setEditingTodo(todo);
-                                                      onEditModalOpen();
-                                                    }}
-                                                    onDelete={handleDeleteClick}
-                                                    onStatusChange={handleStatusChange}
-                                                  />
-                                                ))
-                                              ) : (
-                                                <Flex
-                                                  direction="column"
-                                                  align="center"
-                                                  justify="center"
-                                                  py={8}
-                                                  px={4}
-                                                  borderRadius="lg"
-                                                  borderWidth="2px"
-                                                  borderStyle="dashed"
-                                                  borderColor={useColorModeValue('gray.200', 'gray.600')}
-                                                  bg={useColorModeValue('gray.50', 'gray.700')}
-                                                  transition="all 0.2s"
-                                                  _hover={{
-                                                    borderColor: status === 'completed' ? 'green.400' : status === 'in-progress' ? 'blue.400' : 'gray.400',
-                                                    transform: 'translateY(-2px)',
-                                                    boxShadow: 'sm'
-                                                  }}
-                                                >
-                                                  <VStack spacing={3}>
-                                                    <Icon
-                                                      as={getStatusIcon(status)}
-                                                      boxSize="8"
-                                                      color={`${status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}.400`}
-                                                      opacity={0.7}
-                                                    />
-                                                    <Text 
-                                                      color={secondaryTextColor} 
-                                                      fontSize="sm"
-                                                      textAlign="center"
-                                                      fontWeight="medium"
-                                                    >
-                                                      {status === 'pending' ? (
-                                                        "No pending tasks. Add one or drag tasks here to mark them as To Do"
-                                                      ) : status === 'in-progress' ? (
-                                                        "No tasks in progress. Add one or drag tasks here when you start working on them"
-                                                      ) : (
-                                                        "No completed tasks yet. Add one or drag tasks here when they're done"
-                                                      )}
-                                                    </Text>
-                                                    <Button
-                                                      size="sm"
-                                                      variant="ghost"
-                                                      colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
-                                                      leftIcon={<AddIcon />}
-                                                      onClick={() => {
-                                                        setStatus(status);
-                                                        onCreateModalOpen();
-                                                      }}
-                                                    >
-                                                      Add a task
-                                                    </Button>
-                                                  </VStack>
-                                                </Flex>
-                                              )}
-                                            </VStack>
-                                          </SortableContext>
-                                        </Box>
-                                      </AccordionPanel>
-                                    </AccordionItem>
-                                  </Droppable>
-                                );
-                              })}
-                            </VStack>
-                          </Accordion>
-                        )}
-                        <DragOverlay dropAnimation={null}>
-                          {activeId ? (
-                            <DragOverlayCard todo={todos.find(t => t.id === activeId)!} />
-                          ) : null}
-                        </DragOverlay>
-                      </DndContext>
+                      isInitialLoad ? (
+                        <VStack spacing={4} align="stretch" width="100%">
+                          {[...Array(6)].map((_, index) => (
+                            <SkeletonCard key={index} />
+                          ))}
+                        </VStack>
+                      ) : (
+                        renderBoardView()
+                      )
                     ) : (
-                      renderBoardView()
+                      isListView ? (
+                        <DndContext
+                          sensors={sensors}
+                          collisionDetection={rectIntersection}
+                          onDragStart={handleDragStart}
+                          onDragEnd={handleDragEnd}
+                        >
+                          {todos.length === 0 ? (
+                            <Flex
+                              direction="column"
+                              align="center"
+                              justify="center"
+                              py={12}
+                              px={4}
+                            >
+                              <VStack spacing={6}>
+                                <Box
+                                  position="relative"
+                                  width="200px"
+                                  height="200px"
+                                >
+                                  {/* Empty state illustration using boxes */}
+                                  <Box
+                                    position="absolute"
+                                    top="50%"
+                                    left="50%"
+                                    transform="translate(-50%, -50%)"
+                                    width="160px"
+                                    height="120px"
+                                    borderWidth="3px"
+                                    borderStyle="dashed"
+                                    borderColor={useColorModeValue('blue.200', 'blue.500')}
+                                    borderRadius="xl"
+                                    opacity={0.5}
+                                  />
+                                  <Box
+                                    position="absolute"
+                                    top="40%"
+                                    left="45%"
+                                    transform="translate(-50%, -50%)"
+                                    width="160px"
+                                    height="120px"
+                                    borderWidth="3px"
+                                    borderStyle="dashed"
+                                    borderColor={useColorModeValue('green.200', 'green.500')}
+                                    borderRadius="xl"
+                                    opacity={0.5}
+                                  />
+                                  <Box
+                                    position="absolute"
+                                    top="45%"
+                                    left="55%"
+                                    transform="translate(-50%, -50%)"
+                                    width="160px"
+                                    height="120px"
+                                    borderWidth="3px"
+                                    borderStyle="dashed"
+                                    borderColor={useColorModeValue('purple.200', 'purple.500')}
+                                    borderRadius="xl"
+                                    opacity={0.5}
+                                  />
+                                </Box>
+                                <VStack spacing={3}>
+                                  <Heading size="lg" color={textColor}>
+                                    No tasks yet
+                                  </Heading>
+                                  <Text color={secondaryTextColor} textAlign="center">
+                                    Get started by creating your first task using the "New Task" button above
+                                  </Text>
+                                  <Button
+                                    leftIcon={<AddIcon />}
+                                    colorScheme="blue"
+                                    onClick={() => onCreateModalOpen()}
+                                    size="lg"
+                                    borderRadius="full"
+                                    px={8}
+                                    mt={4}
+                                  >
+                                    Create Your First Task
+                                  </Button>
+                                </VStack>
+                              </VStack>
+                            </Flex>
+                          ) : (
+                            <Accordion 
+                              defaultIndex={[0, 1, 2]} 
+                              allowMultiple 
+                              as={motion.div} 
+                              layout
+                            >
+                              <VStack spacing={6} align="stretch">
+                                {(['pending', 'in-progress', 'completed'] as const).map(status => {
+                                  const statusTodos = todos.filter(todo => todo.status === status);
+                                  
+                                  return (
+                                    <Droppable id={status} key={status}>
+                                      <AccordionItem
+                                        border="none"
+                                      >
+                                        <Card 
+                                          bg={columnBg}
+                                          borderRadius="lg"
+                                          boxShadow="sm"
+                                          position="relative"
+                                          overflow="hidden"
+                                          width="100%"
+                                          transition="all 0.2s"
+                                          _hover={{
+                                            bg: hoverBg,
+                                          }}
+                                        >
+                                          <Box
+                                            position="absolute"
+                                            top={0}
+                                            left={0}
+                                            right={0}
+                                            h="3px"
+                                            bg={status === 'completed' ? 'green.400' : status === 'in-progress' ? 'blue.400' : 'gray.400'}
+                                          />
+                                          <AccordionButton 
+                                            py={4} 
+                                            px={6}
+                                            _hover={{ bg: 'transparent' }}
+                                            _expanded={{ bg: hoverBg }}
+                                          >
+                                            <Flex align="center" justify="space-between" flex="1">
+                                              <HStack spacing={3}>
+                                                <Icon 
+                                                  as={getStatusIcon(status)}
+                                                  color={`${status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}.400`}
+                                                />
+                                                <Heading size="md" textTransform="capitalize">
+                                                  {status.replace('-', ' ')}
+                                                </Heading>
+                                              </HStack>
+                                              <HStack spacing={3}>
+                                                <Tag
+                                                  colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
+                                                  borderRadius="full"
+                                                  variant="subtle"
+                                                  py={1}
+                                                  px={3}
+                                                  fontSize="sm"
+                                                >
+                                                  {statusTodos.length}
+                                                </Tag>
+                                                <AccordionIcon />
+                                              </HStack>
+                                            </Flex>
+                                          </AccordionButton>
+                                        </Card>
+                                        <AccordionPanel 
+                                          pb={4} 
+                                          pt={4} 
+                                          px={0}
+                                          as={motion.div}
+                                          initial={{ opacity: 0, height: 0 }}
+                                          animate={{ 
+                                            opacity: 1,
+                                            height: "auto",
+                                            transition: {
+                                              height: { type: "spring", bounce: 0.2, duration: 0.6 },
+                                              opacity: { duration: 0.25 }
+                                            }
+                                          }}
+                                          exit={{ 
+                                            opacity: 0,
+                                            height: 0,
+                                            transition: {
+                                              height: { type: "spring", bounce: 0, duration: 0.4 },
+                                              opacity: { duration: 0.15 }
+                                            }
+                                          }}
+                                        >
+                                          <Box 
+                                            minH="100px"
+                                            borderRadius="lg"
+                                            transition="all 0.2s"
+                                            p={4}
+                                          >
+                                            <SortableContext 
+                                              items={statusTodos.map(t => t.id)}
+                                              strategy={verticalListSortingStrategy}
+                                            >
+                                              <VStack spacing={4} align="stretch">
+                                                {statusTodos.length > 0 ? (
+                                                  statusTodos.map(todo => (
+                                                    <SortableCard
+                                                      key={todo.id}
+                                                      todo={todo}
+                                                      isDragging={activeId === todo.id}
+                                                      isUpdating={updatingTodoIds.has(todo.id)}
+                                                      onEdit={(todo) => {
+                                                        setEditingTodo(todo);
+                                                        onEditModalOpen();
+                                                      }}
+                                                      onDelete={handleDeleteClick}
+                                                      onStatusChange={handleStatusChange}
+                                                    />
+                                                  ))
+                                                ) : (
+                                                  <Flex
+                                                    direction="column"
+                                                    align="center"
+                                                    justify="center"
+                                                    py={8}
+                                                    px={4}
+                                                    borderRadius="lg"
+                                                    borderWidth="2px"
+                                                    borderStyle="dashed"
+                                                    borderColor={useColorModeValue('gray.200', 'gray.600')}
+                                                    bg={useColorModeValue('gray.50', 'gray.700')}
+                                                    transition="all 0.2s"
+                                                    _hover={{
+                                                      borderColor: status === 'completed' ? 'green.400' : status === 'in-progress' ? 'blue.400' : 'gray.400',
+                                                      transform: 'translateY(-2px)',
+                                                      boxShadow: 'sm'
+                                                    }}
+                                                  >
+                                                    <VStack spacing={3}>
+                                                      <Icon
+                                                        as={getStatusIcon(status)}
+                                                        boxSize="8"
+                                                        color={`${status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}.400`}
+                                                        opacity={0.7}
+                                                      />
+                                                      <Text 
+                                                        color={secondaryTextColor} 
+                                                        fontSize="sm"
+                                                        textAlign="center"
+                                                        fontWeight="medium"
+                                                      >
+                                                        {status === 'pending' ? (
+                                                          "No pending tasks. Add one or drag tasks here to mark them as To Do"
+                                                        ) : status === 'in-progress' ? (
+                                                          "No tasks in progress. Add one or drag tasks here when you start working on them"
+                                                        ) : (
+                                                          "No completed tasks yet. Add one or drag tasks here when they're done"
+                                                        )}
+                                                      </Text>
+                                                      <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
+                                                        leftIcon={<AddIcon />}
+                                                        onClick={() => {
+                                                          setStatus(status);
+                                                          onCreateModalOpen();
+                                                        }}
+                                                      >
+                                                        Add a task
+                                                      </Button>
+                                                    </VStack>
+                                                  </Flex>
+                                                )}
+                                              </VStack>
+                                            </SortableContext>
+                                          </Box>
+                                        </AccordionPanel>
+                                      </AccordionItem>
+                                    </Droppable>
+                                  );
+                                })}
+                              </VStack>
+                            </Accordion>
+                          )}
+                          <DragOverlay dropAnimation={null}>
+                            {activeId ? (
+                              <DragOverlayCard todo={todos.find(t => t.id === activeId)!} />
+                            ) : null}
+                          </DragOverlay>
+                        </DndContext>
+                      ) : (
+                        renderBoardView()
+                      )
                     )}
                   </AnimatePresence>
                 </Box>
