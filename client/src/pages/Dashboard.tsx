@@ -111,7 +111,10 @@ const SortableCard = ({ todo, isDragging, onEdit, onDelete, onStatusChange }: {
     setNodeRef,
     transform,
     transition,
-  } = useSortable({ id: todo.id });
+  } = useSortable({ 
+    id: todo.id,
+    disabled: false
+  });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -166,7 +169,6 @@ const SortableCard = ({ todo, isDragging, onEdit, onDelete, onStatusChange }: {
           transform: 'translateY(-2px)',
           boxShadow: 'md',
         }}
-        {...listeners}
       >
         {/* Status Indicator */}
         <Box
@@ -190,11 +192,13 @@ const SortableCard = ({ todo, isDragging, onEdit, onDelete, onStatusChange }: {
                 noOfLines={1}
                 flex={1}
                 _hover={{ color: 'blue.500' }}
+                cursor="grab"
+                {...listeners}
               >
                 {todo.title}
               </Heading>
               
-              <HStack spacing={3} onClick={e => e.stopPropagation()}>
+              <HStack spacing={3}>
                 <Menu>
                   <Tooltip 
                     label={`Click to change status. Current: ${todo.status.replace('-', ' ')}`}
@@ -285,70 +289,73 @@ const SortableCard = ({ todo, isDragging, onEdit, onDelete, onStatusChange }: {
             </Flex>
 
             {/* Description Section */}
-            {todo.description && (
-              <Text 
-                fontSize="sm" 
-                color={descriptionColor} 
-                noOfLines={2}
-                lineHeight="tall"
-              >
-                {todo.description}
-              </Text>
-            )}
+            <Box cursor="grab" {...listeners}>
+              {todo.description && (
+                <Text 
+                  fontSize="sm" 
+                  color={descriptionColor} 
+                  noOfLines={2}
+                  lineHeight="tall"
+                >
+                  {todo.description}
+                </Text>
+              )}
 
-            {/* Metadata Section */}
-            <Flex 
-              justify="space-between" 
-              align="center"
-              wrap="wrap"
-              gap={2}
-            >
-              <HStack spacing={2}>
+              {/* Metadata Section */}
+              <Flex 
+                justify="space-between" 
+                align="center"
+                wrap="wrap"
+                gap={2}
+                mt={2}
+              >
+                <HStack spacing={2}>
+                  <Tooltip
+                    label={`Priority: ${todo.priority}`}
+                    placement="top"
+                    hasArrow
+                  >
+                    <Tag
+                      size="sm"
+                      colorScheme={priorityColors[todo.priority]}
+                      variant="subtle"
+                      borderRadius="full"
+                      px={3}
+                    >
+                      <TagLeftIcon 
+                        as={WarningIcon} 
+                        boxSize="10px"
+                      />
+                      <TagLabel textTransform="capitalize">
+                        {todo.priority}
+                      </TagLabel>
+                    </Tag>
+                  </Tooltip>
+                </HStack>
+                
                 <Tooltip
-                  label={`Priority: ${todo.priority}`}
+                  label={`Due: ${format(new Date(todo.dueDate), 'PPP')}`}
                   placement="top"
                   hasArrow
                 >
-                  <Tag
-                    size="sm"
-                    colorScheme={priorityColors[todo.priority]}
+                  <Tag 
+                    size="sm" 
                     variant="subtle"
+                    colorScheme={isOverdue ? 'red' : isDueSoon ? 'orange' : 'gray'}
                     borderRadius="full"
                     px={3}
                   >
                     <TagLeftIcon 
-                      as={WarningIcon} 
+                      as={CalendarIcon}
                       boxSize="10px"
                     />
-                    <TagLabel textTransform="capitalize">
-                      {todo.priority}
+                    <TagLabel>
+                      {format(new Date(todo.dueDate), 'MMM d')}
                     </TagLabel>
                   </Tag>
                 </Tooltip>
-              </HStack>
-              
-              <Tooltip
-                label={`Due: ${format(new Date(todo.dueDate), 'PPP')}`}
-                placement="top"
-                hasArrow
-              >
-                <Tag 
-                  size="sm" 
-                  variant="subtle"
-                  colorScheme={isOverdue ? 'red' : isDueSoon ? 'orange' : 'gray'}
-                  borderRadius="full"
-                  px={3}
-                >
-                  <TagLeftIcon 
-                    as={CalendarIcon}
-                    boxSize="10px"
-                  />
-                  <TagLabel>
-                    {format(new Date(todo.dueDate), 'MMM d')}
-                  </TagLabel>
-                </Tag>
-              </Tooltip>
-            </Flex>
+              </Flex>
+            </Box>
           </VStack>
         </CardBody>
       </Card>
