@@ -64,6 +64,7 @@ import {
   PopoverContent,
   PopoverArrow,
   PopoverCloseButton,
+  Progress,
 } from '@chakra-ui/react';
 import {
   Task,
@@ -1948,11 +1949,27 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     setIsTemplateModalOpen(false);
     setIsSubmitting(true);
     
+    // Show initial toast with loading state
+    const loadingToastId = toast({
+      title: `Creating tasks from template "${template.name}"`,
+      description: (
+        <Box>
+          <Progress size="sm" isIndeterminate colorScheme="blue" borderRadius="full" />
+          <Text mt={2} fontSize="sm">Setting up your workflow...</Text>
+        </Box>
+      ),
+      status: 'loading',
+      duration: null,
+      isClosable: false,
+      position: 'top-right',
+    });
+    
     try {
-      // Create all tasks from the template
-      for (const task of template.tasks) {
+      // Create all tasks from the template with a slight delay between each
+      for (let i = 0; i < template.tasks.length; i++) {
+        const task = template.tasks[i];
         const dueDate = new Date();
-        dueDate.setDate(dueDate.getDate() + task.dueDate);
+        dueDate.setDate(dueDate.getDate() + (typeof task.dueDate === 'number' ? task.dueDate : 0));
         
         await fetch('http://localhost:5001/api/todos', {
           method: 'POST',
@@ -1964,21 +1981,68 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
             dueDate: dueDate.toISOString(),
           }),
         });
+
+        // Update progress toast
+        toast.update(loadingToastId, {
+          description: (
+            <Box>
+              <Progress 
+                size="sm" 
+                value={((i + 1) / template.tasks.length) * 100} 
+                colorScheme="blue" 
+                borderRadius="full" 
+              />
+              <Text mt={2} fontSize="sm">
+                Created {i + 1} of {template.tasks.length} tasks...
+              </Text>
+            </Box>
+          ),
+        });
+
+        // Add a small delay for visual effect
+        await new Promise(resolve => setTimeout(resolve, 300));
       }
       
-      fetchTodos();
-      onCreateModalClose();
+      await fetchTodos();
       
+      // Close loading toast and show success toast with animation
+      toast.close(loadingToastId);
       toast({
-        title: `Created ${template.tasks.length} tasks from template`,
+        title: 'Template tasks created!',
+        description: (
+          <MotionBox
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ 
+              type: "spring",
+              stiffness: 260,
+              damping: 20
+            }}
+          >
+            <VStack align="start" spacing={2}>
+              <Text>Successfully created {template.tasks.length} tasks from "{template.name}"</Text>
+              <HStack spacing={2}>
+                <Icon as={CheckIcon} color="green.500" />
+                <Text fontSize="sm" color="green.500">Your workflow is ready to go!</Text>
+              </HStack>
+            </VStack>
+          </MotionBox>
+        ),
         status: 'success',
-        duration: 3000,
+        duration: 5000,
+        isClosable: true,
+        position: 'top-right',
       });
     } catch (error) {
+      // Close loading toast and show error toast
+      toast.close(loadingToastId);
       toast({
-        title: 'Error creating tasks from template',
+        title: 'Error creating tasks',
+        description: error instanceof Error ? error.message : 'An unexpected error occurred',
         status: 'error',
-        duration: 3000,
+        duration: 5000,
+        isClosable: true,
+        position: 'top-right',
       });
     } finally {
       setIsSubmitting(false);
