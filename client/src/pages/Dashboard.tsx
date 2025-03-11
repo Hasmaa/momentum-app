@@ -614,6 +614,7 @@ const Droppable = React.forwardRef<HTMLDivElement, DroppableProps>(({ children, 
       position="relative"
       role="region"
       aria-label={`${id} column`}
+      mb={4}
       sx={{
         '&::before': {
           content: '""',
@@ -1433,7 +1434,7 @@ const Dashboard = () => {
           <Grid templateColumns="repeat(3, 1fr)" gap={6}>
             {['pending', 'in-progress', 'completed'].map((status) => (
               <GridItem key={status}>
-                <Card bg={columnBg} mb={4} borderRadius="lg" boxShadow="sm">
+                <Card bg={columnBg} borderRadius="lg" boxShadow="sm">
                   <Box
                     position="absolute"
                     top={0}
@@ -1503,7 +1504,6 @@ const Dashboard = () => {
                     <Droppable id={`column-${status}`}>
                       <Card 
                         bg={columnBg}
-                        mb={4}
                         borderRadius="lg"
                         boxShadow="sm"
                         position="relative"
@@ -1684,7 +1684,6 @@ const Dashboard = () => {
                 >
                   <Card 
                     bg={columnBg}
-                    mb={4}
                     borderRadius="lg"
                     boxShadow="sm"
                     position="relative"
@@ -2437,6 +2436,7 @@ const Dashboard = () => {
                                     allowMultiple 
                                     as={motion.div} 
                                     layout
+                                    spacing={6}
                                   >
                                     {(['pending', 'in-progress', 'completed'] as const).map(status => {
                                       const statusTodos = todos.filter(todo => todo.status === status);
