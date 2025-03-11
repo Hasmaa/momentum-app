@@ -2168,20 +2168,37 @@ const Dashboard = () => {
                       bg: ghostButtonHoverBg
                     }}
                   />
-                  <Button
-                    leftIcon={<AddIcon />}
-                    colorScheme="blue"
-                    onClick={() => onCreateModalOpen()}
-                    size="md"
-                    borderRadius="full"
-                    px={6}
-                    _hover={{
-                      transform: 'translateY(-1px)',
-                      boxShadow: 'md',
-                    }}
-                  >
-                    New Task
-                  </Button>
+                  <HStack spacing={3}>
+                    <Button
+                      leftIcon={<AddIcon />}
+                      colorScheme="blue"
+                      onClick={() => onCreateModalOpen()}
+                      size="md"
+                      borderRadius="full"
+                      px={6}
+                      _hover={{
+                        transform: 'translateY(-1px)',
+                        boxShadow: 'md',
+                      }}
+                    >
+                      New Task
+                    </Button>
+                    <Button
+                      leftIcon={<RepeatIcon />}
+                      variant="outline"
+                      colorScheme="blue"
+                      onClick={() => setIsTemplateModalOpen(true)}
+                      size="md"
+                      borderRadius="full"
+                      px={6}
+                      _hover={{
+                        transform: 'translateY(-1px)',
+                        boxShadow: 'md',
+                      }}
+                    >
+                      Use Template
+                    </Button>
+                  </HStack>
                 </HStack>
               </Flex>
             </CardBody>
@@ -2907,21 +2924,6 @@ const Dashboard = () => {
                 <ModalCloseButton />
                 <ModalBody>
                   <VStack spacing={4}>
-                    <Button
-                      width="100%"
-                      height="auto"
-                      py={6}
-                      variant="outline"
-                      onClick={() => setIsTemplateModalOpen(true)}
-                      leftIcon={<Icon as={RepeatIcon} />}
-                    >
-                      <VStack spacing={1}>
-                        <Text>Use a Template</Text>
-                        <Text fontSize="sm" color={secondaryTextColor}>
-                          Quick-start with predefined task templates
-                        </Text>
-                      </VStack>
-                    </Button>
                     <InputGroup>
                       <InputLeftElement pointerEvents="none">
                         <AddIcon color="gray.400" />

@@ -143,5 +143,98 @@ export const PREDEFINED_TEMPLATES: TaskTemplate[] = [
         dueDate: 0
       }
     ]
+  },
+  {
+    id: 'puppy-kitten-vaccines',
+    name: 'Puppy/Kitten Vaccines',
+    description: 'Complete vaccination series for young pets',
+    icon: '💉',
+    tasks: [
+      {
+        title: 'Initial Vaccination Visit',
+        description: 'First round of core vaccines and deworming (6-8 weeks)',
+        status: 'pending',
+        priority: 'high',
+        dueDate: 0
+      },
+      {
+        title: 'Second Vaccination Visit',
+        description: 'Second round of core vaccines and parasite check (10-12 weeks)',
+        status: 'pending',
+        priority: 'high',
+        dueDate: 21
+      },
+      {
+        title: 'Third Vaccination Visit',
+        description: 'Third round of core vaccines and health check (14-16 weeks)',
+        status: 'pending',
+        priority: 'high',
+        dueDate: 42
+      },
+      {
+        title: 'Rabies Vaccination',
+        description: 'First rabies vaccine (16 weeks)',
+        status: 'pending',
+        priority: 'high',
+        dueDate: 56
+      },
+      {
+        title: 'Schedule Spay/Neuter',
+        description: 'Discuss and schedule sterilization procedure',
+        status: 'pending',
+        priority: 'medium',
+        dueDate: 70
+      }
+    ]
+  },
+  {
+    id: 'chronic-condition',
+    name: 'Chronic Condition Monitoring',
+    description: 'Long-term management of chronic conditions',
+    icon: '📊',
+    tasks: [
+      {
+        title: 'Baseline Diagnostics',
+        description: 'Complete initial blood work, imaging, and specific disease markers',
+        status: 'pending',
+        priority: 'high',
+        dueDate: 0
+      },
+      {
+        title: 'Medication Protocol',
+        description: 'Establish medication schedule and dosing instructions',
+        status: 'pending',
+        priority: 'high',
+        dueDate: 1
+      },
+      {
+        title: 'Diet & Exercise Plan',
+        description: 'Develop specialized nutrition and activity guidelines',
+        status: 'pending',
+        priority: 'medium',
+        dueDate: 1
+      },
+      {
+        title: '2-Week Follow-up',
+        description: 'Assess medication effectiveness and adjust as needed',
+        status: 'pending',
+        priority: 'high',
+        dueDate: 14
+      },
+      {
+        title: 'Monthly Progress Check',
+        description: 'Review progress and update treatment plan',
+        status: 'pending',
+        priority: 'medium',
+        dueDate: 30
+      },
+      {
+        title: 'Quarterly Assessment',
+        description: 'Comprehensive evaluation including follow-up diagnostics',
+        status: 'pending',
+        priority: 'high',
+        dueDate: 90
+      }
+    ]
   }
 ]; 
