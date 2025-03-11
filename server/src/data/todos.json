@@ -2,23 +2,23 @@
   "todos": [
     {
       "title": "Make me a sandwich",
-      "description": "I need a great sandwich be made",
-      "status": "1741680921979",
+      "description": "I am really hungry and could use a sandwich",
+      "status": "in-progress",
       "priority": "high",
-      "dueDate": "2025-03-13T00:00:00.000Z",
-      "id": "1741680634340",
-      "createdAt": "2025-03-11T08:10:34.340Z",
-      "updatedAt": "2025-03-11T08:40:30.509Z"
+      "dueDate": "2025-03-12T00:00:00.000Z",
+      "id": "1741682808996",
+      "createdAt": "2025-03-11T08:46:48.996Z",
+      "updatedAt": "2025-03-11T09:52:15.770Z"
     },
     {
-      "title": "asdas",
-      "description": "dasdasdas",
-      "status": "pending",
+      "title": "Get drinks with friends",
+      "description": "I need social activity",
+      "status": "completed",
       "priority": "medium",
-      "dueDate": "2025-03-11T00:00:00.000Z",
-      "id": "1741682466019",
-      "createdAt": "2025-03-11T08:41:06.019Z",
-      "updatedAt": "2025-03-11T08:41:06.019Z"
+      "dueDate": "2025-03-15T00:00:00.000Z",
+      "id": "1741685448602",
+      "createdAt": "2025-03-11T09:30:48.602Z",
+      "updatedAt": "2025-03-11T09:52:13.806Z"
     }
   ]
 }

@@ -2,7 +2,7 @@ import { ChakraProvider, Box, ColorModeScript } from '@chakra-ui/react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import theme from './theme';
-import Navbar from './components/Navbar';
+// import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
 import Auth from './pages/Auth';
 
@@ -16,7 +16,7 @@ function App() {
         <QueryClientProvider client={queryClient}>
           <Router>
             <Box minH="100vh" bg="gray.50">
-              <Navbar />
+              {/* <Navbar /> */}
               <Routes>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/auth" element={<Auth />} />

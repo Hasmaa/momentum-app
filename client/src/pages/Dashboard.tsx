@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   VStack,
@@ -40,7 +40,13 @@ import {
   FocusLock,
   Switch,
   Icon,
-  useColorMode
+  useColorMode,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
 } from '@chakra-ui/react';
 import { Todo } from '../types/todo';
 import { 
@@ -209,7 +215,7 @@ const SortableCard = ({ todo, isDragging, onEdit, onDelete, onStatusChange }: {
   todo: Todo; 
   isDragging?: boolean;
   onEdit: (todo: Todo) => void;
-  onDelete: (id: string) => void;
+  onDelete: (todo: Todo) => void;
   onStatusChange: (id: string, newStatus: Todo['status']) => void;
 }) => {
   const {
@@ -242,7 +248,12 @@ const SortableCard = ({ todo, isDragging, onEdit, onDelete, onStatusChange }: {
   const cardBg = useColorModeValue('white', 'gray.800');
   const descriptionColor = useColorModeValue('gray.600', 'gray.300');
   const borderColor = useColorModeValue('gray.100', 'gray.700');
-  const hoverBg = useColorModeValue('gray.50', 'gray.700');
+  const hoverBg = useColorModeValue('gray.50', 'whiteAlpha.100');
+  const textColor = useColorModeValue('gray.700', 'gray.100');
+  const menuItemHoverBg = useColorModeValue('gray.100', 'whiteAlpha.200');
+  const menuBg = useColorModeValue('white', 'gray.700');
+  const ghostButtonHoverBg = useColorModeValue('blue.50', 'whiteAlpha.200');
+  const accentColor = useColorModeValue('blue.500', 'blue.200');
 
   const isOverdue = isPast(new Date(todo.dueDate));
   const isDueSoon = isWithinInterval(new Date(todo.dueDate), {
@@ -340,11 +351,13 @@ const SortableCard = ({ todo, isDragging, onEdit, onDelete, onStatusChange }: {
                     />
                   </Tooltip>
                   <Portal>
-                    <MenuList>
+                    <MenuList bg={menuBg} borderColor={borderColor}>
                       <MenuItem
                         icon={<Icon as={WarningIcon} color="gray.400" />}
                         onClick={() => onStatusChange(todo.id, 'pending')}
-                        color={statusColors.pending + '.600'}
+                        color={textColor}
+                        bg={menuBg}
+                        _hover={{ bg: menuItemHoverBg }}
                         isDisabled={todo.status === 'pending'}
                       >
                         Set to Pending
@@ -352,7 +365,9 @@ const SortableCard = ({ todo, isDragging, onEdit, onDelete, onStatusChange }: {
                       <MenuItem
                         icon={<Icon as={TimeIcon} color="blue.400" />}
                         onClick={() => onStatusChange(todo.id, 'in-progress')}
-                        color={statusColors['in-progress'] + '.600'}
+                        color={textColor}
+                        bg={menuBg}
+                        _hover={{ bg: menuItemHoverBg }}
                         isDisabled={todo.status === 'in-progress'}
                       >
                         Set to In Progress
@@ -360,7 +375,9 @@ const SortableCard = ({ todo, isDragging, onEdit, onDelete, onStatusChange }: {
                       <MenuItem
                         icon={<Icon as={CheckIcon} color="green.400" />}
                         onClick={() => onStatusChange(todo.id, 'completed')}
-                        color={statusColors.completed + '.600'}
+                        color={textColor}
+                        bg={menuBg}
+                        _hover={{ bg: menuItemHoverBg }}
                         isDisabled={todo.status === 'completed'}
                       >
                         Set to Completed
@@ -378,8 +395,8 @@ const SortableCard = ({ todo, isDragging, onEdit, onDelete, onStatusChange }: {
                     colorScheme="blue"
                     onClick={() => onEdit(todo)}
                     _hover={{
-                      bg: 'blue.50',
-                      color: 'blue.600'
+                      bg: ghostButtonHoverBg,
+                      color: accentColor
                     }}
                   />
                 </Tooltip>
@@ -390,10 +407,10 @@ const SortableCard = ({ todo, isDragging, onEdit, onDelete, onStatusChange }: {
                     size="sm"
                     variant="ghost"
                     colorScheme="red"
-                    onClick={() => onDelete(todo.id)}
+                    onClick={() => onDelete(todo)}
                     _hover={{
-                      bg: 'red.50',
-                      color: 'red.600'
+                      bg: useColorModeValue('red.50', 'whiteAlpha.200'),
+                      color: useColorModeValue('red.600', 'red.300')
                     }}
                   />
                 </Tooltip>
@@ -533,12 +550,24 @@ const Dashboard = () => {
 
   const mainBg = useColorModeValue('gray.50', 'gray.900');
   const cardBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.600');
-  const hoverBg = useColorModeValue('gray.50', 'gray.700');
-  const textColor = useColorModeValue('gray.600', 'gray.200');
-  const columnBg = useColorModeValue('gray.50', 'gray.700');
+  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const hoverBg = useColorModeValue('gray.50', 'whiteAlpha.100');
+  const textColor = useColorModeValue('gray.700', 'gray.100');
+  const columnBg = useColorModeValue('gray.50', 'gray.800');
   const headerBg = useColorModeValue('blue.50', 'gray.800');
-  const accentColor = useColorModeValue('blue.500', 'blue.300');
+  const accentColor = useColorModeValue('blue.500', 'blue.200');
+  const descriptionColor = useColorModeValue('gray.600', 'gray.300');
+  const secondaryTextColor = useColorModeValue('gray.500', 'gray.400');
+  const menuHoverBg = useColorModeValue('gray.100', 'whiteAlpha.200');
+  const ghostButtonHoverBg = useColorModeValue('blue.50', 'whiteAlpha.200');
+
+  const [todoToDelete, setTodoToDelete] = useState<Todo | null>(null);
+  const cancelDeleteRef = useRef<HTMLButtonElement>(null);
+  const { 
+    isOpen: isDeleteAlertOpen, 
+    onOpen: onDeleteAlertOpen, 
+    onClose: onDeleteAlertClose 
+  } = useDisclosure();
 
   const fetchTodos = async () => {
     try {
@@ -618,14 +647,16 @@ const Dashboard = () => {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!id) {
-      console.error('No todo id provided');
-      return;
-    }
+  const handleDeleteClick = (todo: Todo) => {
+    setTodoToDelete(todo);
+    onDeleteAlertOpen();
+  };
 
+  const confirmDelete = async () => {
+    if (!todoToDelete) return;
+    
     try {
-      const response = await fetch(`http://localhost:5001/api/todos/${id}`, {
+      const response = await fetch(`http://localhost:5001/api/todos/${todoToDelete.id}`, {
         method: 'DELETE',
       });
       
@@ -633,16 +664,19 @@ const Dashboard = () => {
       
       fetchTodos();
       toast({
-        title: 'Todo deleted successfully',
+        title: 'Task deleted successfully',
         status: 'success',
         duration: 3000,
       });
     } catch (error) {
       toast({
-        title: 'Error deleting todo',
+        title: 'Error deleting task',
         status: 'error',
         duration: 3000,
       });
+    } finally {
+      setTodoToDelete(null);
+      onDeleteAlertClose();
     }
   };
 
@@ -905,7 +939,7 @@ const Dashboard = () => {
                               setEditingTodo(todo);
                               onEditModalOpen();
                             }}
-                            onDelete={handleDelete}
+                            onDelete={handleDeleteClick}
                             onStatusChange={handleStatusChange}
                           />
                         ))}
@@ -933,12 +967,12 @@ const Dashboard = () => {
           <Card bg={headerBg} borderRadius="lg" borderColor={borderColor} borderWidth="1px">
             <CardBody>
               <Flex justify="space-between" align="center">
-                <Heading size="lg" color={accentColor}>Tasks</Heading>
+                <Heading size="lg" color={textColor}>Tasks</Heading>
                 <HStack spacing={6}>
                   <HStack spacing={3}>
                     <Icon 
                       as={ViewIcon} 
-                      color={isListView ? accentColor : 'gray.400'}
+                      color={isListView ? accentColor : secondaryTextColor}
                       transition="all 0.2s"
                       transform={isListView ? 'scale(1)' : 'scale(1)'}
                     />
@@ -948,17 +982,16 @@ const Dashboard = () => {
                       onChange={() => setIsListView(!isListView)}
                       sx={{
                         '& .chakra-switch__track': {
-                          bg: isListView ? 'gray.300' : accentColor,
+                          bg: isListView ? 'gray.400' : accentColor,
                         }
                       }}
                     />
                     <Icon 
-                      as={ HamburgerIcon} 
-                      color={!isListView ? accentColor : 'gray.400'}
-                      opacity={0.5}
+                      as={HamburgerIcon} 
+                      color={!isListView ? accentColor : secondaryTextColor}
+                      opacity={!isListView ? 1 : 0.5}
                       transition="all 0.2s"
                       transform={isListView ? 'rotate(0deg)' : 'rotate(90deg)'}
-                      
                     />
                   </HStack>
                   <IconButton
@@ -976,7 +1009,7 @@ const Dashboard = () => {
                     onClick={toggleColorMode}
                     color={accentColor}
                     _hover={{
-                      bg: useColorModeValue('blue.50', 'gray.700')
+                      bg: ghostButtonHoverBg
                     }}
                   />
                   <Button
@@ -1004,7 +1037,7 @@ const Dashboard = () => {
                 <GridItem colSpan={[12, 12, 6]}>
                   <InputGroup size="md">
                     <InputLeftElement pointerEvents="none">
-                      <SearchIcon color="gray.400" />
+                      <SearchIcon color={secondaryTextColor} />
                     </InputLeftElement>
                     <Input
                       placeholder="Search tasks..."
@@ -1012,6 +1045,8 @@ const Dashboard = () => {
                       onChange={(e) => setSearchQuery(e.target.value)}
                       variant="filled"
                       borderRadius="full"
+                      _placeholder={{ color: secondaryTextColor }}
+                      color={textColor}
                     />
                   </InputGroup>
                 </GridItem>
@@ -1021,8 +1056,9 @@ const Dashboard = () => {
                     onChange={(e) => setFilterStatus(e.target.value as Todo['status'] | 'all')}
                     variant="filled"
                     size="md"
-                    icon={<HamburgerIcon />}
+                    icon={<HamburgerIcon color={secondaryTextColor} />}
                     borderRadius="full"
+                    color={textColor}
                   >
                     <option value="all">All Status</option>
                     <option value="pending">Pending</option>
@@ -1036,8 +1072,9 @@ const Dashboard = () => {
                     onChange={(e) => setFilterPriority(e.target.value as Todo['priority'] | 'all')}
                     variant="filled"
                     size="md"
-                    icon={<WarningIcon />}
+                    icon={<WarningIcon color={secondaryTextColor} />}
                     borderRadius="full"
+                    color={textColor}
                   >
                     <option value="all">All Priority</option>
                     <option value="low">Low</option>
@@ -1060,7 +1097,7 @@ const Dashboard = () => {
                             setEditingTodo(todo);
                             onEditModalOpen();
                           }}
-                          onDelete={handleDelete}
+                          onDelete={handleDeleteClick}
                           onStatusChange={handleStatusChange}
                         />
                       ))}
@@ -1224,6 +1261,34 @@ const Dashboard = () => {
             )}
           </ModalContent>
         </Modal>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog
+          isOpen={isDeleteAlertOpen}
+          leastDestructiveRef={cancelDeleteRef}
+          onClose={onDeleteAlertClose}
+        >
+          <AlertDialogOverlay>
+            <AlertDialogContent>
+              <AlertDialogHeader fontSize="lg" fontWeight="bold">
+                Delete Task
+              </AlertDialogHeader>
+
+              <AlertDialogBody>
+                Are you sure you want to delete "{todoToDelete?.title}"? This action cannot be undone.
+              </AlertDialogBody>
+
+              <AlertDialogFooter>
+                <Button ref={cancelDeleteRef} onClick={onDeleteAlertClose}>
+                  Cancel
+                </Button>
+                <Button colorScheme="red" onClick={confirmDelete} ml={3}>
+                  Delete
+                </Button>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialogOverlay>
+        </AlertDialog>
       </Container>
     </Box>
   );
