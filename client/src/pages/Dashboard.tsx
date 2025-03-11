@@ -1682,7 +1682,217 @@ const Dashboard = () => {
                           ))}
                         </VStack>
                       ) : (
-                        renderBoardView()
+                        <Box position="relative">
+                          <Box
+                            position="absolute"
+                            top={0}
+                            left={0}
+                            right={0}
+                            height="2px"
+                            bg="blue.500"
+                            zIndex={1}
+                            as={motion.div}
+                            initial={{ width: "0%" }}
+                            animate={{ width: "100%" }}
+                            transition={{ duration: 0.5 }}
+                          />
+                          <Box opacity={0.7}>
+                            {isListView ? (
+                              <DndContext
+                                sensors={sensors}
+                                collisionDetection={rectIntersection}
+                                onDragStart={handleDragStart}
+                                onDragEnd={handleDragEnd}
+                              >
+                                <Accordion 
+                                  defaultIndex={[0, 1, 2]} 
+                                  allowMultiple 
+                                  as={motion.div} 
+                                  layout
+                                >
+                                  <VStack spacing={6} align="stretch">
+                                    {(['pending', 'in-progress', 'completed'] as const).map(status => {
+                                      const statusTodos = todos.filter(todo => todo.status === status);
+                                      return (
+                                        <Droppable id={status} key={status}>
+                                          <AccordionItem
+                                            border="none"
+                                          >
+                                            <Card 
+                                              bg={columnBg}
+                                              borderRadius="lg"
+                                              boxShadow="sm"
+                                              position="relative"
+                                              overflow="hidden"
+                                              width="100%"
+                                              transition="all 0.2s"
+                                              _hover={{
+                                                bg: hoverBg,
+                                              }}
+                                            >
+                                              <Box
+                                                position="absolute"
+                                                top={0}
+                                                left={0}
+                                                right={0}
+                                                h="3px"
+                                                bg={status === 'completed' ? 'green.400' : status === 'in-progress' ? 'blue.400' : 'gray.400'}
+                                              />
+                                              <AccordionButton 
+                                                py={4} 
+                                                px={6}
+                                                _hover={{ bg: 'transparent' }}
+                                                _expanded={{ bg: hoverBg }}
+                                              >
+                                                <Flex align="center" justify="space-between" flex="1">
+                                                  <HStack spacing={3}>
+                                                    <Icon 
+                                                      as={getStatusIcon(status)}
+                                                      color={`${status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}.400`}
+                                                    />
+                                                    <Heading size="md" textTransform="capitalize">
+                                                      {status.replace('-', ' ')}
+                                                    </Heading>
+                                                  </HStack>
+                                                  <HStack spacing={3}>
+                                                    <Tag
+                                                      colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
+                                                      borderRadius="full"
+                                                      variant="subtle"
+                                                      py={1}
+                                                      px={3}
+                                                      fontSize="sm"
+                                                    >
+                                                      {statusTodos.length}
+                                                    </Tag>
+                                                    <AccordionIcon />
+                                                  </HStack>
+                                                </Flex>
+                                              </AccordionButton>
+                                            </Card>
+                                            <AccordionPanel 
+                                              pb={4} 
+                                              pt={4} 
+                                              px={0}
+                                              as={motion.div}
+                                              initial={{ opacity: 0, height: 0 }}
+                                              animate={{ 
+                                                opacity: 1,
+                                                height: "auto",
+                                                transition: {
+                                                  height: { type: "spring", bounce: 0.2, duration: 0.6 },
+                                                  opacity: { duration: 0.25 }
+                                                }
+                                              }}
+                                              exit={{ 
+                                                opacity: 0,
+                                                height: 0,
+                                                transition: {
+                                                  height: { type: "spring", bounce: 0, duration: 0.4 },
+                                                  opacity: { duration: 0.15 }
+                                                }
+                                              }}
+                                            >
+                                              <Box 
+                                                minH="100px"
+                                                borderRadius="lg"
+                                                transition="all 0.2s"
+                                                p={4}
+                                              >
+                                                <SortableContext 
+                                                  items={statusTodos.map(t => t.id)}
+                                                  strategy={verticalListSortingStrategy}
+                                                >
+                                                  <VStack spacing={4} align="stretch">
+                                                    {statusTodos.length > 0 ? (
+                                                      statusTodos.map(todo => (
+                                                        <SortableCard
+                                                          key={todo.id}
+                                                          todo={todo}
+                                                          isDragging={activeId === todo.id}
+                                                          isUpdating={updatingTodoIds.has(todo.id)}
+                                                          onEdit={(todo) => {
+                                                            setEditingTodo(todo);
+                                                            onEditModalOpen();
+                                                          }}
+                                                          onDelete={handleDeleteClick}
+                                                          onStatusChange={handleStatusChange}
+                                                        />
+                                                      ))
+                                                    ) : (
+                                                      <Flex
+                                                        direction="column"
+                                                        align="center"
+                                                        justify="center"
+                                                        py={8}
+                                                        px={4}
+                                                        borderRadius="lg"
+                                                        borderWidth="2px"
+                                                        borderStyle="dashed"
+                                                        borderColor={useColorModeValue('gray.200', 'gray.600')}
+                                                        bg={useColorModeValue('gray.50', 'gray.700')}
+                                                        transition="all 0.2s"
+                                                        _hover={{
+                                                          borderColor: status === 'completed' ? 'green.400' : status === 'in-progress' ? 'blue.400' : 'gray.400',
+                                                          transform: 'translateY(-2px)',
+                                                          boxShadow: 'sm'
+                                                        }}
+                                                      >
+                                                        <VStack spacing={3}>
+                                                          <Icon
+                                                            as={getStatusIcon(status)}
+                                                            boxSize="8"
+                                                            color={`${status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}.400`}
+                                                            opacity={0.7}
+                                                          />
+                                                          <Text 
+                                                            color={secondaryTextColor} 
+                                                            fontSize="sm"
+                                                            textAlign="center"
+                                                            fontWeight="medium"
+                                                          >
+                                                            {status === 'pending' ? (
+                                                              "No pending tasks. Add one or drag tasks here to mark them as To Do"
+                                                            ) : status === 'in-progress' ? (
+                                                              "No tasks in progress. Add one or drag tasks here when you start working on them"
+                                                            ) : (
+                                                              "No completed tasks yet. Add one or drag tasks here when they're done"
+                                                            )}
+                                                          </Text>
+                                                          <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            colorScheme={status === 'completed' ? 'green' : status === 'in-progress' ? 'blue' : 'gray'}
+                                                            leftIcon={<AddIcon />}
+                                                            onClick={() => {
+                                                              setStatus(status);
+                                                              onCreateModalOpen();
+                                                            }}
+                                                          >
+                                                            Add a task
+                                                          </Button>
+                                                        </VStack>
+                                                      </Flex>
+                                                    )}
+                                                  </VStack>
+                                                </SortableContext>
+                                              </Box>
+                                            </AccordionPanel>
+                                          </AccordionItem>
+                                        </Droppable>
+                                      );
+                                    })}
+                                  </VStack>
+                                </Accordion>
+                                <DragOverlay dropAnimation={null}>
+                                  {activeId ? <DragOverlayCard todo={todos.find(t => t.id === activeId)!} /> : null}
+                                </DragOverlay>
+                              </DndContext>
+                            ) : (
+                              renderBoardView()
+                            )}
+                          </Box>
+                        </Box>
                       )
                     ) : (
                       isListView ? (
