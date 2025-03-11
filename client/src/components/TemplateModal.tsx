@@ -70,9 +70,16 @@ const TemplateModal: React.FC<TemplateModalProps> = ({
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: -20, opacity: 0 }}
         maxH="85vh"
-        overflowY="auto"
+        display="flex"
+        flexDirection="column"
       >
-        <ModalHeader>
+        <ModalHeader 
+          borderBottomWidth="1px" 
+          bg={cardBg}
+          position="sticky"
+          top={0}
+          zIndex={2}
+        >
           <HStack spacing={3}>
             <Text>✨ Choose a Template</Text>
             <Text color={textColor} fontSize="sm" fontWeight="normal">
@@ -80,33 +87,52 @@ const TemplateModal: React.FC<TemplateModalProps> = ({
             </Text>
           </HStack>
         </ModalHeader>
-        <ModalCloseButton />
-        <ModalBody pb={6}>
-          <Tabs variant="soft-rounded" colorScheme="blue">
-            <TabList mb={4} p={1} bg={useColorModeValue('gray.100', 'gray.700')} borderRadius="full">
+        <ModalCloseButton zIndex={3} />
+        <ModalBody 
+          pb={6} 
+          overflowY="auto"
+          flex="1"
+        >
+          <Tabs variant="enclosed" colorScheme="blue">
+            <TabList 
+              position="sticky" 
+              top={0} 
+              bg={cardBg} 
+              zIndex={1} 
+              mb={4}
+              borderBottomWidth="1px"
+              borderBottomColor={borderColor}
+            >
               {categories.map(category => {
                 const info = getCategoryInfo(category);
                 return (
                   <Tab
                     key={category}
-                    borderRadius="full"
+                    py={3}
+                    px={4}
+                    borderRadius="md"
+                    fontWeight="medium"
                     _selected={{ 
-                      bg: cardBg,
+                      bg: hoverBg,
                       color: accentColor,
-                      boxShadow: 'sm'
+                      borderBottomWidth: "2px",
+                      borderBottomColor: accentColor,
+                      fontWeight: "semibold"
                     }}
                     color={textColor}
                     _hover={{
-                      color: accentColor
+                      color: accentColor,
+                      bg: hoverBg
                     }}
                   >
                     <HStack spacing={2}>
                       <Text>{info.icon}</Text>
                       <Text>{info.name}</Text>
                       <Badge 
+                        ml={1}
                         colorScheme="blue" 
-                        borderRadius="full"
                         variant="subtle"
+                        fontSize="xs"
                       >
                         {templatesByCategory[category].length}
                       </Badge>
