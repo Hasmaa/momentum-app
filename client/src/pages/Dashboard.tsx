@@ -971,10 +971,11 @@ const Dashboard = () => {
                 <HStack spacing={6}>
                   <HStack spacing={3}>
                     <Icon 
-                      as={ViewIcon} 
+                      as={HamburgerIcon} 
                       color={isListView ? accentColor : secondaryTextColor}
                       transition="all 0.2s"
-                      transform={isListView ? 'scale(1)' : 'scale(1)'}
+                      opacity={isListView ? 1 : 0.5}
+
                     />
                     <Switch
                       colorScheme="blue"
@@ -991,7 +992,7 @@ const Dashboard = () => {
                       color={!isListView ? accentColor : secondaryTextColor}
                       opacity={!isListView ? 1 : 0.5}
                       transition="all 0.2s"
-                      transform={isListView ? 'rotate(0deg)' : 'rotate(90deg)'}
+                      transform={ 'rotate(90deg)'}
                     />
                   </HStack>
                   <IconButton
