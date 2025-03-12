@@ -29,6 +29,20 @@ Momentum is a modern task management application that combines powerful features
   - 📅 Due date management
   - 📊 Status tracking (Pending, In Progress, Completed)
 
+### 🏆 Achievement System - NEW!
+
+- **Gamified Productivity**
+  - 🌟 Unlock achievements as you complete tasks and use features
+  - 🎭 Four categories: Completion, Productivity, Consistency, Explorer
+  - 💎 Different rarity levels: Common, Uncommon, Rare, Legendary
+  - 🎉 Beautiful achievement notifications with animations
+
+- **Progress Tracking**
+  - 📈 Track your productivity journey
+  - 🔥 Build streaks with daily task completions
+  - 🏅 Earn special achievements for consistent usage
+  - 🧠 Learn application features through achievements
+
 ### 🎨 Modern UI/UX
 
 - **Flexible Views**
@@ -82,6 +96,38 @@ Momentum is a modern task management application that combines powerful features
 - ARIA labels and roles
 - High contrast mode
 
+## 🏆 Achievement System
+
+Momentum now includes a gamified achievement system that makes task management more enjoyable and rewarding!
+
+### Achievement Categories
+
+| Category | Description |
+|:---------|:------------|
+| Completion | Achievements earned by completing tasks |
+| Productivity | Achievements for efficient task management |
+| Consistency | Rewards for maintaining regular usage habits |
+| Explorer | Unlocked by discovering and using app features |
+
+### Rarity Levels
+
+Achievements come in different rarity levels, each with its own visual style:
+
+- **Common** - Basic achievements for getting started
+- **Uncommon** - Slightly more challenging goals
+- **Rare** - Significant accomplishments requiring dedication
+- **Legendary** - Ultimate achievements for power users
+
+### Notable Achievements
+
+- **First Steps** - Complete your first task
+- **Getting Things Done** - Complete 10 tasks
+- **Momentum Builder** - Complete at least one task for 3 days in a row
+- **Perfect Day** - Complete all tasks scheduled for a single day
+- **Completionist** - Unlock all other achievements
+
+Achievements are presented with beautiful animated notifications and celebratory confetti effects when unlocked!
+
 ## 🛠️ Tech Stack
 
 ### 🎨 Frontend
@@ -92,6 +138,8 @@ Momentum is a modern task management application that combines powerful features
 ✨ Framer Motion     → Smooth animations
 🔄 @dnd-kit         → Drag and drop functionality
 📅 date-fns         → Date manipulation
+🎊 canvas-confetti   → Achievement celebration effects
+🎯 uuid             → Unique ID generation
 ⚡ Vite             → Build tool
 ```
 
