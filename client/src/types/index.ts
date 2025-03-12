@@ -142,4 +142,37 @@ export interface CustomTheme {
   components: {
     [component: string]: unknown;
   };
+}
+
+// Achievement Types
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;  // SVG icon name or path
+  condition: AchievementCondition;
+  unlockedAt?: string;
+  progress?: number;
+  maxProgress?: number;
+  category: AchievementCategory;
+  rarity: AchievementRarity;
+}
+
+export type AchievementCategory = 'completion' | 'productivity' | 'consistency' | 'explorer';
+export type AchievementRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+
+export interface AchievementCondition {
+  type: 'task_count' | 'priority_count' | 'streak' | 'perfect_day' | 'drag_drop' | 'template_use' | 'bulk_action';
+  target: number;
+  criteria?: {
+    status?: TaskStatus;
+    priority?: TaskPriority;
+    within?: 'day' | 'week' | 'month';
+  };
+}
+
+export interface AchievementState {
+  achievements: Achievement[];
+  recentlyUnlocked: Achievement | null;
+  initialized: boolean;
 } 

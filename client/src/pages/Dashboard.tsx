@@ -95,6 +95,10 @@ import SkeletonCard from '../components/SkeletonCard';
 import { PREDEFINED_TEMPLATES } from '../types/template';
 import TemplateModal from '../components/TemplateModal';
 import { useTaskHistory } from '../hooks/useTaskHistory';
+import { useAchievements } from '../hooks/useAchievements';
+import AchievementsButton from '../components/AchievementsButton';
+import AchievementsModal from '../components/AchievementsModal';
+import AchievementPopup from '../components/AchievementPopup';
 import KeyboardShortcuts from '../components/KeyboardShortcuts';
 import { customCollisionDetection, getStatusFromColumnId, getStatusIcon } from './utils';
 import { DragOverlayCard } from './DragOverlayCard';
@@ -130,6 +134,18 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     tasks: todos,
     updateTasks: setTodos  } = useTaskHistory(initialTasks);
   
+  // Add achievements state
+  const {
+    achievements,
+    recentlyUnlocked,
+    checkAchievements,
+    hasUnlocked,
+    dismissRecentAchievement,
+    getProgressPercentage
+  } = useAchievements();
+  
+  const [isAchievementsModalOpen, setIsAchievementsModalOpen] = useState(false);
+
   const { 
     isOpen: isShortcutsOpen, 
     onOpen: onShortcutsOpen, 
@@ -554,6 +570,9 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
         status: 'success',
         duration: 3000,
       });
+
+      // Check for achievements after creating a task
+      checkAchievements(await fetchTodosForAchievements());
     } catch (error) {
       toast({
         title: 'Error creating todo',
@@ -587,6 +606,9 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
         status: 'success',
         duration: 3000,
       });
+
+      // Check for achievements after deleting a task
+      checkAchievements(await fetchTodosForAchievements());
     } catch (error) {
       toast({
         title: 'Error deleting task',
@@ -621,6 +643,9 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
         status: 'success',
         duration: 3000,
       });
+
+      // Check for achievements after status change
+      checkAchievements(await fetchTodosForAchievements());
     } catch (error) {
       toast({
         title: 'Error updating task status',
@@ -669,6 +694,9 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
         status: 'success',
         duration: 3000,
       });
+
+      // Check for achievements after editing a task
+      checkAchievements(await fetchTodosForAchievements());
     } catch (error) {
       toast({
         title: 'Error updating todo',
@@ -818,6 +846,9 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
       );
       setTodos(finalTodos.sort((a, b) => a.order - b.order));
 
+      // Check for drag and drop achievements
+      checkAchievements(todos, { type: 'drag_drop' });
+
     } catch (error) {
       console.error('Error moving todo:', error);
       toast({
@@ -836,6 +867,26 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     }
   };
 
+  // Add function to fetch todos for achievement checks
+  const fetchTodosForAchievements = async (): Promise<Task[]> => {
+    try {
+      const response = await fetch('http://localhost:5001/api/todos');
+      if (!response.ok) {
+        throw new Error('Failed to fetch tasks for achievement check');
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching tasks for achievement check:', error);
+      return todos; // Fall back to current state if fetch fails
+    }
+  };
+
+  // Check achievements on initial load
+  useEffect(() => {
+    if (!isLoading && !isInitialLoad && todos.length > 0) {
+      checkAchievements(todos);
+    }
+  }, [isLoading, isInitialLoad]);
 
   const renderBoardView = () => {
     if (isLoading) {
@@ -1446,6 +1497,15 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
         isClosable: true,
         position: 'top-right',
       });
+
+      // Check for template use achievements
+      checkAchievements(
+        await fetchTodosForAchievements(), 
+        { 
+          type: 'template_use', 
+          templateIds: [template.id] 
+        }
+      );
     } catch (error) {
       // Close loading toast and show error toast
       toast.close(loadingToastId);
@@ -1636,7 +1696,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                               as={Button}
                               variant="ghost"
                               height="auto"
-                              onClick={() => onCreateModalOpen()}
+                              onClick={() => _onCreateModalOpen()}
                             >
                               <HStack>
                                 <AddIcon boxSize="3" />
@@ -1809,6 +1869,14 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                       />
                     </HStack>
                   )}
+                  
+                  {/* Add Achievements Button */}
+                  <AchievementsButton 
+                    count={achievements.filter(a => a.unlockedAt).length}
+                    totalCount={achievements.length}
+                    hasRecentUnlock={!!recentlyUnlocked}
+                    onClick={() => setIsAchievementsModalOpen(true)}
+                  />
                   
                   {/* Keep existing buttons */}
                   <HStack spacing={3}>
@@ -2745,6 +2813,21 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
           onClose={() => setIsTemplateModalOpen(false)}
           templates={PREDEFINED_TEMPLATES}
           onSelectTemplate={handleTemplateSelect as any}
+        />
+
+        {/* Achievement popup notification */}
+        <AchievementPopup 
+          achievement={recentlyUnlocked} 
+          onClose={dismissRecentAchievement} 
+        />
+        
+        {/* Achievements Modal */}
+        <AchievementsModal 
+          isOpen={isAchievementsModalOpen}
+          onClose={() => setIsAchievementsModalOpen(false)}
+          achievements={achievements}
+          recentlyUnlocked={recentlyUnlocked}
+          getProgressPercentage={getProgressPercentage}
         />
       </Container>
       <KeyboardShortcuts isOpen={isShortcutsOpen} onClose={onShortcutsClose} />
