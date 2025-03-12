@@ -2179,7 +2179,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                             as={motion.div}
                             initial={{ width: "0%" }}
                             animate={{ width: "100%" }}
-                            transition={{ duration: 0.5 }}
+                            transition={{ duration: 0.5 } as any}
                           />
                           <Box opacity={0.7}>
                             {isListView ? (
@@ -2906,7 +2906,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              transition={transition}
+              transition={transition as any}
             >
               <AlertDialogHeader fontSize="lg" fontWeight="bold">
                 Delete Task
@@ -2943,7 +2943,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
           isOpen={isTemplateModalOpen}
           onClose={() => setIsTemplateModalOpen(false)}
           templates={PREDEFINED_TEMPLATES}
-          onSelectTemplate={handleTemplateSelect}
+          onSelectTemplate={handleTemplateSelect as any}
         />
       </Container>
       <KeyboardShortcuts isOpen={isShortcutsOpen} onClose={onShortcutsClose} />
