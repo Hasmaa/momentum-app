@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import {
   Box,
   Heading,
@@ -28,6 +28,23 @@ import {
   GridItem,
   Circle,
   useBreakpointValue,
+  Button,
+  IconButton,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  Tooltip,
+  useDisclosure,
+  Table,
+  Thead,
+  Tbody,
+  Tr,
+  Th,
+  Td,
+  Select,
+  FormControl,
+  FormLabel,
 } from '@chakra-ui/react';
 import { 
   FiBarChart2, 
@@ -38,7 +55,20 @@ import {
   FiCheckCircle,
   FiAlertCircle,
   FiActivity,
-  FiStar
+  FiClipboard,
+  FiMoreVertical,
+  FiRefreshCw,
+  FiDownload,
+  FiInfo,
+  FiTarget,
+  FiFlag,
+  FiSettings,
+  FiMaximize,
+  FiSave,
+  FiFilter,
+  FiSliders,
+  FiFileText,
+  FiShare2
 } from 'react-icons/fi';
 import CompletionTrendChart from './CompletionTrendChart';
 import ProductivityHeatmap from './ProductivityHeatmap';
@@ -53,21 +83,60 @@ interface AnalyticsDashboardProps {
 }
 
 const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks }) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState(0);
+  const [selectedDateRange, setSelectedDateRange] = useState('30');
+  
+  // Theme colors - more subdued for enterprise setting
   const cardBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const cardShadow = useColorModeValue('sm', 'dark-lg');
-  const headingColor = useColorModeValue('blue.600', 'blue.300');
-  const gradientBg = useColorModeValue(
-    'linear-gradient(120deg, #f6f9fc 0%, #eef1f5 100%)',
-    'linear-gradient(120deg, #2d3748 0%, #1a202c 100%)'
-  );
-  const accentGradient = useColorModeValue(
-    'linear-gradient(120deg, #4299E1 0%, #3182CE 100%)',
-    'linear-gradient(120deg, #63B3ED 0%, #4299E1 100%)'
-  );
-  const tabSize = useBreakpointValue({ base: 'sm', md: 'md' });
+  const headingColor = useColorModeValue('gray.700', 'gray.300');
+  const subtleText = useColorModeValue('gray.600', 'gray.400');
+  const hoverBg = useColorModeValue('gray.50', 'gray.700');
+  const accentColor = useColorModeValue('blue.600', 'blue.400');
+  const headerBg = useColorModeValue('gray.50', 'gray.900');
   
-  // Derived statistics for the dashboard header
+  // Responsive settings
+  const tabSize = useBreakpointValue({ base: 'sm', md: 'md' });
+  const statCardColumns = useBreakpointValue({ base: 2, md: 4 });
+  const showFullStats = useBreakpointValue({ base: false, lg: true });
+  
+  // Analytics best practices
+  const bestPractices = [
+    "Focus on high-priority tasks to improve organizational efficiency.",
+    "Monitor completion rates for key performance indicators.",
+    "Analyze time-of-day patterns to optimize resource allocation.",
+    "Track weekly progress to identify productivity trends.",
+    "Review task distribution to ensure balanced workload management.",
+    "Document completed objectives for performance measurement.",
+    "Maintain consistent task completion schedules for maximum efficiency.",
+    "Identify recurring patterns in task completion to optimize workflows.",
+  ];
+  
+  // Generate a random best practice tip on component load or refresh
+  useEffect(() => {
+    // Set a random best practice
+    const randomIndex = Math.floor(Math.random() * bestPractices.length);
+    
+    // Simulate loading state
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 800);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
+  // Handle refreshing data
+  const handleRefresh = () => {
+    setIsLoading(true);
+    // Simulate refresh delay
+    setTimeout(() => {
+      setIsLoading(false);
+    }, 800);
+  };
+  
+  // Derived statistics for the dashboard
   const stats = useMemo(() => {
     const completedTasks = tasks.filter(task => task.status === 'completed');
     const totalTasks = tasks.length;
@@ -104,6 +173,11 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks }) => {
       task.priority === 'high'
     ).length;
     
+    const highPriorityTotal = tasks.filter(task => task.priority === 'high').length;
+    const highPriorityCompletionRate = highPriorityTotal > 0
+      ? Math.round((highPriorityCompleted / highPriorityTotal) * 100)
+      : 0;
+    
     // Most productive day
     const dayCompletions: Record<string, number> = {};
     completedTasks.forEach(task => {
@@ -120,6 +194,17 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks }) => {
       }
     });
     
+    // Average tasks per day (when active)
+    const uniqueDays = new Set(
+      completedTasks
+        .filter(task => task.completedAt)
+        .map(task => new Date(task.completedAt!).toDateString())
+    );
+    
+    const avgTasksPerActiveDay = uniqueDays.size > 0
+      ? Math.round((completedTasks.length / uniqueDays.size) * 10) / 10
+      : 0;
+    
     return {
       totalTasks,
       completedTasks: completedTasks.length,
@@ -129,7 +214,9 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks }) => {
       recentlyCompleted: recentlyCompleted.length,
       weeklyChange,
       highPriorityCompleted,
-      mostProductiveDay
+      highPriorityCompletionRate,
+      mostProductiveDay,
+      avgTasksPerActiveDay,
     };
   }, [tasks]);
   
@@ -140,42 +227,64 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks }) => {
     // Completion rate insight
     if (stats.completionRate > 75) {
       insights.push({
-        text: `Great job! Your completion rate of ${stats.completionRate}% is excellent.`,
-        type: 'success'
+        title: 'High Completion Rate',
+        text: `Task completion rate of ${stats.completionRate}% exceeds target metrics.`,
+        type: 'success',
+        icon: FiCheckCircle,
       });
-    } else if (stats.completionRate < 30) {
+    } else if (stats.completionRate < 30 && stats.totalTasks > 5) {
       insights.push({
-        text: `Your task completion rate is ${stats.completionRate}%. Try focusing on smaller, achievable tasks.`,
-        type: 'warning'
+        title: 'Low Completion Rate',
+        text: `Current completion rate of ${stats.completionRate}% falls below expected performance targets.`,
+        type: 'warning',
+        icon: FiAlertCircle,
       });
     }
     
     // Weekly progress insight
     if (stats.weeklyChange > 20) {
       insights.push({
-        text: `Impressive! You've increased your productivity by ${Math.abs(Math.round(stats.weeklyChange))}% this week.`,
-        type: 'success'
+        title: 'Productivity Increase',
+        text: `${Math.abs(Math.round(stats.weeklyChange))}% increase in completed tasks this week compared to previous period.`,
+        type: 'success',
+        icon: FiTrendingUp,
       });
-    } else if (stats.weeklyChange < -20) {
+    } else if (stats.weeklyChange < -20 && stats.recentlyCompleted > 0) {
       insights.push({
-        text: `You completed ${Math.abs(Math.round(stats.weeklyChange))}% fewer tasks this week than last week.`,
-        type: 'warning'
+        title: 'Productivity Decrease',
+        text: `${Math.abs(Math.round(stats.weeklyChange))}% decrease in completed tasks compared to previous period.`,
+        type: 'warning',
+        icon: FiTrendingUp,
       });
     }
     
     // Most productive day
     if (stats.mostProductiveDay.day !== 'N/A') {
       insights.push({
-        text: `${stats.mostProductiveDay.day} appears to be your most productive day.`,
-        type: 'info'
+        title: 'Peak Efficiency Day',
+        text: `${stats.mostProductiveDay.day} shows highest task completion rate with ${stats.mostProductiveDay.count} completed items.`,
+        type: 'info',
+        icon: FiCalendar,
       });
     }
     
     // High priority insight
     if (stats.highPriorityCompleted > 5) {
       insights.push({
-        text: `You've tackled ${stats.highPriorityCompleted} high-priority tasks! Great focus on what matters.`,
-        type: 'success'
+        title: 'High-Priority Success',
+        text: `${stats.highPriorityCompleted} high-priority tasks completed with ${stats.highPriorityCompletionRate}% efficiency rate.`,
+        type: 'success',
+        icon: FiFlag,
+      });
+    }
+    
+    // Daily average insight
+    if (stats.avgTasksPerActiveDay > 3) {
+      insights.push({
+        title: 'Daily Efficiency Metric',
+        text: `Average daily completion rate: ${stats.avgTasksPerActiveDay} tasks per active workday.`,
+        type: 'info',
+        icon: FiActivity,
       });
     }
     
@@ -184,538 +293,454 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks }) => {
   
   return (
     <Box p={{ base: 3, md: 6 }}>
-      {/* Hero Header Section */}
-      <Box 
-        bg={accentGradient} 
-        borderRadius="xl" 
-        p={{ base: 5, md: 8 }} 
-        mb={8}
-        color="white"
-        boxShadow="xl"
+      {/* Header Section with Key Metrics */}
+      <Card 
+        bg={headerBg}
+        borderRadius="md"
+        p={{ base: 4, md: 5 }}
+        mb={6}
+        boxShadow="sm"
+        borderWidth="1px"
+        borderColor={borderColor}
+        position="relative"
       >
-        <Flex direction={{ base: 'column', md: 'row' }} align="center" justify="space-between">
-          <Box mb={{ base: 5, md: 0 }}>
-            <Heading size="xl" fontWeight="extrabold" mb={2}>
-              Your Productivity Dashboard
+        <Flex direction={{ base: 'column', md: 'row' }} justify="space-between" align="center" mb={4}>
+          <Box mb={{ base: 4, md: 0 }}>
+            <Heading size="lg" color={headingColor} mb={1}>
+              Performance Analytics
             </Heading>
-            <Text fontSize="lg" opacity={0.9}>
-              Insights and analytics to boost your productivity
+            <Text fontSize="md" color={subtleText}>
+              Task Completion Metrics and Productivity Analysis
             </Text>
           </Box>
+          
           <HStack spacing={4}>
-            <Stat 
-              bg="whiteAlpha.200" 
-              p={3} 
-              borderRadius="md" 
-              minW="150px"
-              backdropFilter="blur(10px)"
-            >
+            <Tooltip label="Refresh data">
+              <IconButton
+                aria-label="Refresh data"
+                icon={<FiRefreshCw />}
+                size="sm"
+                variant="outline"
+                onClick={handleRefresh}
+                isLoading={isLoading}
+              />
+            </Tooltip>
+            
+            <Tooltip label="Export as CSV">
+              <IconButton
+                aria-label="Export data"
+                icon={<FiDownload />}
+                size="sm"
+                variant="outline"
+              />
+            </Tooltip>
+            
+            <Menu>
+              <MenuButton
+                as={IconButton}
+                aria-label="More options"
+                icon={<FiMoreVertical />}
+                size="sm"
+                variant="outline"
+              />
+              <MenuList>
+                <MenuItem icon={<FiMaximize />}>Full Screen View</MenuItem>
+                <MenuItem icon={<FiFilter />}>Apply Filters</MenuItem>
+                <MenuItem icon={<FiFileText />}>Generate Report</MenuItem>
+                <MenuItem icon={<FiShare2 />}>Share Dashboard</MenuItem>
+                <MenuItem icon={<FiSettings />}>Dashboard Settings</MenuItem>
+              </MenuList>
+            </Menu>
+          </HStack>
+        </Flex>
+        
+        <Divider mb={4} />
+        
+        <Flex mb={4} justify="space-between" align="center">
+          <HStack>
+            <FormControl maxW="200px">
+              <Select
+                size="sm" 
+                value={selectedDateRange}
+                onChange={(e) => setSelectedDateRange(e.target.value)}
+              >
+                <option value="7">Last 7 days</option>
+                <option value="30">Last 30 days</option>
+                <option value="90">Last 90 days</option>
+                <option value="365">Last 12 months</option>
+              </Select>
+            </FormControl>
+            
+            <Badge variant="subtle" colorScheme="green">
+              {isLoading ? 'Refreshing...' : 'Data current'}
+            </Badge>
+          </HStack>
+          
+          <Text fontSize="sm" color={subtleText}>
+            Last updated: {new Date().toLocaleString()}
+          </Text>
+        </Flex>
+        
+        <SimpleGrid columns={statCardColumns} spacing={4}>
+          <Card 
+            bg={cardBg} 
+            shadow="sm"
+            borderWidth="1px"
+            borderColor={borderColor}
+            borderRadius="md"
+            p={3}
+          >
+            <Stat>
+              <StatLabel fontSize="xs">Total Tasks</StatLabel>
+              <StatNumber fontSize="2xl">{stats.totalTasks}</StatNumber>
+              <StatHelpText fontSize="xs" mb={0}>
+                {stats.pendingTasks} pending, {stats.inProgressTasks} in progress
+              </StatHelpText>
+            </Stat>
+          </Card>
+          
+          <Card 
+            bg={cardBg} 
+            shadow="sm"
+            borderWidth="1px"
+            borderColor={borderColor}
+            borderRadius="md"
+            p={3}
+          >
+            <Stat>
               <StatLabel fontSize="xs">Completion Rate</StatLabel>
               <StatNumber fontSize="2xl">{stats.completionRate}%</StatNumber>
-              <StatHelpText fontSize="xs">
+              <StatHelpText fontSize="xs" mb={0}>
+                {stats.completedTasks} completed tasks
+              </StatHelpText>
+            </Stat>
+          </Card>
+          
+          <Card 
+            bg={cardBg} 
+            shadow="sm"
+            borderWidth="1px"
+            borderColor={borderColor}
+            borderRadius="md"
+            p={3}
+          >
+            <Stat>
+              <StatLabel fontSize="xs">Weekly Trend</StatLabel>
+              <StatNumber fontSize="2xl">{stats.recentlyCompleted}</StatNumber>
+              <StatHelpText fontSize="xs" mb={0}>
                 {stats.weeklyChange !== 0 && (
                   <>
                     <StatArrow type={stats.weeklyChange > 0 ? 'increase' : 'decrease'} />
-                    {Math.abs(Math.round(stats.weeklyChange))}% vs last week
+                    {Math.abs(Math.round(stats.weeklyChange))}% vs previous
                   </>
                 )}
               </StatHelpText>
             </Stat>
-            <Stat 
-              bg="whiteAlpha.200" 
-              p={3} 
-              borderRadius="md" 
-              minW="150px"
-              backdropFilter="blur(10px)"
-              display={{ base: 'none', lg: 'block' }}
-            >
-              <StatLabel fontSize="xs">Tasks This Week</StatLabel>
-              <StatNumber fontSize="2xl">{stats.recentlyCompleted}</StatNumber>
-              <StatHelpText fontSize="xs">
-                Completed in last 7 days
+          </Card>
+          
+          <Card 
+            bg={cardBg} 
+            shadow="sm"
+            borderWidth="1px"
+            borderColor={borderColor}
+            borderRadius="md"
+            p={3}
+          >
+            <Stat>
+              <StatLabel fontSize="xs">High Priority</StatLabel>
+              <StatNumber fontSize="2xl">{stats.highPriorityCompleted}</StatNumber>
+              <StatHelpText fontSize="xs" mb={0}>
+                {stats.highPriorityCompletionRate}% completion rate
               </StatHelpText>
             </Stat>
-          </HStack>
-        </Flex>
-      </Box>
+          </Card>
+        </SimpleGrid>
+      </Card>
       
-      {/* Key Metrics Section */}
-      <SimpleGrid columns={{ base: 2, md: 4 }} spacing={5} mb={8}>
-        <EnhancedStatCard 
-          title="Total Tasks" 
-          value={stats.totalTasks.toString()}
-          subtext={`${stats.pendingTasks} pending, ${stats.inProgressTasks} in progress`}
-          icon={FiBarChart2}
-          color="blue"
-        />
-        <EnhancedStatCard 
-          title="Completed" 
-          value={stats.completedTasks.toString()}
-          subtext={`${stats.completionRate}% completion rate`}
-          icon={FiCheckCircle}
-          color="green"
-        />
-        <EnhancedStatCard 
-          title="Last Week" 
-          value={stats.recentlyCompleted.toString()}
-          subtext={stats.weeklyChange > 0 
-            ? `↑ ${Math.abs(Math.round(stats.weeklyChange))}% increase` 
-            : stats.weeklyChange < 0 
-              ? `↓ ${Math.abs(Math.round(stats.weeklyChange))}% decrease`
-              : 'Same as last week'}
-          icon={FiTrendingUp}
-          color="purple"
-        />
-        <EnhancedStatCard 
-          title="High Priority" 
-          value={stats.highPriorityCompleted.toString()}
-          subtext="Completed high-priority tasks"
-          icon={FiAlertCircle}
-          color="red"
-        />
-      </SimpleGrid>
-      
-      {/* Insights Section */}
+      {/* Key Findings Section */}
       {insights.length > 0 && (
         <Card 
-          bg={gradientBg} 
-          borderRadius="lg" 
-          mb={8} 
+          bg={cardBg}
+          borderRadius="md"
+          mb={6}
           boxShadow={cardShadow}
           borderWidth="1px"
           borderColor={borderColor}
         >
           <CardHeader pb={0}>
             <Flex align="center">
-              <Icon as={FiStar} color="yellow.400" mr={2} />
-              <Heading size="md">Key Insights</Heading>
+              <Icon as={FiClipboard} mr={2} />
+              <Heading size="md">Key Findings</Heading>
             </Flex>
           </CardHeader>
+          
           <CardBody>
-            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4}>
-              {insights.map((insight, index) => (
-                <InsightCard key={index} text={insight.text} type={insight.type} />
-              ))}
-            </SimpleGrid>
+            <Table size="sm" variant="simple">
+              <Thead>
+                <Tr>
+                  <Th>Observation</Th>
+                  <Th>Details</Th>
+                  <Th>Category</Th>
+                </Tr>
+              </Thead>
+              <Tbody>
+                {insights.map((insight, index) => (
+                  <Tr key={index}>
+                    <Td fontWeight="medium">{insight.title}</Td>
+                    <Td>{insight.text}</Td>
+                    <Td>
+                      <Badge 
+                        colorScheme={
+                          insight.type === 'success' ? 'green' : 
+                          insight.type === 'warning' ? 'orange' : 
+                          'blue'
+                        }
+                      >
+                        {insight.type === 'success' ? 'Positive' : 
+                         insight.type === 'warning' ? 'Needs Attention' : 
+                         'Informational'}
+                      </Badge>
+                    </Td>
+                  </Tr>
+                ))}
+              </Tbody>
+            </Table>
           </CardBody>
         </Card>
       )}
       
-      {/* Main Charts Section */}
-      <Tabs 
-        variant="soft-rounded" 
-        colorScheme="blue" 
-        isLazy
-        size={tabSize}
-        mb={4}
+      {/* Main Charts Tabs */}
+      <Card 
+        bg={cardBg}
+        borderRadius="md"
+        boxShadow={cardShadow}
+        borderWidth="1px"
+        borderColor={borderColor}
+        mb={6}
       >
-        <TabList mb={5} overflowX="auto" py={2} css={{
-          '&::-webkit-scrollbar': { height: '8px' },
-          '&::-webkit-scrollbar-thumb': { backgroundColor: borderColor, borderRadius: '8px' }
-        }}>
-          <Tab gap={2}><Icon as={FiTrendingUp} /> Productivity Trends</Tab>
-          <Tab gap={2}><Icon as={FiClock} /> Time Analysis</Tab>
-          <Tab gap={2}><Icon as={FiPieChart} /> Task Breakdown</Tab>
-        </TabList>
-        
-        <TabPanels>
-          {/* Productivity Trends Tab */}
-          <TabPanel px={0}>
-            <Grid 
-              templateColumns={{ base: "repeat(1, 1fr)", lg: "repeat(4, 1fr)" }}
-              gap={5}
-            >
-              <GridItem colSpan={{ base: 1, lg: 2 }}>
-                <Card 
-                  bg={cardBg} 
-                  borderRadius="lg" 
-                  shadow={cardShadow} 
-                  h="100%"
-                  borderWidth="1px"
-                  borderColor={borderColor}
-                  position="relative"
-                  overflow="hidden"
-                  _before={{
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: '4px',
-                    background: accentGradient,
-                  }}
+        <CardHeader pb={0}>
+          <Tabs 
+            variant="enclosed" 
+            colorScheme="blue" 
+            isLazy
+            size={tabSize}
+            onChange={(index) => setActiveTab(index)}
+          >
+            <TabList>
+              <Tab><HStack><Icon as={FiTrendingUp} /><Text>Productivity Metrics</Text></HStack></Tab>
+              <Tab><HStack><Icon as={FiClock} /><Text>Temporal Analysis</Text></HStack></Tab>
+              <Tab><HStack><Icon as={FiPieChart} /><Text>Task Distribution</Text></HStack></Tab>
+            </TabList>
+            
+            <TabPanels>
+              {/* Productivity Metrics Tab */}
+              <TabPanel px={0} pt={4}>
+                <Grid 
+                  templateColumns={{ base: "repeat(1, 1fr)", lg: "repeat(4, 1fr)" }}
+                  gap={5}
                 >
-                  <CardHeader pb={0}>
-                    <Flex align="center" justify="space-between">
-                      <Heading size="md">Completion Trends</Heading>
-                      <Circle size="8" bg="blue.50" color="blue.500">
-                        <Icon as={FiActivity} />
-                      </Circle>
-                    </Flex>
-                  </CardHeader>
-                  <CardBody>
-                    <Text fontSize="sm" color="gray.500" mb={3}>
-                      Your task completion patterns over the last month
-                    </Text>
-                    <CompletionTrendChart tasks={tasks} />
-                  </CardBody>
-                </Card>
-              </GridItem>
-              
-              <GridItem colSpan={{ base: 1, lg: 2 }}>
-                <Card 
-                  bg={cardBg} 
-                  borderRadius="lg" 
-                  shadow={cardShadow} 
-                  h="100%"
-                  borderWidth="1px"
-                  borderColor={borderColor}
-                  position="relative"
-                  overflow="hidden"
-                  _before={{
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: '4px',
-                    background: 'linear-gradient(90deg, purple.400, pink.400)',
-                  }}
-                >
-                  <CardHeader pb={0}>
-                    <Flex align="center" justify="space-between">
-                      <Heading size="md">Productivity Calendar</Heading>
-                      <Circle size="8" bg="purple.50" color="purple.500">
-                        <Icon as={FiCalendar} />
-                      </Circle>
-                    </Flex>
-                  </CardHeader>
-                  <CardBody>
-                    <Text fontSize="sm" color="gray.500" mb={3}>
-                      Heatmap of your productive days over the last 3 months
-                    </Text>
-                    <ProductivityHeatmap tasks={tasks} />
-                  </CardBody>
-                </Card>
-              </GridItem>
-              
-              <GridItem colSpan={{ base: 1, lg: 4 }}>
-                <Card 
-                  bg={cardBg} 
-                  borderRadius="lg" 
-                  shadow={cardShadow}
-                  borderWidth="1px"
-                  borderColor={borderColor}
-                  position="relative"
-                  overflow="hidden"
-                  _before={{
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: '4px',
-                    background: 'linear-gradient(90deg, orange.400, yellow.400)',
-                  }}
-                >
-                  <CardHeader pb={0}>
-                    <Flex align="center" justify="space-between">
-                      <Heading size="md">Streak Performance</Heading>
-                      <Circle size="8" bg="orange.50" color="orange.500">
-                        <Icon as={FiTrendingUp} />
-                      </Circle>
-                    </Flex>
-                  </CardHeader>
-                  <CardBody>
-                    <Text fontSize="sm" color="gray.500" mb={3}>
-                      Your consistency in completing tasks day after day
-                    </Text>
-                    <StreakVisualization tasks={tasks} />
-                  </CardBody>
-                </Card>
-              </GridItem>
-            </Grid>
-          </TabPanel>
-          
-          {/* Time Analysis Tab */}
-          <TabPanel px={0}>
-            <Grid 
-              templateColumns={{ base: "repeat(1, 1fr)", lg: "repeat(2, 1fr)" }}
-              gap={5}
-            >
-              <GridItem>
-                <Card 
-                  bg={cardBg} 
-                  borderRadius="lg" 
-                  shadow={cardShadow}
-                  borderWidth="1px"
-                  borderColor={borderColor}
-                  position="relative"
-                  overflow="hidden"
-                  _before={{
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: '4px',
-                    background: 'linear-gradient(90deg, purple.400, indigo.400)',
-                  }}
-                >
-                  <CardHeader pb={0}>
-                    <Flex align="center" justify="space-between">
-                      <Heading size="md">Productivity by Hour</Heading>
-                      <Circle size="8" bg="purple.50" color="purple.500">
-                        <Icon as={FiClock} />
-                      </Circle>
-                    </Flex>
-                  </CardHeader>
-                  <CardBody>
-                    <Text fontSize="sm" color="gray.500" mb={3}>
-                      Your most productive hours based on task completion times
-                    </Text>
-                    <TimeOfDayChart tasks={tasks} />
-                  </CardBody>
-                </Card>
-              </GridItem>
-              
-              <GridItem>
-                <Card 
-                  bg={cardBg} 
-                  borderRadius="lg" 
-                  shadow={cardShadow}
-                  borderWidth="1px"
-                  borderColor={borderColor}
-                  height="100%"
-                  position="relative"
-                  overflow="hidden"
-                  _before={{
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: '4px',
-                    background: 'linear-gradient(90deg, blue.400, cyan.400)',
-                  }}
-                >
-                  <CardHeader pb={0}>
-                    <Flex align="center" justify="space-between">
-                      <Heading size="md">Productive Days</Heading>
-                      <Circle size="8" bg="blue.50" color="blue.500">
-                        <Icon as={FiCalendar} />
-                      </Circle>
-                    </Flex>
-                  </CardHeader>
-                  <CardBody>
-                    <Text fontSize="sm" color="gray.500" mb={3}>
-                      Days of the week when you're most productive
-                    </Text>
-                    
-                    <Flex direction="column" justify="center" h="260px">
-                      {stats.mostProductiveDay.day !== 'N/A' ? (
-                        <VStack spacing={1} justify="center" align="center">
-                          <Text fontSize="lg" fontWeight="bold">
-                            {stats.mostProductiveDay.day}
-                          </Text>
-                          <Text fontSize="3xl" fontWeight="extrabold" color="blue.500">
-                            {stats.mostProductiveDay.count}
-                          </Text>
-                          <Text>tasks completed</Text>
-                          <Badge colorScheme="blue" mt={2}>
-                            Your most productive day
-                          </Badge>
-                        </VStack>
-                      ) : (
-                        <Text textAlign="center" color="gray.500">
-                          Complete more tasks to see your most productive day
+                  <GridItem colSpan={{ base: 1, lg: 2 }}>
+                    <Card 
+                      bg={cardBg} 
+                      borderRadius="md" 
+                      shadow="sm" 
+                      h="100%"
+                      borderWidth="1px"
+                      borderColor={borderColor}
+                    >
+                      <CardHeader>
+                        <Flex align="center" justify="space-between">
+                          <Heading size="md">Completion Trend Analysis</Heading>
+                          <Tooltip label="View details">
+                            <IconButton
+                              aria-label="View details"
+                              icon={<FiInfo />}
+                              size="sm"
+                              variant="ghost"
+                            />
+                          </Tooltip>
+                        </Flex>
+                      </CardHeader>
+                      <CardBody>
+                        <Text fontSize="sm" color="gray.500" mb={3}>
+                          Historical completion patterns over time
                         </Text>
-                      )}
-                    </Flex>
-                  </CardBody>
-                </Card>
-              </GridItem>
-            </Grid>
-          </TabPanel>
-          
-          {/* Task Breakdown Tab */}
-          <TabPanel px={0}>
-            <Grid 
-              templateColumns={{ base: "repeat(1, 1fr)", lg: "repeat(2, 1fr)" }}
-              gap={5}
-            >
-              <GridItem>
-                <Card 
-                  bg={cardBg} 
-                  borderRadius="lg" 
-                  shadow={cardShadow}
-                  borderWidth="1px"
-                  borderColor={borderColor}
-                  position="relative"
-                  overflow="hidden"
-                  _before={{
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: '4px',
-                    background: 'linear-gradient(90deg, yellow.400, green.400)',
-                  }}
-                >
-                  <CardHeader pb={0}>
-                    <Flex align="center" justify="space-between">
-                      <Heading size="md">Priority Distribution</Heading>
-                      <Circle size="8" bg="yellow.50" color="yellow.500">
-                        <Icon as={FiPieChart} />
-                      </Circle>
-                    </Flex>
-                  </CardHeader>
-                  <CardBody>
-                    <Text fontSize="sm" color="gray.500" mb={3}>
-                      Breakdown of tasks by priority level
-                    </Text>
-                    <PriorityDistribution tasks={tasks} />
-                  </CardBody>
-                </Card>
-              </GridItem>
+                        <CompletionTrendChart tasks={tasks} />
+                      </CardBody>
+                    </Card>
+                  </GridItem>
+                  
+                  <GridItem colSpan={{ base: 1, lg: 2 }}>
+                    <Card 
+                      bg={cardBg} 
+                      borderRadius="md" 
+                      shadow="sm" 
+                      h="100%"
+                      borderWidth="1px"
+                      borderColor={borderColor}
+                    >
+                      <CardHeader>
+                        <Heading size="md">Productivity Heatmap</Heading>
+                      </CardHeader>
+                      <CardBody>
+                        <Text fontSize="sm" color="gray.500" mb={3}>
+                          Task completion density over calendar periods
+                        </Text>
+                        <ProductivityHeatmap tasks={tasks} />
+                      </CardBody>
+                    </Card>
+                  </GridItem>
+                  
+                  <GridItem colSpan={{ base: 1, lg: 4 }}>
+                    <Card 
+                      bg={cardBg} 
+                      borderRadius="md" 
+                      shadow="sm"
+                      borderWidth="1px"
+                      borderColor={borderColor}
+                    >
+                      <CardHeader>
+                        <Heading size="md">Consistency Analysis</Heading>
+                      </CardHeader>
+                      <CardBody>
+                        <Text fontSize="sm" color="gray.500" mb={3}>
+                          Sequential task completion patterns and streak metrics
+                        </Text>
+                        <StreakVisualization tasks={tasks} />
+                      </CardBody>
+                    </Card>
+                  </GridItem>
+                </Grid>
+              </TabPanel>
               
-              <GridItem>
-                <Card 
-                  bg={cardBg} 
-                  borderRadius="lg" 
-                  shadow={cardShadow}
-                  borderWidth="1px"
-                  borderColor={borderColor}
-                  position="relative"
-                  overflow="hidden"
-                  _before={{
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    height: '4px',
-                    background: 'linear-gradient(90deg, blue.400, green.400)',
-                  }}
+              {/* Temporal Analysis Tab */}
+              <TabPanel px={0} pt={4}>
+                <Grid 
+                  templateColumns={{ base: "repeat(1, 1fr)", lg: "repeat(2, 1fr)" }}
+                  gap={5}
                 >
-                  <CardHeader pb={0}>
-                    <Flex align="center" justify="space-between">
-                      <Heading size="md">Status Breakdown</Heading>
-                      <Circle size="8" bg="green.50" color="green.500">
-                        <Icon as={FiPieChart} />
-                      </Circle>
-                    </Flex>
-                  </CardHeader>
-                  <CardBody>
-                    <Text fontSize="sm" color="gray.500" mb={3}>
-                      Current distribution of tasks by status
-                    </Text>
-                    <TaskStatusBreakdown tasks={tasks} />
-                  </CardBody>
-                </Card>
-              </GridItem>
-            </Grid>
-          </TabPanel>
-        </TabPanels>
-      </Tabs>
+                  <GridItem>
+                    <Card 
+                      bg={cardBg} 
+                      borderRadius="md" 
+                      shadow="sm"
+                      borderWidth="1px"
+                      borderColor={borderColor}
+                    >
+                      <CardHeader>
+                        <Heading size="md">Hourly Distribution Analysis</Heading>
+                      </CardHeader>
+                      <CardBody>
+                        <Text fontSize="sm" color="gray.500" mb={3}>
+                          Task completion frequency by hour of day
+                        </Text>
+                        <TimeOfDayChart tasks={tasks} />
+                      </CardBody>
+                    </Card>
+                  </GridItem>
+                  
+                  <GridItem>
+                    <Card 
+                      bg={cardBg} 
+                      borderRadius="md" 
+                      shadow="sm"
+                      borderWidth="1px"
+                      borderColor={borderColor}
+                      height="100%"
+                    >
+                      <CardHeader>
+                        <Heading size="md">Weekly Efficiency Pattern</Heading>
+                      </CardHeader>
+                      <CardBody>
+                        <Text fontSize="sm" color="gray.500" mb={3}>
+                          Distribution of completed tasks by day of week
+                        </Text>
+                        
+                        <Flex direction="column" justify="center" h="260px">
+                          {stats.mostProductiveDay.day !== 'N/A' ? (
+                            <VStack spacing={1} justify="center" align="center">
+                              <Text fontSize="md" fontWeight="medium">
+                                Highest Efficiency Day:
+                              </Text>
+                              <Text fontSize="2xl" fontWeight="bold" color={accentColor}>
+                                {stats.mostProductiveDay.day}
+                              </Text>
+                              <Text>{stats.mostProductiveDay.count} completed tasks</Text>
+                              <Badge colorScheme="blue" mt={2}>
+                                Optimal Productivity Period
+                              </Badge>
+                            </VStack>
+                          ) : (
+                            <Text textAlign="center" color="gray.500">
+                              Insufficient data for weekly pattern analysis
+                            </Text>
+                          )}
+                        </Flex>
+                      </CardBody>
+                    </Card>
+                  </GridItem>
+                </Grid>
+              </TabPanel>
+              
+              {/* Task Distribution Tab */}
+              <TabPanel px={0} pt={4}>
+                <Grid 
+                  templateColumns={{ base: "repeat(1, 1fr)", lg: "repeat(2, 1fr)" }}
+                  gap={5}
+                >
+                  <GridItem>
+                    <Card 
+                      bg={cardBg} 
+                      borderRadius="md" 
+                      shadow="sm"
+                      borderWidth="1px"
+                      borderColor={borderColor}
+                    >
+                      <CardHeader>
+                        <Heading size="md">Priority Distribution Analysis</Heading>
+                      </CardHeader>
+                      <CardBody>
+                        <Text fontSize="sm" color="gray.500" mb={3}>
+                          Task breakdown by assigned priority level
+                        </Text>
+                        <PriorityDistribution tasks={tasks} />
+                      </CardBody>
+                    </Card>
+                  </GridItem>
+                  
+                  <GridItem>
+                    <Card 
+                      bg={cardBg} 
+                      borderRadius="md" 
+                      shadow="sm"
+                      borderWidth="1px"
+                      borderColor={borderColor}
+                    >
+                      <CardHeader>
+                        <Heading size="md">Status Distribution Analysis</Heading>
+                      </CardHeader>
+                      <CardBody>
+                        <Text fontSize="sm" color="gray.500" mb={3}>
+                          Current task allocation by workflow stage
+                        </Text>
+                        <TaskStatusBreakdown tasks={tasks} />
+                      </CardBody>
+                    </Card>
+                  </GridItem>
+                </Grid>
+              </TabPanel>
+            </TabPanels>
+          </Tabs>
+        </CardHeader>
+      </Card>
       
-      <Divider my={8} />
+      <Divider my={4} />
       
-      <Text textAlign="center" fontSize="sm" color="gray.500">
-        Last updated: {new Date().toLocaleString()}
-      </Text>
+      <HStack justify="space-between" fontSize="sm" color="gray.500">
+        <Text>Powered by Advanced Analytics</Text>
+        <Text>Data timestamp: {new Date().toLocaleString()}</Text>
+      </HStack>
     </Box>
-  );
-};
-
-// Enhanced stat card component
-interface EnhancedStatCardProps {
-  title: string;
-  value: string;
-  subtext: string;
-  icon: React.ElementType;
-  color: string;
-}
-
-const EnhancedStatCard: React.FC<EnhancedStatCardProps> = ({ title, value, subtext, icon, color }) => {
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const textColor = useColorModeValue('gray.600', 'gray.400');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-  const iconBg = useColorModeValue(`${color}.50`, `${color}.900`);
-  const iconColor = useColorModeValue(`${color}.500`, `${color}.300`);
-  const cardShadow = useColorModeValue('sm', 'dark-lg');
-  
-  return (
-    <Card 
-      bg={cardBg} 
-      shadow={cardShadow}
-      borderWidth="1px"
-      borderColor={borderColor}
-      borderRadius="lg"
-      overflow="hidden"
-      transition="transform 0.2s"
-      _hover={{ transform: 'translateY(-4px)', shadow: 'md' }}
-    >
-      <CardBody p={4}>
-        <Flex align="center" mb={3}>
-          <Circle size="10" bg={iconBg} color={iconColor} mr={3}>
-            <Icon as={icon} boxSize={5} />
-          </Circle>
-          <VStack align="start" spacing={0}>
-            <Text fontSize="sm" color={textColor}>{title}</Text>
-            <Text fontSize="2xl" fontWeight="bold">{value}</Text>
-          </VStack>
-        </Flex>
-        <Text fontSize="xs" color={textColor} opacity={0.8}>{subtext}</Text>
-      </CardBody>
-    </Card>
-  );
-};
-
-// Insight card component
-interface InsightCardProps {
-  text: string;
-  type: 'success' | 'warning' | 'info';
-}
-
-const InsightCard: React.FC<InsightCardProps> = ({ text, type }) => {
-  // Color schemes based on insight type
-  const schemes = {
-    success: {
-      bg: useColorModeValue('green.50', 'green.900'),
-      border: useColorModeValue('green.200', 'green.700'),
-      icon: FiCheckCircle,
-      iconColor: 'green.500',
-    },
-    warning: {
-      bg: useColorModeValue('orange.50', 'orange.900'),
-      border: useColorModeValue('orange.200', 'orange.700'),
-      icon: FiAlertCircle,
-      iconColor: 'orange.500',
-    },
-    info: {
-      bg: useColorModeValue('blue.50', 'blue.900'),
-      border: useColorModeValue('blue.200', 'blue.700'),
-      icon: FiCalendar,
-      iconColor: 'blue.500',
-    }
-  };
-  
-  const scheme = schemes[type];
-  
-  return (
-    <Flex
-      p={3}
-      borderRadius="md"
-      bg={scheme.bg}
-      borderWidth="1px"
-      borderColor={scheme.border}
-      align="center"
-    >
-      <Icon as={scheme.icon} color={scheme.iconColor} boxSize={5} mr={3} />
-      <Text fontSize="sm">{text}</Text>
-    </Flex>
   );
 };
 
