@@ -1,0 +1,1 @@
+onSelectTemplate: (template: any) => Promise<void>; // Replace 'any' with the actual type if known 

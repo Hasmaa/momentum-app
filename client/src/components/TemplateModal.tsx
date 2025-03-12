@@ -11,7 +11,6 @@ import {
   VStack,
   Heading,
   Text,
-  Icon,
   useColorModeValue,
   Box,
   Tabs,
@@ -21,14 +20,12 @@ import {
   TabPanel,
   HStack,
   Badge,
-  Divider,
   Button,
 } from '@chakra-ui/react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { TaskTemplate, getCategoryInfo } from '../types/template';
 
 const MotionCard = motion(Card);
-const MotionBox = motion(Box);
 
 interface TemplateModalProps {
   isOpen: boolean;
@@ -49,7 +46,6 @@ const TemplateModal: React.FC<TemplateModalProps> = ({
   const borderColor = useColorModeValue('gray.200', 'whiteAlpha.100');
   const textColor = useColorModeValue('gray.600', 'gray.300');
   const headingColor = useColorModeValue('gray.800', 'white');
-  const accentColor = useColorModeValue('blue.500', 'blue.200');
   const badgeBg = useColorModeValue('gray.200', 'whiteAlpha.200');
 
   // Group templates by category

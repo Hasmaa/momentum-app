@@ -184,7 +184,6 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     onClose: onEditModalClose 
   } = useDisclosure();
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
-  const [selectedTemplate, setSelectedTemplate] = useState<TaskTemplate | null>(null);
 
   const mainBg = useColorModeValue('gray.50', 'gray.900');
   const cardBg = useColorModeValue('white', 'gray.800');
@@ -1296,7 +1295,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                                       _onCreateModalOpen();
                                     }}
                                     variant="solid"
-                                    px={8}
+                                    px={6}
                                     _hover={{
                                       transform: 'translateY(-2px)',
                                       boxShadow: 'md'
