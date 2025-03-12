@@ -2,7 +2,6 @@
 
 <div align="center">
 
-<img src="path/to/logo.png" alt="Momentum Logo" width="200"/>
 
 **A powerful, intuitive, and beautiful task management application built with modern web technologies.**
 
