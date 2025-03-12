@@ -43,6 +43,20 @@ Momentum is a modern task management application that combines powerful features
   - 🏅 Earn special achievements for consistent usage
   - 🧠 Learn application features through achievements
 
+### 📊 Analytics & Insights Dashboard - NEW!
+
+- **Data Visualization**
+  - 📈 Beautiful charts showing completion trends
+  - 🗓️ Productivity heatmaps for identifying patterns
+  - 🎯 Progress tracking with elegant visual indicators
+  - 📊 Priority and status distribution visualizations
+
+- **Performance Insights**
+  - ⭐ Completion rate metrics with historical context
+  - ⏰ Time-of-day productivity analysis
+  - ⚖️ Workload balance visualization
+  - 🏁 Milestone tracking with timeline markers
+
 ### 🎨 Modern UI/UX
 
 - **Flexible Views**
@@ -128,6 +142,32 @@ Achievements come in different rarity levels, each with its own visual style:
 
 Achievements are presented with beautiful animated notifications and celebratory confetti effects when unlocked!
 
+## 📊 Analytics & Insights Dashboard - NEW!
+
+Track your productivity with our beautiful, data-rich Analytics Dashboard that helps you visualize your progress and understand your work patterns!
+
+### Productivity Visualization
+
+- **Task Completion Charts**
+  - 📈 Daily, weekly, and monthly completion trends
+  - 🔄 Comparison views across different time periods
+  - 🎯 Progress toward goals with elegant progress indicators
+  - 🔍 Drill-down capability for detailed analysis
+
+- **Time & Pattern Analysis**
+  - 🗓️ Heatmap calendar showing your most productive days
+  - ⏰ Time-of-day productivity chart to identify your peak hours
+  - 📊 Priority distribution breakdown with color-coded visualization
+  - ⚖️ Workload balance indicators across projects or categories
+
+- **Performance Metrics**
+  - ⭐ Completion rate percentage with historical tracking
+  - 🔥 Streak visualization that complements the achievement system
+  - ⏱️ Average completion time for different task priorities
+  - 🏁 Milestone celebration markers on timeline views
+
+All analytics are generated directly from your existing task data stored in the JSON file system - no additional setup required! The dashboard updates in real-time as you complete tasks, providing immediate feedback on your productivity journey.
+
 ## 🛠️ Tech Stack
 
 ### 🎨 Frontend
@@ -138,6 +178,8 @@ Achievements are presented with beautiful animated notifications and celebratory
 ✨ Framer Motion     → Smooth animations
 🔄 @dnd-kit         → Drag and drop functionality
 📅 date-fns         → Date manipulation
+📊 recharts          → Beautiful data visualization
+🎨 react-calendar-heatmap → Productivity heatmaps
 🎊 canvas-confetti   → Achievement celebration effects
 🎯 uuid             → Unique ID generation
 ⚡ Vite             → Build tool
