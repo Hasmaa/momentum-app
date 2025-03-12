@@ -2102,10 +2102,22 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
           <Card bg={headerBg} borderRadius="lg" borderColor={borderColor} borderWidth="1px" flexShrink={0}>
             <CardBody>
               <Flex justify="space-between" align="center">
-                <VStack spacing={1} align="flex-start">
-                  <HStack spacing={3} align="center">
-                    <Box>
-                      <VStack gap={-5} pt={5}>
+                {/* Logo Section */}
+                <HStack spacing={3} align="center">
+                  <Box>
+                    <VStack gap={-5} pt={5}>
+                      <MotionBox
+                        initial={{ y: 0 }}
+                        animate={{ 
+                          y: [0, -4, 0],
+                          scale: [1, 1.1, 1],
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                        }}
+                      >
                         <Icon
                           as={ChevronRightIcon}
                           boxSize={8}
@@ -2113,6 +2125,20 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                           transform="rotate(-90deg)"
                           mt={-4}
                         />
+                      </MotionBox>
+                      <MotionBox
+                        initial={{ y: 0 }}
+                        animate={{ 
+                          y: [0, -4, 0],
+                          scale: [1, 1.1, 1],
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                          delay: 0.15
+                        }}
+                      >
                         <Icon
                           as={ChevronRightIcon}
                           boxSize={8}
@@ -2121,6 +2147,20 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                           transform="rotate(-90deg)"
                           mt={-4}
                         />
+                      </MotionBox>
+                      <MotionBox
+                        initial={{ y: 0 }}
+                        animate={{ 
+                          y: [0, -4, 0],
+                          scale: [1, 1.1, 1],
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: "easeInOut",
+                          delay: 0.3
+                        }}
+                      >
                         <Icon
                           as={ChevronRightIcon}
                           boxSize={8}
@@ -2129,16 +2169,26 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                           transform="rotate(-90deg)"
                           mt={-4}
                         />
-                      </VStack>
-                    </Box>
+                      </MotionBox>
+                    </VStack>
+                  </Box>
+                  {/* Title Section */}
+                  <MotionBox
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{
+                      duration: 0.5,
+                      ease: "easeOut"
+                    }}
+                  >
                     <VStack spacing={0} align="flex-start">
                       <Heading size="lg" color={textColor}>Momentum</Heading>
                       <Text color={secondaryTextColor} fontSize="sm">
                         Keep Your Progress Moving
                       </Text>
                     </VStack>
-                  </HStack>
-                </VStack>
+                  </MotionBox>
+                </HStack>
                 <HStack spacing={6}>
                   <Popover placement="bottom-start">
                     <PopoverTrigger>
