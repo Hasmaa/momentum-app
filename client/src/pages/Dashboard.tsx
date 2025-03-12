@@ -773,7 +773,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     duration: 3000,
     isClosable: true,
   });
-  const [isListView, setIsListView] = useState(true);
+  const [isListView, setIsListView] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor),
