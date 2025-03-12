@@ -66,11 +66,7 @@ import {
   Task,
   TaskStatus,
   TaskPriority,
-  TaskCreationInput,
-  TaskUpdateInput,
-  TaskFilters,
   SortConfig,
-  TasksState,
   ApiError,
   TaskStatistics,
   TaskTemplate
@@ -92,11 +88,8 @@ import {
   RepeatIcon,
   QuestionIcon,
   ChevronRightIcon,
-  FiRotateCcw,
-  FiRotateCw,
-  FiHelpCircle,
 } from '@chakra-ui/icons';
-import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   DndContext,
   DragOverlay,
@@ -106,14 +99,12 @@ import {
   KeyboardSensor,
   DragStartEvent,
   DragEndEvent,
-  getFirstCollision,
-  UniqueIdentifier,
 } from '@dnd-kit/core';
 import {
   SortableContext,
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
-import type { FC, PropsWithChildren } from 'react';
+import type { PropsWithChildren } from 'react';
 import SkeletonCard from '../components/SkeletonCard';
 import { PREDEFINED_TEMPLATES } from '../types/template';
 import TemplateModal from '../components/TemplateModal';
