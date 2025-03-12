@@ -17,9 +17,6 @@
 
 Momentum is a modern task management application that combines powerful features with an intuitive interface. Built with React and TypeScript, it offers both Kanban and List views, keyboard shortcuts, and smart filtering capabilities.
 
-<div align="center">
-  <img src="path/to/screenshot.png" alt="Momentum Screenshot" width="800px" />
-</div>
 
 ## 🎯 Features
 
