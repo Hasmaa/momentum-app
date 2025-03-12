@@ -45,19 +45,24 @@ Momentum is a modern task management application that combines powerful features
 
 ### 📊 Analytics & Insights Dashboard - NEW!
 
-- **Data Visualization**
-  - 📈 Beautiful charts showing completion trends
-  - 🗓️ Productivity heatmaps for identifying patterns
-  - 🎯 Progress tracking with elegant visual indicators
-  - 📊 Priority and status distribution visualizations
+- **Performance Visualization**
+  - 📈 Interactive trend charts to track task completion over time
+  - 🔥 Productivity heatmap showing your most active days
+  - 📋 Beautiful visualizations of priority and status distributions
+  - ⏰ Time of day analysis to identify your most productive hours
 
-- **Performance Insights**
-  - ⭐ Completion rate metrics with historical context
-  - ⏰ Time-of-day productivity analysis
-  - ⚖️ Workload balance visualization
-  - 🏁 Milestone tracking with timeline markers
+- **Productivity Insights**
+  - 🏆 Track and visualize your task completion streaks
+  - 📊 Monitor your completion rate and productivity patterns
+  - 📉 Analyze high-priority task performance
+  - 📆 View recent activity with 7-day metrics
 
-### 🎨 Modern UI/UX
+- **Tab-Based Organization**
+  - 📑 Productivity Trends for long-term analysis
+  - ⏱️ Time Analysis to optimize your work schedule
+  - 📊 Task Breakdown to understand your workload composition
+
+### �� Modern UI/UX
 
 - **Flexible Views**
   - 📌 Kanban board for visual task management
