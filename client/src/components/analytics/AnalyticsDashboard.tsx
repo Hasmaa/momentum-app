@@ -30,9 +30,14 @@ interface AnalyticsDashboardProps {
 }
 
 const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks }) => {
+  // Enhanced colors for dark mode
   const cardBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const headingColor = useColorModeValue('blue.600', 'blue.300');
+  const textColor = useColorModeValue('gray.800', 'gray.100');
+  const tabSelectedBg = useColorModeValue('white', 'gray.700');
+  const tabActiveBorderColor = useColorModeValue('blue.500', 'blue.300');
+  const pageBg = useColorModeValue('gray.50', 'gray.900');
   
   // Derived statistics for the dashboard header
   const stats = useMemo(() => {
@@ -69,7 +74,7 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks }) => {
   }, [tasks]);
   
   return (
-    <Box p={5}>
+    <Box p={5} bg={pageBg} minH="calc(100vh - 64px)">
       <Heading 
         size="xl" 
         mb={6} 
@@ -86,32 +91,84 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks }) => {
           value={stats.totalTasks.toString()}
           icon={FiBarChart2}
           color="blue.400"
+          bg={cardBg}
+          textColor={textColor}
+          borderColor={borderColor}
         />
         <StatCard 
           title="Completion Rate" 
           value={`${stats.completionRate}%`}
           icon={FiPieChart}
           color="green.400"
+          bg={cardBg}
+          textColor={textColor}
+          borderColor={borderColor}
         />
         <StatCard 
           title="Last 7 Days" 
           value={stats.recentlyCompleted.toString()}
           icon={FiCalendar}
           color="purple.400"
+          bg={cardBg}
+          textColor={textColor}
+          borderColor={borderColor}
         />
         <StatCard 
           title="High Priority Done" 
           value={stats.highPriorityCompleted.toString()}
           icon={FiClock}
           color="red.400"
+          bg={cardBg}
+          textColor={textColor}
+          borderColor={borderColor}
         />
       </SimpleGrid>
       
-      <Tabs variant="enclosed" colorScheme="blue" isLazy>
-        <TabList>
-          <Tab>Productivity Trends</Tab>
-          <Tab>Time Analysis</Tab>
-          <Tab>Task Breakdown</Tab>
+      <Tabs 
+        variant="enclosed" 
+        colorScheme="blue" 
+        isLazy
+        bg={cardBg}
+        borderRadius="md"
+        borderWidth="1px"
+        borderColor={borderColor}
+        p={4}
+        boxShadow="sm"
+      >
+        <TabList borderBottomColor={borderColor}>
+          <Tab 
+            _selected={{ 
+              color: tabActiveBorderColor, 
+              bg: tabSelectedBg, 
+              borderColor: borderColor, 
+              borderBottomColor: tabSelectedBg 
+            }}
+            color={textColor}
+          >
+            Productivity Trends
+          </Tab>
+          <Tab 
+            _selected={{ 
+              color: tabActiveBorderColor, 
+              bg: tabSelectedBg, 
+              borderColor: borderColor, 
+              borderBottomColor: tabSelectedBg 
+            }}
+            color={textColor}
+          >
+            Time Analysis
+          </Tab>
+          <Tab 
+            _selected={{ 
+              color: tabActiveBorderColor, 
+              bg: tabSelectedBg, 
+              borderColor: borderColor, 
+              borderBottomColor: tabSelectedBg 
+            }}
+            color={textColor}
+          >
+            Task Breakdown
+          </Tab>
         </TabList>
         
         <TabPanels>
@@ -119,8 +176,8 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks }) => {
           <TabPanel>
             <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={5}>
               <Card bg={cardBg} borderWidth="1px" borderColor={borderColor} shadow="md">
-                <CardHeader>
-                  <Heading size="md">Completion Trends</Heading>
+                <CardHeader borderBottomWidth="1px" borderColor={borderColor}>
+                  <Heading size="md" color={textColor}>Completion Trends</Heading>
                 </CardHeader>
                 <CardBody>
                   <CompletionTrendChart tasks={tasks} />
@@ -128,8 +185,8 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks }) => {
               </Card>
               
               <Card bg={cardBg} borderWidth="1px" borderColor={borderColor} shadow="md">
-                <CardHeader>
-                  <Heading size="md">Productivity Calendar</Heading>
+                <CardHeader borderBottomWidth="1px" borderColor={borderColor}>
+                  <Heading size="md" color={textColor}>Productivity Calendar</Heading>
                 </CardHeader>
                 <CardBody>
                   <ProductivityHeatmap tasks={tasks} />
@@ -137,8 +194,8 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks }) => {
               </Card>
               
               <Card bg={cardBg} borderWidth="1px" borderColor={borderColor} shadow="md" gridColumn={{ lg: "span 2" }}>
-                <CardHeader>
-                  <Heading size="md">Streak Performance</Heading>
+                <CardHeader borderBottomWidth="1px" borderColor={borderColor}>
+                  <Heading size="md" color={textColor}>Streak Performance</Heading>
                 </CardHeader>
                 <CardBody>
                   <StreakVisualization tasks={tasks} />
@@ -151,8 +208,8 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks }) => {
           <TabPanel>
             <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={5}>
               <Card bg={cardBg} borderWidth="1px" borderColor={borderColor} shadow="md">
-                <CardHeader>
-                  <Heading size="md">Time of Day Productivity</Heading>
+                <CardHeader borderBottomWidth="1px" borderColor={borderColor}>
+                  <Heading size="md" color={textColor}>Time of Day Productivity</Heading>
                 </CardHeader>
                 <CardBody>
                   <TimeOfDayChart tasks={tasks} />
@@ -160,16 +217,16 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks }) => {
               </Card>
               
               <Card bg={cardBg} borderWidth="1px" borderColor={borderColor} shadow="md">
-                <CardHeader>
-                  <Heading size="md">Task Duration by Priority</Heading>
+                <CardHeader borderBottomWidth="1px" borderColor={borderColor}>
+                  <Heading size="md" color={textColor}>Task Duration by Priority</Heading>
                 </CardHeader>
                 <CardBody>
-                  <Text fontSize="sm" color="gray.500" mb={4}>
+                  <Text fontSize="sm" color={useColorModeValue('gray.500', 'gray.400')} mb={4}>
                     Average time spent on tasks by priority level.
                   </Text>
                   {/* Placeholder for future chart */}
                   <Box height="200px" display="flex" alignItems="center" justifyContent="center">
-                    <Text>Coming Soon</Text>
+                    <Text color={textColor}>Coming Soon</Text>
                   </Box>
                 </CardBody>
               </Card>
@@ -180,8 +237,8 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks }) => {
           <TabPanel>
             <SimpleGrid columns={{ base: 1, lg: 2 }} spacing={5}>
               <Card bg={cardBg} borderWidth="1px" borderColor={borderColor} shadow="md">
-                <CardHeader>
-                  <Heading size="md">Priority Distribution</Heading>
+                <CardHeader borderBottomWidth="1px" borderColor={borderColor}>
+                  <Heading size="md" color={textColor}>Priority Distribution</Heading>
                 </CardHeader>
                 <CardBody>
                   <PriorityDistribution tasks={tasks} />
@@ -189,8 +246,8 @@ const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({ tasks }) => {
               </Card>
               
               <Card bg={cardBg} borderWidth="1px" borderColor={borderColor} shadow="md">
-                <CardHeader>
-                  <Heading size="md">Status Breakdown</Heading>
+                <CardHeader borderBottomWidth="1px" borderColor={borderColor}>
+                  <Heading size="md" color={textColor}>Status Breakdown</Heading>
                 </CardHeader>
                 <CardBody>
                   <TaskStatusBreakdown tasks={tasks} />
@@ -210,19 +267,27 @@ interface StatCardProps {
   value: string;
   icon: React.ElementType;
   color: string;
+  bg: string;
+  textColor: string;
+  borderColor: string;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ title, value, icon, color }) => {
-  const cardBg = useColorModeValue('white', 'gray.800');
-  const textColor = useColorModeValue('gray.600', 'gray.400');
-  
+const StatCard: React.FC<StatCardProps> = ({ 
+  title, 
+  value, 
+  icon, 
+  color, 
+  bg, 
+  textColor, 
+  borderColor 
+}) => {
   return (
-    <Card bg={cardBg} shadow="md">
+    <Card bg={bg} shadow="md" borderWidth="1px" borderColor={borderColor}>
       <CardBody>
         <Flex align="center" justify="space-between">
           <Box>
-            <Text fontSize="sm" color={textColor}>{title}</Text>
-            <Text fontSize="2xl" fontWeight="bold">{value}</Text>
+            <Text fontSize="sm" color={useColorModeValue('gray.600', 'gray.400')}>{title}</Text>
+            <Text fontSize="2xl" fontWeight="bold" color={textColor}>{value}</Text>
           </Box>
           <Icon as={icon} boxSize={10} color={color} />
         </Flex>

@@ -17,8 +17,13 @@ interface TimeOfDayChartProps {
 }
 
 const TimeOfDayChart: React.FC<TimeOfDayChartProps> = ({ tasks }) => {
+  // Enhanced colors for dark mode
   const barColor = useColorModeValue('#805AD5', '#B794F4'); // purple.600 / purple.300
   const gridColor = useColorModeValue('#E2E8F0', '#2D3748'); // gray.200 / gray.700
+  const bgColor = useColorModeValue('white', 'gray.800');
+  const textColor = useColorModeValue('gray.800', 'gray.100');
+  const emptyStateColor = useColorModeValue('gray.500', 'gray.400');
+  const axisColor = useColorModeValue('#4A5568', '#A0AEC0'); // gray.600 / gray.400
   
   // Format the hour for display
   const formatHour = (hour: number) => {
@@ -54,8 +59,8 @@ const TimeOfDayChart: React.FC<TimeOfDayChartProps> = ({ tasks }) => {
   // If no completed tasks, show empty state
   if (!tasks.some(task => task.status === 'completed' && task.completedAt)) {
     return (
-      <Box textAlign="center" py={10}>
-        <Text color="gray.500">
+      <Box textAlign="center" py={10} bg={bgColor} borderRadius="md">
+        <Text color={emptyStateColor}>
           No completion time data available. Complete tasks to see your productive hours!
         </Text>
       </Box>
@@ -63,7 +68,7 @@ const TimeOfDayChart: React.FC<TimeOfDayChartProps> = ({ tasks }) => {
   }
   
   return (
-    <Box height="300px">
+    <Box height="300px" bg={bgColor} borderRadius="md" p={2}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={hourlyData}
@@ -72,14 +77,16 @@ const TimeOfDayChart: React.FC<TimeOfDayChartProps> = ({ tasks }) => {
           <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
           <XAxis 
             dataKey="displayHour" 
-            tick={{ fontSize: 10 }}
+            tick={{ fontSize: 10, fill: axisColor }}
             tickMargin={10}
             tickFormatter={(value, index) => index % 3 === 0 ? value : ''}
             interval={0}
+            stroke={axisColor}
           />
           <YAxis 
             allowDecimals={false}
-            tick={{ fontSize: 10 }}
+            tick={{ fontSize: 10, fill: axisColor }}
+            stroke={axisColor}
           />
           <Tooltip
             formatter={(value) => [`${value} tasks`, 'Completed']}
@@ -88,6 +95,7 @@ const TimeOfDayChart: React.FC<TimeOfDayChartProps> = ({ tasks }) => {
               backgroundColor: useColorModeValue('#FFFFFF', '#1A202C'),
               borderColor: useColorModeValue('#E2E8F0', '#2D3748'),
               borderRadius: '8px',
+              color: textColor,
             }}
           />
           <Bar 
@@ -95,11 +103,13 @@ const TimeOfDayChart: React.FC<TimeOfDayChartProps> = ({ tasks }) => {
             fill={barColor} 
             radius={[4, 4, 0, 0]}
             name="Tasks Completed"
+            stroke={useColorModeValue('#553C9A', '#D6BCFA')} // purple.700 / purple.200
+            strokeWidth={1}
           />
         </BarChart>
       </ResponsiveContainer>
       
-      <Text textAlign="center" fontSize="sm" color="gray.500" mt={2}>
+      <Text textAlign="center" fontSize="sm" color={textColor} mt={2}>
         Hour of the day when tasks are completed
       </Text>
     </Box>

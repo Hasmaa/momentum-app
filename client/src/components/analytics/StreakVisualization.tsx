@@ -36,8 +36,15 @@ interface StreakVisualizationProps {
 }
 
 const StreakVisualization: React.FC<StreakVisualizationProps> = ({ tasks }) => {
+  // Enhanced colors for dark mode
   const lineColor = useColorModeValue('#DD6B20', '#F6AD55'); // orange.600 / orange.300
   const gridColor = useColorModeValue('#E2E8F0', '#2D3748'); // gray.200 / gray.700
+  const referenceLineColor = useColorModeValue('#805AD5', '#B794F4'); // purple.600 / purple.300
+  const bgColor = useColorModeValue('white', 'gray.800');
+  const textColor = useColorModeValue('gray.800', 'gray.100');
+  const statBgColor = useColorModeValue('gray.50', 'gray.700');
+  const emptyStateColor = useColorModeValue('gray.500', 'gray.400');
+  const axisColor = useColorModeValue('#4A5568', '#A0AEC0'); // gray.600 / gray.400
   
   // Calculate streaks and generate chart data
   const { 
@@ -151,8 +158,8 @@ const StreakVisualization: React.FC<StreakVisualizationProps> = ({ tasks }) => {
   // If no tasks, show empty state
   if (tasks.length === 0) {
     return (
-      <Box textAlign="center" py={10}>
-        <Text color="gray.500">
+      <Box textAlign="center" py={10} bg={bgColor} borderRadius="md">
+        <Text color={emptyStateColor}>
           No task data available. Complete tasks daily to build your streak!
         </Text>
       </Box>
@@ -160,7 +167,7 @@ const StreakVisualization: React.FC<StreakVisualizationProps> = ({ tasks }) => {
   }
   
   return (
-    <Box>
+    <Box bg={bgColor} borderRadius="md" p={4}>
       <Flex 
         justify="space-around" 
         mb={6}
@@ -168,10 +175,17 @@ const StreakVisualization: React.FC<StreakVisualizationProps> = ({ tasks }) => {
         align="center"
         gap={4}
       >
-        <Stat textAlign="center">
-          <StatLabel>Current Streak</StatLabel>
-          <StatNumber>{currentStreak}</StatNumber>
-          <StatHelpText>
+        <Stat 
+          textAlign="center" 
+          bg={statBgColor} 
+          p={3} 
+          borderRadius="md" 
+          borderWidth="1px"
+          borderColor={useColorModeValue('gray.200', 'gray.600')}
+        >
+          <StatLabel color={textColor}>Current Streak</StatLabel>
+          <StatNumber color={textColor}>{currentStreak}</StatNumber>
+          <StatHelpText color={useColorModeValue('gray.600', 'gray.400')}>
             {currentStreak === 0 ? "No active streak" : "days"}
           </StatHelpText>
           {currentStreak >= 3 && (
@@ -181,10 +195,17 @@ const StreakVisualization: React.FC<StreakVisualizationProps> = ({ tasks }) => {
           )}
         </Stat>
         
-        <Stat textAlign="center">
-          <StatLabel>Longest Streak</StatLabel>
-          <StatNumber>{longestStreak}</StatNumber>
-          <StatHelpText>days</StatHelpText>
+        <Stat 
+          textAlign="center" 
+          bg={statBgColor} 
+          p={3} 
+          borderRadius="md" 
+          borderWidth="1px"
+          borderColor={useColorModeValue('gray.200', 'gray.600')}
+        >
+          <StatLabel color={textColor}>Longest Streak</StatLabel>
+          <StatNumber color={textColor}>{longestStreak}</StatNumber>
+          <StatHelpText color={useColorModeValue('gray.600', 'gray.400')}>days</StatHelpText>
           {longestStreak >= 7 && (
             <Badge colorScheme="purple" variant="solid" borderRadius="full" px={2}>
               Impressive! 🏆
@@ -202,14 +223,16 @@ const StreakVisualization: React.FC<StreakVisualizationProps> = ({ tasks }) => {
             <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
             <XAxis 
               dataKey="displayDate" 
-              tick={{ fontSize: 10 }}
+              tick={{ fontSize: 10, fill: axisColor }}
               tickMargin={10}
               tickFormatter={(value, index) => index % 7 === 0 ? value : ''}
+              stroke={axisColor}
             />
             <YAxis 
-              tick={{ fontSize: 10 }} 
+              tick={{ fontSize: 10, fill: axisColor }} 
               allowDecimals={false}
               domain={[0, 'dataMax + 1']}
+              stroke={axisColor}
             />
             <Tooltip
               formatter={(value) => [value, 'Streak']}
@@ -218,6 +241,7 @@ const StreakVisualization: React.FC<StreakVisualizationProps> = ({ tasks }) => {
                 backgroundColor: useColorModeValue('#FFFFFF', '#1A202C'),
                 borderColor: useColorModeValue('#E2E8F0', '#2D3748'),
                 borderRadius: '8px',
+                color: textColor,
               }}
             />
             <Line
@@ -231,12 +255,12 @@ const StreakVisualization: React.FC<StreakVisualizationProps> = ({ tasks }) => {
             {longestStreak > 0 && (
               <ReferenceLine 
                 y={longestStreak} 
-                stroke={useColorModeValue('#805AD5', '#B794F4')} 
+                stroke={referenceLineColor} 
                 strokeDasharray="3 3" 
                 label={{ 
                   value: 'Longest',
                   position: 'insideBottomRight',
-                  fill: useColorModeValue('#805AD5', '#B794F4'),
+                  fill: referenceLineColor,
                   fontSize: 12,
                 }} 
               />

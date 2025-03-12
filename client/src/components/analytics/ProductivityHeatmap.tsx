@@ -31,15 +31,33 @@ const ProductivityHeatmap: React.FC<ProductivityHeatmapProps> = ({ tasks }) => {
   const endDate = new Date();
   const startDate = subDays(endDate, 90); // 90 days back
   
-  // Colors for the heatmap
-  const colorScale = [
-    useColorModeValue('#F7FAFC', '#2D3748'), // No tasks (gray.50 / gray.700)
-    useColorModeValue('#BEE3F8', '#2B6CB0'), // 1 task (blue.100 / blue.700)
-    useColorModeValue('#90CDF4', '#3182CE'), // 2 tasks (blue.200 / blue.600)
-    useColorModeValue('#63B3ED', '#4299E1'), // 3 tasks (blue.300 / blue.500)
-    useColorModeValue('#4299E1', '#63B3ED'), // 4 tasks (blue.400 / blue.300)
-    useColorModeValue('#3182CE', '#90CDF4'), // 5+ tasks (blue.600 / blue.200)
-  ];
+  // Background and text colors for dark mode
+  const emptyColor = useColorModeValue('#F7FAFC', '#2D3748'); // gray.50 / gray.700
+  const textColor = useColorModeValue('gray.800', 'gray.100');
+  const bgColor = useColorModeValue('white', 'gray.800');
+  
+  // Enhanced color scale for better dark mode visibility
+  const colorScale = {
+    light: [
+      '#F7FAFC', // No tasks (gray.50)
+      '#BEE3F8', // 1 task (blue.100)
+      '#90CDF4', // 2 tasks (blue.200)
+      '#63B3ED', // 3 tasks (blue.300)
+      '#4299E1', // 4 tasks (blue.400)
+      '#3182CE', // 5+ tasks (blue.600)
+    ],
+    dark: [
+      '#2D3748', // No tasks (gray.700)
+      '#2B6CB0', // 1 task (blue.700)
+      '#3182CE', // 2 tasks (blue.600)
+      '#4299E1', // 3 tasks (blue.500)
+      '#63B3ED', // 4 tasks (blue.300)
+      '#90CDF4', // 5+ tasks (blue.200)
+    ]
+  };
+  
+  // Get the current color scale based on mode
+  const currentColorScale = useColorModeValue(colorScale.light, colorScale.dark);
   
   // Process task data for the heatmap
   const heatmapData = useMemo(() => {
@@ -79,20 +97,27 @@ const ProductivityHeatmap: React.FC<ProductivityHeatmapProps> = ({ tasks }) => {
   };
   
   return (
-    <Box>
+    <Box bg={bgColor} borderRadius="md" p={4}>
       <style>
         {`
-        .react-calendar-heatmap .color-scale-1 { fill: ${colorScale[1]}; }
-        .react-calendar-heatmap .color-scale-2 { fill: ${colorScale[2]}; }
-        .react-calendar-heatmap .color-scale-3 { fill: ${colorScale[3]}; }
-        .react-calendar-heatmap .color-scale-4 { fill: ${colorScale[4]}; }
-        .react-calendar-heatmap .color-scale-5 { fill: ${colorScale[5]}; }
+        .react-calendar-heatmap .color-scale-1 { fill: ${currentColorScale[1]}; }
+        .react-calendar-heatmap .color-scale-2 { fill: ${currentColorScale[2]}; }
+        .react-calendar-heatmap .color-scale-3 { fill: ${currentColorScale[3]}; }
+        .react-calendar-heatmap .color-scale-4 { fill: ${currentColorScale[4]}; }
+        .react-calendar-heatmap .color-scale-5 { fill: ${currentColorScale[5]}; }
+        
+        .react-calendar-heatmap .color-empty { fill: ${emptyColor}; }
         
         .react-calendar-heatmap rect {
           rx: 2;
           ry: 2;
           stroke: ${useColorModeValue('#EDF2F7', '#1A202C')};
           stroke-width: 1;
+        }
+        
+        .react-calendar-heatmap text {
+          fill: ${useColorModeValue('#4A5568', '#CBD5E0')};
+          font-size: 0.7em;
         }
         `}
       </style>
@@ -124,18 +149,20 @@ const ProductivityHeatmap: React.FC<ProductivityHeatmapProps> = ({ tasks }) => {
       </Box>
       
       <Box display="flex" justifyContent="center" mt={4}>
-        <Text fontSize="sm" mr={2}>Less</Text>
+        <Text fontSize="sm" mr={2} color={textColor}>Less</Text>
         {[0, 1, 2, 3, 4, 5].map(level => (
           <Box 
             key={level}
             width="15px"
             height="15px"
             borderRadius="sm"
-            bg={level === 0 ? colorScale[0] : colorScale[level]}
+            bg={level === 0 ? currentColorScale[0] : currentColorScale[level]}
             mr={level < 5 ? 1 : 0}
+            borderWidth="1px"
+            borderColor={useColorModeValue('gray.200', 'gray.600')}
           />
         ))}
-        <Text fontSize="sm" ml={2}>More</Text>
+        <Text fontSize="sm" ml={2} color={textColor}>More</Text>
       </Box>
     </Box>
   );

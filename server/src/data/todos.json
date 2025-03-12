@@ -1,3 +1,224 @@
 {
-  "todos": []
+  "todos": [
+    {
+      "title": "Initial Patient History",
+      "description": "Collect comprehensive medical history, vaccination records, and previous treatments",
+      "status": "completed",
+      "priority": "high",
+      "dueDate": "2025-03-12T19:19:38.309Z",
+      "id": "1741807178915",
+      "createdAt": "2025-03-12T19:19:38.915Z",
+      "updatedAt": "2025-03-12T19:43:20.568Z",
+      "order": 6
+    },
+    {
+      "title": "Physical Examination",
+      "description": "Conduct thorough physical exam including vitals, weight, and general health assessment",
+      "status": "completed",
+      "priority": "high",
+      "dueDate": "2025-03-12T19:19:39.218Z",
+      "id": "1741807179821",
+      "createdAt": "2025-03-12T19:19:39.821Z",
+      "updatedAt": "2025-03-12T19:43:20.569Z",
+      "order": 7
+    },
+    {
+      "title": "Vaccination Review",
+      "description": "Check vaccination status and schedule necessary updates",
+      "status": "completed",
+      "priority": "high",
+      "dueDate": "2025-03-13T19:19:40.124Z",
+      "id": "1741807180728",
+      "createdAt": "2025-03-12T19:19:40.728Z",
+      "updatedAt": "2025-03-12T19:43:20.569Z",
+      "order": 8
+    },
+    {
+      "title": "Lab Work Orders",
+      "description": "Order and schedule required laboratory tests",
+      "status": "completed",
+      "priority": "medium",
+      "dueDate": "2025-03-14T19:19:41.030Z",
+      "id": "1741807181634",
+      "createdAt": "2025-03-12T19:19:41.634Z",
+      "updatedAt": "2025-03-12T19:43:20.569Z",
+      "order": 9
+    },
+    {
+      "title": "Treatment Plan",
+      "description": "Develop and document initial treatment plan",
+      "status": "completed",
+      "priority": "high",
+      "dueDate": "2025-03-14T19:19:41.938Z",
+      "id": "1741807182541",
+      "createdAt": "2025-03-12T19:19:42.541Z",
+      "updatedAt": "2025-03-12T19:43:20.569Z",
+      "order": 10
+    },
+    {
+      "title": "Initial Patient History",
+      "description": "Collect comprehensive medical history, vaccination records, and previous treatments",
+      "status": "completed",
+      "priority": "high",
+      "dueDate": "2025-03-12T19:20:28.485Z",
+      "id": "1741807229092",
+      "createdAt": "2025-03-12T19:20:29.092Z",
+      "updatedAt": "2025-03-12T19:43:20.569Z",
+      "order": 2.25
+    },
+    {
+      "title": "Physical Examination",
+      "description": "Conduct thorough physical exam including vitals, weight, and general health assessment",
+      "status": "completed",
+      "priority": "high",
+      "dueDate": "2025-03-12T19:20:29.395Z",
+      "id": "1741807229998",
+      "createdAt": "2025-03-12T19:20:29.998Z",
+      "updatedAt": "2025-03-12T19:43:20.569Z",
+      "order": -4
+    },
+    {
+      "title": "Pre-op Blood Work",
+      "description": "Complete blood count, chemistry panel, and other required tests",
+      "status": "completed",
+      "priority": "high",
+      "dueDate": "2025-03-15T19:20:30.218Z",
+      "id": "1741807230822",
+      "createdAt": "2025-03-12T19:20:30.822Z",
+      "updatedAt": "2025-03-12T19:43:20.569Z",
+      "order": 0.5
+    },
+    {
+      "title": "Vaccination Review",
+      "description": "Check vaccination status and schedule necessary updates",
+      "status": "completed",
+      "priority": "high",
+      "dueDate": "2025-03-13T19:20:30.300Z",
+      "id": "1741807230905",
+      "createdAt": "2025-03-12T19:20:30.905Z",
+      "updatedAt": "2025-03-12T19:43:20.569Z",
+      "order": 0
+    },
+    {
+      "title": "Patient Fasting Instructions",
+      "description": "Communicate fasting requirements to pet owners",
+      "status": "completed",
+      "priority": "high",
+      "dueDate": "2025-03-14T19:20:31.126Z",
+      "id": "1741807231730",
+      "createdAt": "2025-03-12T19:20:31.730Z",
+      "updatedAt": "2025-03-12T19:43:20.569Z",
+      "order": 4
+    },
+    {
+      "title": "Lab Work Orders",
+      "description": "Order and schedule required laboratory tests",
+      "status": "completed",
+      "priority": "medium",
+      "dueDate": "2025-03-14T19:20:31.207Z",
+      "id": "1741807231811",
+      "createdAt": "2025-03-12T19:20:31.811Z",
+      "updatedAt": "2025-03-12T19:43:20.569Z",
+      "order": 11
+    },
+    {
+      "title": "Surgery Equipment Check",
+      "description": "Verify all necessary surgical instruments and equipment",
+      "status": "completed",
+      "priority": "high",
+      "dueDate": "2025-03-13T19:20:32.033Z",
+      "id": "1741807232638",
+      "createdAt": "2025-03-12T19:20:32.638Z",
+      "updatedAt": "2025-03-12T19:43:20.569Z",
+      "order": 12
+    },
+    {
+      "title": "Treatment Plan",
+      "description": "Develop and document initial treatment plan",
+      "status": "completed",
+      "priority": "high",
+      "dueDate": "2025-03-14T19:20:32.112Z",
+      "id": "1741807232716",
+      "createdAt": "2025-03-12T19:20:32.716Z",
+      "updatedAt": "2025-03-12T19:43:20.569Z",
+      "order": 13
+    },
+    {
+      "title": "Initial Vaccination Visit",
+      "description": "First round of core vaccines and deworming (6-8 weeks)",
+      "status": "completed",
+      "priority": "high",
+      "dueDate": "2025-03-12T19:20:32.231Z",
+      "id": "1741807232837",
+      "createdAt": "2025-03-12T19:20:32.837Z",
+      "updatedAt": "2025-03-12T19:43:20.569Z",
+      "order": 14
+    },
+    {
+      "title": "Anesthesia Plan",
+      "description": "Review patient history and develop anesthesia protocol",
+      "status": "completed",
+      "priority": "high",
+      "dueDate": "2025-03-13T19:20:32.940Z",
+      "id": "1741807233544",
+      "createdAt": "2025-03-12T19:20:33.544Z",
+      "updatedAt": "2025-03-12T19:43:20.569Z",
+      "order": 15
+    },
+    {
+      "title": "Second Vaccination Visit",
+      "description": "Second round of core vaccines and parasite check (10-12 weeks)",
+      "status": "completed",
+      "priority": "high",
+      "dueDate": "2025-04-02T18:20:33.139Z",
+      "id": "1741807233743",
+      "createdAt": "2025-03-12T19:20:33.743Z",
+      "updatedAt": "2025-03-12T19:43:20.569Z",
+      "order": 16
+    },
+    {
+      "title": "Post-op Care Plan",
+      "description": "Prepare post-operative care instructions and medications",
+      "status": "completed",
+      "priority": "medium",
+      "dueDate": "2025-03-12T19:20:33.916Z",
+      "id": "1741807234524",
+      "createdAt": "2025-03-12T19:20:34.524Z",
+      "updatedAt": "2025-03-12T19:43:20.569Z",
+      "order": 17
+    },
+    {
+      "title": "Third Vaccination Visit",
+      "description": "Third round of core vaccines and health check (14-16 weeks)",
+      "status": "completed",
+      "priority": "high",
+      "dueDate": "2025-04-23T18:20:34.091Z",
+      "id": "1741807234703",
+      "createdAt": "2025-03-12T19:20:34.703Z",
+      "updatedAt": "2025-03-12T19:43:20.569Z",
+      "order": 18
+    },
+    {
+      "title": "Rabies Vaccination",
+      "description": "First rabies vaccine (16 weeks)",
+      "status": "completed",
+      "priority": "high",
+      "dueDate": "2025-05-07T18:20:35.041Z",
+      "id": "1741807235646",
+      "createdAt": "2025-03-12T19:20:35.646Z",
+      "updatedAt": "2025-03-12T19:43:20.569Z",
+      "order": 19
+    },
+    {
+      "title": "Schedule Spay/Neuter",
+      "description": "Discuss and schedule sterilization procedure",
+      "status": "in-progress",
+      "priority": "medium",
+      "dueDate": "2025-05-21T18:20:36.155Z",
+      "id": "1741807236757",
+      "createdAt": "2025-03-12T19:20:36.757Z",
+      "updatedAt": "2025-03-12T19:48:50.908Z",
+      "order": 0
+    }
+  ]
 }

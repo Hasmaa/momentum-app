@@ -1,5 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Spinner, Center, Text, Button, Flex, useToast } from '@chakra-ui/react';
+import { 
+  Box, 
+  Spinner, 
+  Center, 
+  Text, 
+  Button, 
+  Flex, 
+  useToast, 
+  useColorModeValue,
+  Heading
+} from '@chakra-ui/react';
 import { FiArrowLeft } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import AnalyticsDashboard from '../components/analytics/AnalyticsDashboard';
@@ -10,6 +20,11 @@ const AnalyticsDashboardPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const toast = useToast();
+
+  // Enhanced colors for dark mode
+  const bgColor = useColorModeValue('gray.50', 'gray.900');
+  const textColor = useColorModeValue('gray.800', 'gray.100');
+  const buttonHoverBg = useColorModeValue('gray.100', 'gray.700');
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -44,7 +59,7 @@ const AnalyticsDashboardPage: React.FC = () => {
   }, [toast]);
 
   return (
-    <Box p={4}>
+    <Box p={4} bg={bgColor} minH="calc(100vh - 64px)">
       <Flex mb={6} alignItems="center">
         <Button 
           as={Link} 
@@ -52,6 +67,8 @@ const AnalyticsDashboardPage: React.FC = () => {
           leftIcon={<FiArrowLeft />}
           variant="ghost"
           mr={4}
+          color={textColor}
+          _hover={{ bg: buttonHoverBg }}
         >
           Back to Tasks
         </Button>
@@ -59,8 +76,8 @@ const AnalyticsDashboardPage: React.FC = () => {
 
       {isLoading ? (
         <Center h="70vh" flexDirection="column">
-          <Spinner size="xl" color="blue.500" mb={4} />
-          <Text>Loading your analytics data...</Text>
+          <Spinner size="xl" color="blue.500" mb={4} thickness="4px" />
+          <Text color={textColor}>Loading your analytics data...</Text>
         </Center>
       ) : error ? (
         <Center h="50vh" flexDirection="column">
