@@ -16,12 +16,30 @@ import {
   Text,
 } from '@chakra-ui/react';
 
+/**
+ * Represents a keyboard shortcut with its action and key combination
+ */
+interface Shortcut {
+  /** The action that will be performed */
+  action: string;
+  /** Array of keys that need to be pressed */
+  keys: string[];
+}
+
+/**
+ * Props for the KeyboardShortcuts component
+ */
 interface KeyboardShortcutsProps {
+  /** Whether the shortcuts modal is open */
   isOpen: boolean;
+  /** Callback to close the shortcuts modal */
   onClose: () => void;
 }
 
-const shortcuts = [
+/**
+ * List of available keyboard shortcuts in the application
+ */
+const shortcuts: Shortcut[] = [
   { action: 'Undo', keys: ['⌘/Ctrl', 'Z'] },
   { action: 'Redo', keys: ['⌘/Ctrl', 'Shift', 'Z'] },
   { action: 'Edit Task', keys: ['Double Click'] },
@@ -32,7 +50,12 @@ const shortcuts = [
   { action: 'Previous Status', keys: ['←'] },
 ];
 
+/**
+ * KeyboardShortcuts component displays a modal with all available keyboard shortcuts.
+ * The modal can be opened by pressing the '?' key or through a button click.
+ */
 export const KeyboardShortcuts: React.FC<KeyboardShortcutsProps> = ({ isOpen, onClose }) => {
+  // Theme colors
   const bgColor = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.600');
 
