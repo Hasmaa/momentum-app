@@ -31,7 +31,7 @@ interface TemplateModalProps {
   isOpen: boolean;
   onClose: () => void;
   templates: TaskTemplate[];
-  onSelectTemplate: (template: TaskTemplate) => void;
+  onSelectTemplate: (template: TaskTemplate) => Promise<void>;
 }
 
 const TemplateModal: React.FC<TemplateModalProps> = ({

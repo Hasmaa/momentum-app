@@ -129,6 +129,12 @@ interface DashboardProps {
   initialTasks?: Task[];
 }
 
+// Define the transition object
+const transition = {
+  enter: { type: "tween", duration: 0.2 },
+  exit: { type: "tween", duration: 0.2 }
+} as const;
+
 const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
   const {
     tasks: todos,
@@ -890,7 +896,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
             as={motion.div}
             initial={{ width: "0%" }}
             animate={{ width: "100%" }}
-            transition={{ duration: 0.5 }}
+            transition={{ duration: 0.5 } as any}
           />
           <Box opacity={0.7}>
             <DndContext
@@ -2900,7 +2906,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              transition={{ type: "tween", duration: 0.2 }}
+              transition={transition}
             >
               <AlertDialogHeader fontSize="lg" fontWeight="bold">
                 Delete Task
