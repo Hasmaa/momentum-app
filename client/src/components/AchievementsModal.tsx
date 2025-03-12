@@ -39,6 +39,7 @@ import { SearchIcon, ChevronDownIcon, SmallCloseIcon } from '@chakra-ui/icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Achievement, AchievementCategory } from '../types';
 import AchievementCard from './AchievementCard';
+import AchievementIcon from './AchievementIcon';
 
 const MotionBox = motion(Box);
 
@@ -204,11 +205,13 @@ const AchievementsModal: React.FC<AchievementsModalProps> = ({
                 <Text fontWeight="bold" mb={2}>Latest Achievement</Text>
                 {mostRecentAchievement ? (
                   <HStack spacing={3}>
-                    <Box boxSize="50px">
-                      <AchievementCard 
-                        achievement={mostRecentAchievement}
-                        getProgressPercentage={getProgressPercentage}
-                        isRecent={mostRecentAchievement.id === recentlyUnlocked?.id}
+                    <Box>
+                      <AchievementIcon 
+                        icon={mostRecentAchievement.icon} 
+                        rarity={mostRecentAchievement.rarity}
+                        isUnlocked={true}
+                        isAnimated={mostRecentAchievement.id === recentlyUnlocked?.id}
+                        size="2.5rem"
                       />
                     </Box>
                     <VStack align="start" spacing={0}>

@@ -5,7 +5,6 @@ import {
   useColorModeValue,
   Tooltip,
   Badge,
-  position,
 } from '@chakra-ui/react';
 import { TrophyIcon } from './AchievementIcon';
 import { motion } from 'framer-motion';
@@ -25,8 +24,9 @@ const AchievementsButton: React.FC<AchievementsButtonProps> = ({
   hasRecentUnlock,
   onClick,
 }) => {
-  const buttonBg = useColorModeValue('gray.100', 'gray.700');
-  const buttonHoverBg = useColorModeValue('gray.200', 'gray.600');
+  // Use a more subtle background that matches the app's theme
+  const buttonBg = useColorModeValue('transparent', 'transparent');
+  const buttonHoverBg = useColorModeValue('gray.100', 'whiteAlpha.100');
   const iconColor = useColorModeValue('blue.500', 'blue.300');
   const pulseBg = useColorModeValue('blue.400', 'blue.300');
   
@@ -39,13 +39,14 @@ const AchievementsButton: React.FC<AchievementsButtonProps> = ({
       <Box position="relative">
         <IconButton
           aria-label="Achievements"
-          icon={<TrophyIcon boxSize="1.3rem" />}
+          icon={<TrophyIcon boxSize="1.2rem" />}
           borderRadius="full"
           bg={buttonBg}
           color={iconColor}
           _hover={{ bg: buttonHoverBg }}
           onClick={onClick}
-          size="md"
+          size="sm"
+          variant="ghost"
         />
         
         {/* Count badge */}
@@ -63,6 +64,7 @@ const AchievementsButton: React.FC<AchievementsButtonProps> = ({
           justifyContent="center"
           fontWeight="bold"
           zIndex={1}
+          boxShadow="0 0 0 2px var(--chakra-colors-white)"
         >
           {count}
         </Badge>

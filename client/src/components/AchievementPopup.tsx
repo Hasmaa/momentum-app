@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   Box,
   Flex,
@@ -11,12 +11,19 @@ import {
   VStack,
   useToken,
 } from '@chakra-ui/react';
+import { keyframes } from '@emotion/react';
 import { motion } from 'framer-motion';
 import { Achievement } from '../types';
 import AchievementIcon from './AchievementIcon';
 import confetti from 'canvas-confetti';
 
 const MotionBox = motion(Box);
+
+// Define a shimmer animation
+const shimmer = keyframes`
+  0% { background-position: -40rem 0 }
+  100% { background-position: 40rem 0 }
+`;
 
 interface AchievementPopupProps {
   achievement: Achievement | null;
@@ -28,11 +35,16 @@ const AchievementPopup: React.FC<AchievementPopupProps> = ({
   onClose,
 }) => {
   const [blue500] = useToken('colors', ['blue.500']);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // Background and text colors
   const bgColor = useColorModeValue('white', 'gray.800');
   const textColor = useColorModeValue('gray.700', 'gray.300');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const shimmerColor = useColorModeValue(
+    'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0) 100%)',
+    'linear-gradient(90deg, rgba(26,32,44,0) 0%, rgba(66,82,114,0.4) 50%, rgba(26,32,44,0) 100%)'
+  );
   
   // Launch confetti when achievement is shown
   useEffect(() => {
@@ -68,8 +80,19 @@ const AchievementPopup: React.FC<AchievementPopupProps> = ({
       } catch (e) {
         console.log('Audio creation error:', e);
       }
+      
+      // Auto-close after 6 seconds
+      timeoutRef.current = setTimeout(() => {
+        onClose();
+      }, 6000);
     }
-  }, [achievement]);
+    
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, [achievement, onClose]);
   
   if (!achievement) return null;
   
@@ -105,6 +128,7 @@ const AchievementPopup: React.FC<AchievementPopupProps> = ({
               damping: 25
             }
           }}
+          whileHover={{ scale: 1.02 }}
         >
           {/* Achievement unlocked header */}
           <Heading 
@@ -112,6 +136,18 @@ const AchievementPopup: React.FC<AchievementPopupProps> = ({
             mb={4} 
             textAlign="center"
             color={useColorModeValue('blue.600', 'blue.300')}
+            position="relative"
+            _after={{
+              content: '""',
+              position: 'absolute',
+              bottom: '-10px',
+              left: '50%',
+              width: '40px',
+              height: '3px',
+              bg: 'blue.400',
+              transform: 'translateX(-50%)',
+              borderRadius: 'full'
+            }}
           >
             Achievement Unlocked!
           </Heading>
@@ -186,6 +222,22 @@ const AchievementPopup: React.FC<AchievementPopupProps> = ({
             onClick={onClose}
             width="full"
             borderRadius="full"
+            mt={2}
+            position="relative"
+            overflow="hidden"
+            _after={{
+              content: '""',
+              position: 'absolute',
+              top: '0',
+              left: '0',
+              width: '100%',
+              height: '100%',
+              backgroundImage: shimmerColor,
+              backgroundSize: '40rem 100%',
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: '-40rem 0',
+              animation: `${shimmer} 3s infinite linear`,
+            }}
           >
             Awesome!
           </Button>
