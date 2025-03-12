@@ -67,8 +67,6 @@ import {
   TaskStatus,
   TaskPriority,
   SortConfig,
-  ApiError,
-  TaskStatistics,
   TaskTemplate
 } from '../types';
 import { 
@@ -110,7 +108,7 @@ import { PREDEFINED_TEMPLATES } from '../types/template';
 import TemplateModal from '../components/TemplateModal';
 import { useTaskHistory } from '../hooks/useTaskHistory';
 import KeyboardShortcuts from '../components/KeyboardShortcuts';
-import { customCollisionDetection, getStatusIcon } from './utils';
+import { customCollisionDetection, getStatusFromColumnId, getStatusIcon } from './utils';
 import { DragOverlayCard } from './DragOverlayCard';
 import { SortableCard } from './SortableCard';
 import { Droppable } from './Droppable';
@@ -123,25 +121,6 @@ const MotionFlex = motion(Flex);
 export interface DroppableProps extends PropsWithChildren {
   id: string;
 }
-
-SortableCard.displayName = 'SortableCard';
-
-
-// Update the Droppable component usage
-const getStatusFromColumnId = (columnId: string): Task['status'] | null => {
-  switch (columnId) {
-    case 'column-pending':
-      return 'pending';
-    case 'column-in-progress':
-      return 'in-progress';
-    case 'column-completed':
-      return 'completed';
-    default:
-      return null;
-  }
-};
-
-Droppable.displayName = 'Droppable';
 
 type StatusType = Task['status'] | 'all';
 type PriorityType = Task['priority'] | 'all';
@@ -180,16 +159,8 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
-  const [error, setError] = useState<ApiError | null>(null);
   const [isSelectMode, setIsSelectMode] = useState<boolean>(false);
-  const [statistics, setStatistics] = useState<TaskStatistics>({
-    total: 0,
-    completed: 0,
-    inProgress: 0,
-    pending: 0,
-    overdue: 0,
-    completionRate: 0
-  });
+ 
   const toast = useToast({
     position: 'top-right',
     duration: 3000,

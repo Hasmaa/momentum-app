@@ -72,4 +72,17 @@ export const customCollisionDetection: CollisionDetection = ({
 
   return closestColumn ? [{ id: closestColumn.id }] : [];
 };
+// Update the Droppable component usage
+export const getStatusFromColumnId = (columnId: string): Task['status'] | null => {
+  switch (columnId) {
+    case 'column-pending':
+      return 'pending';
+    case 'column-in-progress':
+      return 'in-progress';
+    case 'column-completed':
+      return 'completed';
+    default:
+      return null;
+  }
+};
 
