@@ -39,4 +39,5 @@ export interface PomodoroModalProps {
   selectedTask?: Task | null;
   tasks: Task[];
   onTaskComplete: (taskId: string) => Promise<void>;
+  onCreateTask?: () => void;
 } 

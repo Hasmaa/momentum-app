@@ -2873,6 +2873,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
           onTaskComplete={async (taskId: string) => {
             await handleStatusChange(taskId, 'completed');
           }}
+          onCreateTask={() => _onCreateModalOpen()}
         />
       </Container>
       <KeyboardShortcuts isOpen={isShortcutsOpen} onClose={onShortcutsClose} />

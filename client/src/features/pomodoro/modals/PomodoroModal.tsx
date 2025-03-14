@@ -113,7 +113,8 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
   onClose,
   selectedTask,
   tasks,
-  onTaskComplete
+  onTaskComplete,
+  onCreateTask
 }) => {
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -216,6 +217,12 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
       if (isFocusMode) {
         setIsFocusMode(false);
       }
+      
+      // Reset the pomodoro modal by clearing the selected task
+      // This will return the user to the task selection screen
+      pomodoro.actions.reset();
+      pomodoro.actions.changeTask(null);
+      
     } catch (error) {
       toast({
         title: 'Failed to complete task.',
@@ -894,7 +901,10 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                           <Button
                             mt={4}
                             size="sm"
-                            onClick={onClose}
+                            onClick={() => {
+                              onClose();
+                              onCreateTask && onCreateTask();
+                            }}
                             colorScheme="blue"
                             leftIcon={<FaListUl />}
                           >
