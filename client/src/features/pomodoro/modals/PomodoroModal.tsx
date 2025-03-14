@@ -77,6 +77,7 @@ import { Task } from '../../../types';
 import { PomodoroModalProps } from '../types/pomodoro';
 import { useGlobalPomodoro } from '../hooks/useGlobalPomodoro';
 import { usePomodoroStore } from '../hooks/usePomodoroStore';
+import { PomodoroFocusEnvironment, FocusEnvironmentCompact } from '../../focus-environment';
 
 // Create a motion component with Chakra UI
 const MotionBox = motion(Box);
@@ -780,6 +781,11 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                   ? "Take a deep breath and focus on the present moment."
                   : "Ready to achieve your goals? Take one step at a time."}
               </Text>
+              
+              {/* Focus Environment compact controls */}
+              <Box mt={6} maxW="90%" w="400px">
+                <FocusEnvironmentCompact isMinimal={true} />
+              </Box>
             </VStack>
           </ScaleFade>
         </Box>
@@ -1373,6 +1379,18 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                           <Text fontSize="sm">Sound Alerts</Text>
                           <Switch colorScheme="blue" size="sm" defaultChecked />
                         </Flex>
+                        
+                        {/* Focus Environment component */}
+                        <Box mt={4}>
+                          <PomodoroFocusEnvironment 
+                            pomodoroState={{
+                              isRunning: pomodoro.state.isRunning,
+                              currentSession: {
+                                type: pomodoro.state.task ? 'focus' : null
+                              }
+                            }}
+                          />
+                        </Box>
                       </VStack>
                     </TabPanel>
                   </TabPanels>

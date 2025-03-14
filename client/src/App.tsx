@@ -7,6 +7,7 @@ import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
 import Auth from './pages/Auth';
 import AnalyticsDashboardPage from './pages/AnalyticsDashboardPage';
+import { FocusEnvironmentProvider } from './features/focus-environment';
 import './index.css';
 
 const queryClient = new QueryClient();
@@ -46,16 +47,18 @@ function App() {
       <ColorModeScript initialColorMode={currentTheme.config.initialColorMode} />
       <ChakraProvider theme={currentTheme}>
         <QueryClientProvider client={queryClient}>
-          <Router>
-            <Box minH="100vh" bg="gray.50">
-              <Navbar />
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/auth" element={<Auth />} />
-                <Route path="/analytics" element={<AnalyticsDashboardPage />} />
-              </Routes>
-            </Box>
-          </Router>
+          <FocusEnvironmentProvider>
+            <Router>
+              <Box minH="100vh" bg="gray.50">
+                <Navbar />
+                <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/auth" element={<Auth />} />
+                  <Route path="/analytics" element={<AnalyticsDashboardPage />} />
+                </Routes>
+              </Box>
+            </Router>
+          </FocusEnvironmentProvider>
         </QueryClientProvider>
       </ChakraProvider>
     </>
