@@ -43,7 +43,9 @@ import {
   FaExpand, 
   FaCompress,
   FaTimes,
-  FaHistory
+  FaHistory,
+  FaCloud,
+  FaSun
 } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import { Task } from '../../../types';
@@ -59,6 +61,26 @@ const breathingAnimation = keyframes`
   0% { transform: scale(1); opacity: 0.8; }
   50% { transform: scale(1.05); opacity: 1; }
   100% { transform: scale(1); opacity: 0.8; }
+`;
+
+// Animation for floating clouds
+const floatAnimation = keyframes`
+  0% { transform: translateX(0) translateY(0); }
+  50% { transform: translateX(10px) translateY(-10px); }
+  100% { transform: translateX(0) translateY(0); }
+`;
+
+// Animation for smaller floating clouds
+const floatSmallAnimation = keyframes`
+  0% { transform: translateX(0) translateY(0); }
+  50% { transform: translateX(-15px) translateY(-5px); }
+  100% { transform: translateX(0) translateY(0); }
+`;
+
+// Sun rotation animation
+const sunRotateAnimation = keyframes`
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 `;
 
 const PomodoroModal: React.FC<PomodoroModalProps> = ({
@@ -84,9 +106,17 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const timerBgColor = useColorModeValue('gray.50', 'gray.700');
   const textColor = useColorModeValue('gray.800', 'white');
-  const focusBgColor = useColorModeValue('rgba(255, 255, 255, 0.95)', 'rgba(23, 25, 35, 0.95)');
-  const focusTimerBgColor = useColorModeValue('gray.100', 'gray.900');
-  const breathingColor = useColorModeValue('blue.50', 'blue.900');
+  
+  // Peaceful focus mode colors
+  const focusBgColor = useColorModeValue(
+    'linear-gradient(180deg, #87CEEB 0%, #E0F7FA 100%)',
+    'linear-gradient(180deg, #1A202C 0%, #2D3748 100%)'
+  );
+  const focusTimerBgColor = useColorModeValue('#FFFFFF', '#2D3748');
+  const cloudColor = useColorModeValue('#FFFFFF', '#4A5568');
+  const cloudShadow = useColorModeValue('rgba(0, 0, 0, 0.1)', 'rgba(0, 0, 0, 0.3)');
+  const sunColor = useColorModeValue('#FFD700', '#F6AD55');
+  const breathingColor = useColorModeValue('rgba(255, 255, 255, 0.7)', 'rgba(74, 85, 104, 0.5)');
   const historyItemBg = useColorModeValue('gray.50', 'gray.700');
   
   // Handle focus mode toggle
@@ -200,6 +230,11 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
   // Render the focus mode UI
   const renderFocusMode = () => {
     const percentComplete = (pomodoro.state.totalTime - pomodoro.state.time) / pomodoro.state.totalTime * 100;
+    const statusColor = pomodoro.state.isPaused 
+      ? 'yellow.400' 
+      : pomodoro.state.isRunning 
+        ? 'teal.400' 
+        : 'blue.400';
     
     return (
       <Portal>
@@ -210,24 +245,168 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
           right="0"
           bottom="0"
           zIndex="9999"
-          bg={focusBgColor}
-          backdropFilter="blur(10px)"
+          background={focusBgColor}
+          overflow="hidden"
           display="flex"
           flexDirection="column"
           alignItems="center"
           justifyContent="center"
           p={8}
         >
+          {/* Cloud decorations */}
+          <Box position="absolute" top="5%" left="10%" zIndex={0}>
+            <Box
+              position="relative"
+              width="120px"
+              height="60px"
+              animation={`${floatAnimation} 10s infinite ease-in-out`}
+            >
+              <Box
+                position="absolute"
+                width="120px"
+                height="60px"
+                bg={cloudColor}
+                borderRadius="30px"
+                boxShadow={`5px 5px 10px ${cloudShadow}`}
+              />
+              <Box
+                position="absolute"
+                top="-25px"
+                left="25px"
+                width="60px"
+                height="60px"
+                bg={cloudColor}
+                borderRadius="50%"
+                boxShadow={`2px 2px 8px ${cloudShadow}`}
+              />
+              <Box
+                position="absolute"
+                top="-30px"
+                left="60px"
+                width="70px"
+                height="70px"
+                bg={cloudColor}
+                borderRadius="50%"
+                boxShadow={`3px 3px 9px ${cloudShadow}`}
+              />
+              <Box
+                position="absolute"
+                top="-10px"
+                left="80px"
+                width="50px"
+                height="50px"
+                bg={cloudColor}
+                borderRadius="50%"
+                boxShadow={`4px 4px 10px ${cloudShadow}`}
+              />
+            </Box>
+          </Box>
+
+          <Box position="absolute" top="15%" right="15%" zIndex={0}>
+            <Box
+              position="relative"
+              width="90px"
+              height="45px"
+              animation={`${floatSmallAnimation} 15s infinite ease-in-out`}
+            >
+              <Box
+                position="absolute"
+                width="90px"
+                height="45px"
+                bg={cloudColor}
+                borderRadius="22.5px"
+                boxShadow={`4px 4px 8px ${cloudShadow}`}
+              />
+              <Box
+                position="absolute"
+                top="-20px"
+                left="15px"
+                width="50px"
+                height="50px"
+                bg={cloudColor}
+                borderRadius="50%"
+                boxShadow={`2px 2px 6px ${cloudShadow}`}
+              />
+              <Box
+                position="absolute"
+                top="-25px"
+                left="40px"
+                width="60px"
+                height="60px"
+                bg={cloudColor}
+                borderRadius="50%"
+                boxShadow={`3px 3px 7px ${cloudShadow}`}
+              />
+            </Box>
+          </Box>
+
+          <Box position="absolute" bottom="20%" left="20%" zIndex={0}>
+            <Box
+              position="relative"
+              width="100px"
+              height="50px"
+              animation={`${floatAnimation} 12s infinite ease-in-out 1s`}
+            >
+              <Box
+                position="absolute"
+                width="100px"
+                height="50px"
+                bg={cloudColor}
+                borderRadius="25px"
+                boxShadow={`4px 4px 8px ${cloudShadow}`}
+              />
+              <Box
+                position="absolute"
+                top="-20px"
+                left="20px"
+                width="45px"
+                height="45px"
+                bg={cloudColor}
+                borderRadius="50%"
+                boxShadow={`2px 2px 6px ${cloudShadow}`}
+              />
+              <Box
+                position="absolute"
+                top="-25px"
+                left="50px"
+                width="55px"
+                height="55px"
+                bg={cloudColor}
+                borderRadius="50%"
+                boxShadow={`3px 3px 7px ${cloudShadow}`}
+              />
+            </Box>
+          </Box>
+
+          {/* Sun decoration - only in light mode */}
+          {useColorModeValue(
+            <Box 
+              position="absolute" 
+              top="10%" 
+              right="25%" 
+              color={sunColor}
+              animation={`${sunRotateAnimation} 60s linear infinite`}
+              zIndex={0}
+            >
+              <FaSun size="80px" opacity={0.8} />
+            </Box>,
+            null
+          )}
+
+          {/* Main content */}
           <ScaleFade in={isFocusMode} initialScale={0.9}>
-            <VStack spacing={8} width="100%" maxWidth="600px">
+            <VStack spacing={8} width="100%" maxWidth="600px" position="relative" zIndex={1}>
               {/* Floating exit button */}
-              <Box position="absolute" top={4} right={4}>
+              <Box position="absolute" top={-12} right={0}>
                 <IconButton
                   icon={<FaTimes />}
                   aria-label="Exit focus mode"
-                  variant="ghost"
-                  colorScheme="gray"
+                  variant="solid"
+                  bg="whiteAlpha.300"
+                  color={textColor}
+                  _hover={{ bg: "whiteAlpha.500" }}
                   size="lg"
+                  isRound
                   onClick={toggleFocusMode}
                 />
               </Box>
@@ -235,24 +414,26 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
               {/* Task info */}
               {pomodoro.state.task && (
                 <Text
-                  fontSize="xl"
+                  fontSize="2xl"
                   fontWeight="medium"
                   color={textColor}
                   textAlign="center"
-                  opacity={0.8}
+                  textShadow="0 1px 2px rgba(0,0,0,0.1)"
+                  letterSpacing="0.5px"
                 >
                   {pomodoro.state.task.title}
                 </Text>
               )}
               
               {/* Timer container with breathing animation */}
-              <Center position="relative" w="100%">
+              <Center position="relative" w="100%" mt={4}>
                 <Box
                   position="absolute"
                   borderRadius="full"
                   bg={breathingColor}
                   w="300px"
                   h="300px"
+                  boxShadow="0 0 30px rgba(255,255,255,0.3)"
                   animation={`${breathingAnimation} ${
                     pomodoro.state.isPaused ? '0s' : '10s'
                   } infinite ease-in-out`}
@@ -261,36 +442,42 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                 <Box
                   bg={focusTimerBgColor}
                   borderRadius="full"
-                  boxShadow="lg"
+                  boxShadow="0px 10px 30px rgba(0, 0, 0, 0.15)"
                   p={16}
                   position="relative"
                   zIndex={1}
+                  border="4px solid"
+                  borderColor="whiteAlpha.400"
                 >
                   <Text
                     fontSize="7xl"
                     fontWeight="bold"
                     color={textColor}
                     fontFamily="mono"
+                    letterSpacing="2px"
+                    textShadow="0 1px 3px rgba(0,0,0,0.1)"
                   >
                     {formatTime(pomodoro.state.time)}
                   </Text>
                 </Box>
               </Center>
               
-              {/* Progress ring */}
-              <Box position="relative" width="320px" height="20px">
+              {/* Progress indicator */}
+              <Box position="relative" width="320px" height="12px" mt={6}>
                 <Progress
                   value={percentComplete}
-                  size="sm"
-                  colorScheme={pomodoro.state.isPaused ? 'yellow' : pomodoro.state.isRunning ? 'blue' : 'blue'}
+                  size="md"
+                  colorScheme={pomodoro.state.isPaused ? "yellow" : "teal"}
                   borderRadius="full"
-                  height="8px"
+                  height="12px"
                   width="100%"
+                  boxShadow="0 2px 5px rgba(0,0,0,0.1)"
+                  bg="whiteAlpha.300"
                 />
               </Box>
               
-              {/* Minimal controls */}
-              <HStack spacing={8} mt={8}>
+              {/* Minimal controls with cute styling */}
+              <HStack spacing={8} mt={6}>
                 {!pomodoro.state.isRunning || pomodoro.state.isPaused ? (
                   <IconButton
                     aria-label="Start Timer"
@@ -298,7 +485,10 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                     colorScheme="green"
                     size="lg"
                     isRound
-                    boxShadow="md"
+                    boxShadow="0 4px 10px rgba(0,0,0,0.15)"
+                    _hover={{ transform: "translateY(-3px)", boxShadow: "0 6px 15px rgba(0,0,0,0.2)" }}
+                    _active={{ transform: "translateY(0)", boxShadow: "0 2px 5px rgba(0,0,0,0.1)" }}
+                    transition="all 0.2s"
                     onClick={pomodoro.state.isPaused ? pomodoro.actions.resume : pomodoro.actions.start}
                   />
                 ) : (
@@ -308,7 +498,10 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                     colorScheme="yellow"
                     size="lg"
                     isRound
-                    boxShadow="md"
+                    boxShadow="0 4px 10px rgba(0,0,0,0.15)"
+                    _hover={{ transform: "translateY(-3px)", boxShadow: "0 6px 15px rgba(0,0,0,0.2)" }}
+                    _active={{ transform: "translateY(0)", boxShadow: "0 2px 5px rgba(0,0,0,0.1)" }}
+                    transition="all 0.2s"
                     onClick={pomodoro.actions.pause}
                   />
                 )}
@@ -319,7 +512,11 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                   colorScheme="blue"
                   size="lg"
                   isRound
-                  variant="outline"
+                  variant="solid"
+                  boxShadow="0 4px 10px rgba(0,0,0,0.15)"
+                  _hover={{ transform: "translateY(-3px)", boxShadow: "0 6px 15px rgba(0,0,0,0.2)" }}
+                  _active={{ transform: "translateY(0)", boxShadow: "0 2px 5px rgba(0,0,0,0.1)" }}
+                  transition="all 0.2s"
                   onClick={pomodoro.actions.reset}
                 />
                 
@@ -330,7 +527,11 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                     colorScheme="green"
                     size="lg"
                     isRound
-                    variant="outline"
+                    variant="solid"
+                    boxShadow="0 4px 10px rgba(0,0,0,0.15)"
+                    _hover={{ transform: "translateY(-3px)", boxShadow: "0 6px 15px rgba(0,0,0,0.2)" }}
+                    _active={{ transform: "translateY(0)", boxShadow: "0 2px 5px rgba(0,0,0,0.1)" }}
+                    transition="all 0.2s"
                     onClick={handleCompleteTask}
                   />
                 )}
@@ -338,15 +539,33 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
               
               {/* Status badge */}
               <Badge
-                colorScheme={pomodoro.state.isPaused ? 'yellow' : pomodoro.state.isRunning ? 'blue' : 'gray'}
+                bg={statusColor}
+                color="white"
                 fontSize="md"
-                px={4}
+                px={6}
                 py={2}
                 borderRadius="full"
-                opacity={0.8}
+                boxShadow="0 2px 5px rgba(0,0,0,0.1)"
+                letterSpacing="1px"
+                fontWeight="medium"
               >
-                {pomodoro.state.isPaused ? 'PAUSED' : pomodoro.state.isRunning ? 'FOCUS' : 'IDLE'}
+                {pomodoro.state.isPaused ? 'PAUSED' : pomodoro.state.isRunning ? 'FOCUS' : 'READY'}
               </Badge>
+
+              {/* Inspirational message */}
+              <Text
+                color={textColor}
+                fontSize="md"
+                fontStyle="italic"
+                textAlign="center"
+                opacity={0.8}
+                maxW="80%"
+                mt={2}
+              >
+                {pomodoro.state.isRunning && !pomodoro.state.isPaused
+                  ? "Take a deep breath and focus on the present moment."
+                  : "Ready to achieve your goals? Take one step at a time."}
+              </Text>
             </VStack>
           </ScaleFade>
         </Box>
@@ -501,10 +720,10 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
               <Flex justify="space-between" align="center">
                 <HStack>
                   <Text fontWeight="medium">Focus Mode</Text>
-                  <Tooltip label="Enter fullscreen focus mode">
+                  <Tooltip label="Enter peaceful cloud focus mode">
                     <IconButton
                       aria-label="Enter Focus Mode"
-                      icon={<FaExpand />}
+                      icon={<FaCloud />}
                       size="sm"
                       colorScheme="blue"
                       variant="ghost"
