@@ -88,7 +88,7 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
       borderRadius="lg"
       overflow="hidden"
       bg={bgColor}
-      p={4}
+      p={5}
       boxShadow={boxShadow}
       opacity={isUnlocked ? 1 : 0.7}
       transition="all 0.3s ease"
@@ -108,9 +108,11 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
       }}
       height="100%"
       position="relative"
+      display="flex"
+      flexDirection="column"
     >
       {/* Badges */}
-      <Flex justify="space-between" mb={3}>
+      <Flex justify="space-between" mb={4}>
         <Badge
           colorScheme={isUnlocked ? {
             common: 'gray',
@@ -138,26 +140,29 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
         </Badge>
       </Flex>
 
-      <HStack spacing={4} align="center" mb={4}>
-        <AchievementIcon 
-          icon={icon} 
-          isUnlocked={isUnlocked} 
-          rarity={rarity} 
-          isAnimated={isRecent}
-        />
+      <HStack spacing={4} align="flex-start" mb={4}>
+        <Box flexShrink={0}>
+          <AchievementIcon 
+            icon={icon} 
+            isUnlocked={isUnlocked} 
+            rarity={rarity} 
+            isAnimated={isRecent}
+            size="3rem"
+          />
+        </Box>
         
-        <VStack align="flex-start" spacing={0}>
+        <VStack align="flex-start" spacing={1} flex="1">
           <Heading size="md" color={isUnlocked ? rarityColors[rarity] : textColor}>
             {name}
           </Heading>
-          <Text fontSize="sm" color={textColor} opacity={0.8} mt={1} noOfLines={2}>
+          <Text fontSize="sm" color={textColor} opacity={0.8} noOfLines={2}>
             {description}
           </Text>
         </VStack>
       </HStack>
 
       {/* Progress bar */}
-      <Box mt={2}>
+      <Box mt="auto" pt={3}>
         <Progress 
           value={progressPercentage} 
           size="sm" 
@@ -170,8 +175,8 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
           }[rarity]} 
           borderRadius="full"
           bg={progressBgColor}
-          hasStripe={isUnlocked}
-          isAnimated={isUnlocked}
+          hasStripe={isUnlocked && progressPercentage < 100}
+          isAnimated={isUnlocked && progressPercentage < 100}
         />
         <Flex justify="space-between" mt={1}>
           <Text fontSize="xs" color={textColor} opacity={0.7}>

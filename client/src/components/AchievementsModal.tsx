@@ -180,8 +180,8 @@ const AchievementsModal: React.FC<AchievementsModalProps> = ({
         </ModalHeader>
 
         <ModalBody p={0}>
-          <Box p={6} bg={statsBgColor}>
-            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+          <Box p={{ base: 4, md: 6 }} bg={statsBgColor}>
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 4, md: 6 }}>
               {/* Overall progress */}
               <Box>
                 <Text fontWeight="bold" mb={2}>Overall Progress</Text>
@@ -191,8 +191,8 @@ const AchievementsModal: React.FC<AchievementsModalProps> = ({
                   colorScheme="blue" 
                   borderRadius="md"
                   mb={2}
-                  hasStripe
-                  isAnimated
+                  hasStripe={completionPercentage < 100}
+                  isAnimated={completionPercentage < 100}
                 />
                 <HStack justify="space-between">
                   <Text fontSize="sm">{unlockedCount} Unlocked</Text>
@@ -204,14 +204,14 @@ const AchievementsModal: React.FC<AchievementsModalProps> = ({
               <Box>
                 <Text fontWeight="bold" mb={2}>Latest Achievement</Text>
                 {mostRecentAchievement ? (
-                  <HStack spacing={3}>
+                  <HStack spacing={4} align="center">
                     <Box>
                       <AchievementIcon 
                         icon={mostRecentAchievement.icon} 
                         rarity={mostRecentAchievement.rarity}
                         isUnlocked={true}
                         isAnimated={mostRecentAchievement.id === recentlyUnlocked?.id}
-                        size="2.5rem"
+                        size="3rem"
                       />
                     </Box>
                     <VStack align="start" spacing={0}>
@@ -226,7 +226,7 @@ const AchievementsModal: React.FC<AchievementsModalProps> = ({
             </SimpleGrid>
           </Box>
           
-          <Box p={6}>
+          <Box p={{ base: 4, md: 6 }}>
             {/* Filters and search */}
             <Flex 
               direction={{ base: 'column', md: 'row' }} 
@@ -346,7 +346,7 @@ const AchievementsModal: React.FC<AchievementsModalProps> = ({
               <TabPanels>
                 <TabPanel p={0} pt={4}>
                   {filteredAchievements.length > 0 ? (
-                    <SimpleGrid columns={columns} spacing={6}>
+                    <SimpleGrid columns={columns} spacing={6} minChildWidth="300px">
                       <AnimatePresence>
                         {filteredAchievements.map((achievement) => (
                           <MotionBox
@@ -400,7 +400,7 @@ const AchievementsModal: React.FC<AchievementsModalProps> = ({
                 {['completion', 'productivity', 'consistency', 'explorer'].map((category) => (
                   <TabPanel key={category} p={0} pt={4}>
                     {filteredAchievements.length > 0 ? (
-                      <SimpleGrid columns={columns} spacing={6}>
+                      <SimpleGrid columns={columns} spacing={6} minChildWidth="300px">
                         <AnimatePresence>
                           {filteredAchievements.map((achievement) => (
                             <MotionBox
