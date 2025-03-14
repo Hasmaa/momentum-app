@@ -64,6 +64,7 @@ export const SortableCard = React.forwardRef<HTMLDivElement, {
       {...attributes}
       role="article"
       aria-label={`Task: ${todo.title}`}
+      id={`task-${todo.id}`}
     >
       <MotionCard
         layout

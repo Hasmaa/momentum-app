@@ -106,7 +106,7 @@ import { SortableCard } from './SortableCard';
 import { Droppable } from './Droppable';
 import { CreateTaskModal } from './CreateTaskModal';
 import { EditTaskModal } from './EditTaskModal';
-import { PomodoroModal, PomodoroButton } from '../features/pomodoro';
+import { PomodoroModal, PomodoroButton, usePomodoroStore } from '../features/pomodoro';
 import { FaClock } from 'react-icons/fa';
 
 const MotionBox = motion(Box);
@@ -1045,7 +1045,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                                   isSelected={selectedTodos.has(todo.id)}
                                   isSelectMode={isSelectMode}
                                   onToggleSelect={toggleTodoSelection}
-                                  onPomodoro={onPomodoroOpen}
+                                  onPomodoro={handlePomodoroForTask}
                                 />
                               ))
                             ) : (
@@ -1268,7 +1268,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                               isSelected={selectedTodos.has(todo.id)}
                               isSelectMode={isSelectMode}
                               onToggleSelect={toggleTodoSelection}
-                              onPomodoro={onPomodoroOpen}
+                              onPomodoro={handlePomodoroForTask}
                             />
                           ))
                         ) : (
@@ -1534,16 +1534,53 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     }
   };
 
-  const onPomodoroOpen = (task?: Task) => {
-    if (task) {
-      setPomodoroTask(task);
+  const onPomodoroOpen = useCallback((taskId?: string) => {
+    console.log('[Dashboard] Opening Pomodoro modal for task:', taskId || 'no specific task');
+    
+    // Get the store state using getState to avoid affecting hook order
+    const storeState = usePomodoroStore.getState();
+    console.log('[Dashboard] Current active timers:', storeState.activeTimers.length);
+    console.log('[Dashboard] Running timers count:', storeState.getRunningTimersCount());
+    
+    if (taskId) {
+      // Find the task in our list
+      const task = todos.find(t => t.id === taskId);
+      
+      if (task) {
+        // Check if there's already a timer for this task
+        const existingTimer = storeState.getTimerByTaskId(taskId);
+        
+        if (existingTimer) {
+          console.log('[Dashboard] Task already has an active timer:', existingTimer.id);
+          toast({
+            title: 'Timer already active',
+            description: `There's already an active timer for "${task.title}"`,
+            status: 'info',
+            duration: 3000,
+            isClosable: true,
+          });
+        }
+        
+        // Always set the task and open the modal
+        console.log('[Dashboard] Setting selected task:', task.id);
+        setPomodoroTask(task);
+        setIsPomodoroOpen(true);
+      } else {
+        console.log('[Dashboard] Task not found:', taskId);
+        setIsPomodoroOpen(true); // Open without a task
+      }
     } else {
+      // No task ID provided, just open the modal
+      console.log('[Dashboard] Opening modal without a task');
       setPomodoroTask(null);
+      setIsPomodoroOpen(true);
     }
-    setIsPomodoroOpen(true);
-  };
+  }, [todos, toast]);
 
-  // Update sorting function to remove order property references
+  // Helper function to handle Task to taskId conversion for Pomodoro
+  const handlePomodoroForTask = useCallback((task: Task) => {
+    onPomodoroOpen(task.id);
+  }, [onPomodoroOpen]);
 
   return (
     <Box bg={mainBg} minH="100vh" transition="background-color 0.2s">
@@ -2378,7 +2415,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                                                           isSelected={selectedTodos.has(todo.id)}
                                                           isSelectMode={isSelectMode}
                                                           onToggleSelect={toggleTodoSelection}
-                                                          onPomodoro={onPomodoroOpen}
+                                                          onPomodoro={handlePomodoroForTask}
                                                         />
                                                       ))
                                                     ) : (
@@ -2625,7 +2662,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                                                     isSelected={selectedTodos.has(todo.id)}
                                                     isSelectMode={isSelectMode}
                                                     onToggleSelect={toggleTodoSelection}
-                                                    onPomodoro={onPomodoroOpen}
+                                                    onPomodoro={handlePomodoroForTask}
                                                   />
                                                 ))
                                               ) : (

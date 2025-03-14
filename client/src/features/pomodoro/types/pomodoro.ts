@@ -36,7 +36,7 @@ export interface PomodoroButtonProps {
 export interface PomodoroModalProps {
   isOpen: boolean;
   onClose: () => void;
-  selectedTask: Task | null;
+  selectedTask?: Task | null;
   tasks: Task[];
   onTaskComplete: (taskId: string) => Promise<void>;
 } 

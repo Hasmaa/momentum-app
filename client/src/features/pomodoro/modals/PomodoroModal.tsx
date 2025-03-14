@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -26,10 +26,11 @@ import {
   useToast,
   Tooltip
 } from '@chakra-ui/react';
-import { FaPlay, FaPause, FaUndo, FaCheck, FaStopwatch, FaHourglassHalf } from 'react-icons/fa';
+import { FaPlay, FaPause, FaUndo, FaCheck, FaStopwatch } from 'react-icons/fa';
 import { Task } from '../../../types';
 import { PomodoroModalProps } from '../types/pomodoro';
-import { usePomodoro } from '../hooks/usePomodoro';
+import { useGlobalPomodoro } from '../hooks/useGlobalPomodoro';
+import { usePomodoroStore } from '../hooks/usePomodoroStore';
 
 const PomodoroModal: React.FC<PomodoroModalProps> = ({
   isOpen,
@@ -40,6 +41,7 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
 }) => {
   const [taskId, setTaskId] = useState<string | null>(selectedTask?.id || null);
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
+  const lastSelectedTaskIdRef = useRef<string | null>(selectedTask?.id || null);
   const toast = useToast();
 
   // Convert tasks array to a map for easy lookup
@@ -52,7 +54,7 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
   const currentTask = taskId ? tasksMap[taskId] : null;
 
   // Initialize pomodoro hook
-  const pomodoro = usePomodoro(currentTask);
+  const pomodoro = useGlobalPomodoro(currentTask);
   
   // Colors
   const bgColor = useColorModeValue('white', 'gray.800');
@@ -60,36 +62,72 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
   const timerBgColor = useColorModeValue('gray.50', 'gray.700');
   const textColor = useColorModeValue('gray.800', 'white');
   
-  // Cycle colors
-  const cycleColors = {
-    focus: 'red',
-    shortBreak: 'green',
-    longBreak: 'blue'
-  };
-  
-  // Update task when selected task changes
+  // Update task when selected task changes, only if it's a different task
   useEffect(() => {
-    if (selectedTask) {
-      setTaskId(selectedTask.id);
+    // Skip if it's the same task or null
+    if (!selectedTask || selectedTask.id === lastSelectedTaskIdRef.current) {
+      console.log('[PomodoroModal] Selected task unchanged, skipping update');
+      return;
+    }
+    
+    console.log('[PomodoroModal] Selected task changed:', selectedTask?.id);
+    lastSelectedTaskIdRef.current = selectedTask.id;
+    setTaskId(selectedTask.id);
+    
+    // Check if we already have this timer in the store
+    const storeState = usePomodoroStore.getState();
+    const existingTimer = storeState.getTimerByTaskId(selectedTask.id);
+    
+    if (existingTimer) {
+      console.log('[PomodoroModal] Found existing timer for task:', selectedTask.id);
+    } else {
+      console.log('[PomodoroModal] No existing timer, creating new one for task:', selectedTask.id);
+    }
+    
+    // Only change the task if it's different
+    if (pomodoro.state.task?.id !== selectedTask.id) {
       pomodoro.actions.changeTask(selectedTask);
     }
+  // Only run when selectedTask changes, not on every pomodoro action change
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTask]);
 
   // Handle task selection change
-  const handleTaskChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleTaskChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
     const newTaskId = e.target.value || null;
+    console.log('[PomodoroModal] Task selection changed to:', newTaskId);
+    
+    // Skip if it's the same task
+    if (newTaskId === taskId) {
+      console.log('[PomodoroModal] Task unchanged, skipping update');
+      return;
+    }
+    
     setTaskId(newTaskId);
+    lastSelectedTaskIdRef.current = newTaskId;
     
     if (newTaskId) {
       const task = tasksMap[newTaskId];
+      
+      // Check if we already have this timer in the store
+      const storeState = usePomodoroStore.getState();
+      const existingTimer = storeState.getTimerByTaskId(newTaskId);
+      
+      if (existingTimer) {
+        console.log('[PomodoroModal] Using existing timer for task:', newTaskId);
+        // Do nothing, the useGlobalPomodoro hook will handle it
+      } else {
+        console.log('[PomodoroModal] Creating new timer for task:', newTaskId);
+      }
+      
       pomodoro.actions.changeTask(task);
     } else {
       pomodoro.actions.changeTask(null);
     }
-  };
+  }, [taskId, tasksMap, pomodoro.actions]);
 
   // Handle task completion
-  const handleCompleteTask = async () => {
+  const handleCompleteTask = useCallback(async () => {
     if (!taskId) return;
     
     try {
@@ -104,11 +142,12 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
         isClosable: true,
       });
       
-      // Reset timer
-      pomodoro.actions.reset();
+      // Mark the timer as completed
+      pomodoro.actions.complete();
       
       // Clear task selection
       setTaskId(null);
+      lastSelectedTaskIdRef.current = null;
     } catch (error) {
       toast({
         title: 'Failed to complete task.',
@@ -118,32 +157,27 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
         isClosable: true,
       });
     }
-  };
+  }, [taskId, onTaskComplete, toast, pomodoro.actions]);
 
-  // Calculate progress percentage
-  const getProgressPercentage = (): number => {
-    if (pomodoro.session.currentCycle === 'focus') {
-      const totalTime = 25 * 60; // 25 minutes in seconds
-      return ((totalTime - pomodoro.session.timeRemaining) / totalTime) * 100;
-    } else if (pomodoro.session.currentCycle === 'shortBreak') {
-      const totalTime = 5 * 60; // 5 minutes in seconds
-      return ((totalTime - pomodoro.session.timeRemaining) / totalTime) * 100;
-    } else {
-      const totalTime = 15 * 60; // 15 minutes in seconds
-      return ((totalTime - pomodoro.session.timeRemaining) / totalTime) * 100;
-    }
-  };
-
-  // Format total focus time
-  const formatTotalTime = (seconds: number): string => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
+  // Format time as MM:SS
+  const formatTime = useCallback((ms: number): string => {
+    const totalSeconds = Math.ceil(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }, []);
+  
+  // Format total time
+  const formatTotalTime = useCallback((ms: number): string => {
+    const totalSeconds = Math.ceil(ms / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
     
     if (hours > 0) {
       return `${hours}h ${minutes}m`;
     }
     return `${minutes}m`;
-  };
+  }, []);
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered>
@@ -155,13 +189,13 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
             <Text>Pomodoro Timer</Text>
           </HStack>
           <Badge
-            colorScheme={cycleColors[pomodoro.session.currentCycle]}
+            colorScheme={pomodoro.state.isPaused ? 'yellow' : pomodoro.state.isRunning ? 'red' : 'gray'}
             fontSize="sm"
             px={2}
             py={1}
             borderRadius="md"
           >
-            {pomodoro.cycleLabel}
+            {pomodoro.state.isPaused ? 'PAUSED' : pomodoro.state.isRunning ? 'FOCUS' : 'IDLE'}
           </Badge>
         </ModalHeader>
         <ModalCloseButton />
@@ -179,9 +213,9 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
               overflow="hidden"
             >
               <Progress
-                value={getProgressPercentage()}
+                value={(pomodoro.state.totalTime - pomodoro.state.time) / pomodoro.state.totalTime * 100}
                 size="xs"
-                colorScheme={cycleColors[pomodoro.session.currentCycle]}
+                colorScheme={pomodoro.state.isPaused ? 'yellow' : pomodoro.state.isRunning ? 'red' : 'blue'}
                 position="absolute"
                 top={0}
                 left={0}
@@ -196,18 +230,18 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                 color={textColor}
                 fontFamily="mono"
               >
-                {pomodoro.formattedTime}
+                {formatTime(pomodoro.state.time)}
               </Text>
               
               <HStack spacing={4} justify="center" mt={4}>
-                {pomodoro.session.status === 'idle' || pomodoro.session.status === 'paused' ? (
+                {!pomodoro.state.isRunning || pomodoro.state.isPaused ? (
                   <IconButton
                     aria-label="Start Timer"
                     icon={<FaPlay />}
                     colorScheme="green"
                     size="lg"
                     isRound
-                    onClick={pomodoro.session.status === 'idle' ? pomodoro.actions.start : pomodoro.actions.resume}
+                    onClick={pomodoro.state.isPaused ? pomodoro.actions.resume : pomodoro.actions.start}
                   />
                 ) : (
                   <IconButton
@@ -271,14 +305,14 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
             <Flex justify="space-between">
               <Stat>
                 <StatLabel>Focus Time</StatLabel>
-                <StatNumber>{formatTotalTime(pomodoro.session.totalFocusTime)}</StatNumber>
-                <StatHelpText>Total time focused</StatHelpText>
+                <StatNumber>{formatTotalTime(pomodoro.state.time)}</StatNumber>
+                <StatHelpText>Current focus time</StatHelpText>
               </Stat>
               
               <Stat>
-                <StatLabel>Pomodoros</StatLabel>
-                <StatNumber>{pomodoro.session.completedPomodoros}</StatNumber>
-                <StatHelpText>Completed cycles</StatHelpText>
+                <StatLabel>Cycles</StatLabel>
+                <StatNumber>{pomodoro.state.cycleCount}</StatNumber>
+                <StatHelpText>Pomodoro cycles</StatHelpText>
               </Stat>
               
               <Stat>
