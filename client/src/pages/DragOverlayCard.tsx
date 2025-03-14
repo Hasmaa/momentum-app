@@ -1,8 +1,9 @@
 import { WarningIcon, CalendarIcon } from '@chakra-ui/icons';
-import { useColorModeValue, Card, Box, CardBody, VStack, Heading, Text, Flex, HStack, Tag, TagLeftIcon, TagLabel } from '@chakra-ui/react';
+import { useColorModeValue, Card, Box, CardBody, VStack, Heading, Text, Flex, HStack, Tag as ChakraTag, TagLeftIcon, TagLabel, Wrap, WrapItem } from '@chakra-ui/react';
 import { isPast, isWithinInterval, addDays, format } from 'date-fns';
 import React from 'react';
 import { Task } from '../types';
+import { TagBadge } from '../components/tags/TagBadge';
 
 // Add a DragOverlayCard component for better drag visuals
 export const DragOverlayCard = ({ todo }: { todo: Task; }) => {
@@ -67,6 +68,18 @@ export const DragOverlayCard = ({ todo }: { todo: Task; }) => {
               {todo.description}
             </Text>
           )}
+
+          {/* Task Tags Section */}
+          {todo.tags && todo.tags.length > 0 && (
+            <Wrap spacing={1} mt={2} mb={1}>
+              {todo.tags.map(tag => (
+                <WrapItem key={tag.id}>
+                  <TagBadge tag={tag} size="sm" />
+                </WrapItem>
+              ))}
+            </Wrap>
+          )}
+          
           <Flex
             justify="space-between"
             align="center"
@@ -74,7 +87,7 @@ export const DragOverlayCard = ({ todo }: { todo: Task; }) => {
             gap={2}
           >
             <HStack spacing={2}>
-              <Tag
+              <ChakraTag
                 size="sm"
                 colorScheme={priorityColors[todo.priority]}
                 variant="subtle"
@@ -87,9 +100,9 @@ export const DragOverlayCard = ({ todo }: { todo: Task; }) => {
                 <TagLabel textTransform="capitalize">
                   {todo.priority}
                 </TagLabel>
-              </Tag>
+              </ChakraTag>
             </HStack>
-            <Tag
+            <ChakraTag
               size="sm"
               variant="subtle"
               colorScheme={isOverdue ? 'red' : isDueSoon ? 'orange' : 'gray'}
@@ -102,7 +115,7 @@ export const DragOverlayCard = ({ todo }: { todo: Task; }) => {
               <TagLabel>
                 {format(new Date(todo.dueDate), 'MMM d')}
               </TagLabel>
-            </Tag>
+            </ChakraTag>
           </Flex>
         </VStack>
       </CardBody>

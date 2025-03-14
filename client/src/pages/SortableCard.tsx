@@ -1,5 +1,5 @@
 import { HamburgerIcon, ChevronDownIcon, WarningIcon, TimeIcon, CheckIcon, EditIcon, DeleteIcon, CalendarIcon } from '@chakra-ui/icons';
-import { useColorModeValue, Box, useMergeRefs, Checkbox, Spinner, CardBody, VStack, Flex, Icon, Heading, HStack, Menu, Tooltip, MenuButton, IconButton, Portal, MenuList, MenuItem, Text, Tag, TagLeftIcon, TagLabel } from '@chakra-ui/react';
+import { useColorModeValue, Box, useMergeRefs, Checkbox, Spinner, CardBody, VStack, Flex, Icon, Heading, HStack, Menu, Tooltip, MenuButton, IconButton, Portal, MenuList, MenuItem, Text, Tag as ChakraTag, TagLeftIcon, TagLabel, Wrap, WrapItem } from '@chakra-ui/react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { isPast, isWithinInterval, addDays, format } from 'date-fns';
@@ -8,6 +8,7 @@ import { Task } from '../types';
 import { MotionCard } from './Dashboard';
 import { getStatusIcon } from './utils';
 import { FaClock } from 'react-icons/fa';
+import { TagBadge } from '../components/tags/TagBadge';
 
 // Modify the SortableCard component to properly handle refs
 export const SortableCard = React.forwardRef<HTMLDivElement, {
@@ -254,6 +255,17 @@ export const SortableCard = React.forwardRef<HTMLDivElement, {
                 </Text>
               )}
 
+              {/* Task Tags Section */}
+              {todo.tags && todo.tags.length > 0 && (
+                <Wrap spacing={1} mt={2} mb={1}>
+                  {todo.tags.map(tag => (
+                    <WrapItem key={tag.id}>
+                      <TagBadge tag={tag} size="sm" />
+                    </WrapItem>
+                  ))}
+                </Wrap>
+              )}
+
               {/* Metadata Section */}
               <Flex
                 justify="space-between"
@@ -268,7 +280,7 @@ export const SortableCard = React.forwardRef<HTMLDivElement, {
                     placement="top"
                     hasArrow
                   >
-                    <Tag
+                    <ChakraTag
                       size="sm"
                       colorScheme={priorityColors[todo.priority]}
                       variant="subtle"
@@ -281,7 +293,7 @@ export const SortableCard = React.forwardRef<HTMLDivElement, {
                       <TagLabel textTransform="capitalize">
                         {todo.priority}
                       </TagLabel>
-                    </Tag>
+                    </ChakraTag>
                   </Tooltip>
                 </HStack>
 
@@ -290,7 +302,7 @@ export const SortableCard = React.forwardRef<HTMLDivElement, {
                   placement="top"
                   hasArrow
                 >
-                  <Tag
+                  <ChakraTag
                     size="sm"
                     variant="subtle"
                     colorScheme={isOverdue ? 'red' : isDueSoon ? 'orange' : 'gray'}
@@ -303,7 +315,7 @@ export const SortableCard = React.forwardRef<HTMLDivElement, {
                     <TagLabel>
                       {format(new Date(todo.dueDate), 'MMM d')}
                     </TagLabel>
-                  </Tag>
+                  </ChakraTag>
                 </Tooltip>
               </Flex>
             </Box>

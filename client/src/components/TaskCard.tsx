@@ -12,7 +12,10 @@ import {
   Fade,
   Input,
   Tooltip,
-  useColorModeValue
+  useColorModeValue,
+  Flex,
+  Wrap,
+  WrapItem,
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { Task, TaskStatus } from '../types';
@@ -27,6 +30,7 @@ import {
   FiArrowLeft,
   FiStar
 } from 'react-icons/fi';
+import { TagBadge } from './tags/TagBadge';
 
 interface TaskCardProps {
   task: Task;
@@ -137,9 +141,20 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete, onSt
             cursor="pointer"
             transition="color 0.2s"
             _hover={{ color: 'blue.500' }}
+            mb={2}
           >
             {task.title}
           </Text>
+        )}
+
+        {task.tags && task.tags.length > 0 && (
+          <Wrap spacing={1} mb={2}>
+            {task.tags.map(tag => (
+              <WrapItem key={tag.id}>
+                <TagBadge tag={tag} size="sm" />
+              </WrapItem>
+            ))}
+          </Wrap>
         )}
 
         <Fade in={isHovered} unmountOnExit>
