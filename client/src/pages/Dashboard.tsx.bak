@@ -58,6 +58,8 @@ import {
   TaskPriority,
   SortConfig,
   TaskTemplate,
+  TaskWithProgress,
+  UserPreferences,
   Tag as TagType,
   TagFilters
 } from '../types';
@@ -117,6 +119,8 @@ import { CreateTaskModal } from './CreateTaskModal';
 import { EditTaskModal } from './EditTaskModal';
 import { PomodoroModal, PomodoroButton, usePomodoroStore } from '../features/pomodoro';
 import { FaClock } from 'react-icons/fa';
+// Import Tag type
+import type { Tag as TagType } from '../types';
 // Add import for TagManager
 import { TagManager } from '../components/tags/TagManager';
 import { MdLabel } from 'react-icons/md';
@@ -2988,8 +2992,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
         />
         <TagFilterBar 
           tagFilters={tagFilters}
-          onTagFiltersChange={handleTagFiltersChange}
-          onClearTagFilters={handleClearTagFilters}
+          setTagFilters={setTagFilters}
         />
       </Container>
       <KeyboardShortcuts isOpen={isShortcutsOpen} onClose={onShortcutsClose} />

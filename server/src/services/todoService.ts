@@ -30,6 +30,8 @@ export interface FilterOptions {
   status?: Todo['status'][];
   priority?: Todo['priority'][];
   search?: string;
+  tagIds?: string[];
+  tagMatchType?: 'any' | 'all';
 }
 
 export interface SortOptions {
@@ -58,6 +60,25 @@ export async function readTodos(
         todo.title.toLowerCase().includes(searchLower) ||
         todo.description?.toLowerCase().includes(searchLower)
       );
+    }
+    
+    // Apply tag filtering
+    if (filters.tagIds && filters.tagIds.length > 0) {
+      if (filters.tagMatchType === 'all') {
+        // All tags must be present (every tag in tagIds must be in the todo's tags)
+        todos = todos.filter(todo => 
+          filters.tagIds!.every(tagId => 
+            todo.tags.some(tag => tag.id === tagId)
+          )
+        );
+      } else {
+        // Any tag must be present (at least one tag in tagIds must be in the todo's tags)
+        todos = todos.filter(todo => 
+          filters.tagIds!.some(tagId => 
+            todo.tags.some(tag => tag.id === tagId)
+          )
+        );
+      }
     }
   }
 

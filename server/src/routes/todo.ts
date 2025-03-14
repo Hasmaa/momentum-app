@@ -72,6 +72,21 @@ router.get('/', async (req: Request, res: Response) => {
       filters.search = req.query.search as string;
     }
 
+    // Handle tag filtering
+    if (req.query.tagIds) {
+      const tagIds = Array.isArray(req.query.tagIds)
+        ? req.query.tagIds as string[]
+        : [req.query.tagIds as string];
+      filters.tagIds = tagIds;
+      
+      // Set the tag match type
+      if (req.query.tagMatchType) {
+        filters.tagMatchType = req.query.tagMatchType as 'any' | 'all';
+      } else {
+        filters.tagMatchType = 'any'; // Default to 'any' if not specified
+      }
+    }
+
     const todos = await todoService.readTodos(filters, sort);
     res.json(todos);
   } catch (error) {
@@ -96,7 +111,8 @@ router.post('/', todoValidation, async (req: Request<any, any, Partial<Todo>>, r
       description: req.body.description,
       status: req.body.status || 'pending',
       priority: req.body.priority || 'medium',
-      dueDate: req.body.dueDate || new Date().toISOString()
+      dueDate: req.body.dueDate || new Date().toISOString(),
+      tags: req.body.tags || []
     });
 
     res.status(201).json(todo);

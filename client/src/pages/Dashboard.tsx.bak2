@@ -2988,8 +2988,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
         />
         <TagFilterBar 
           tagFilters={tagFilters}
-          onTagFiltersChange={handleTagFiltersChange}
-          onClearTagFilters={handleClearTagFilters}
+          setTagFilters={setTagFilters}
         />
       </Container>
       <KeyboardShortcuts isOpen={isShortcutsOpen} onClose={onShortcutsClose} />
