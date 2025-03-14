@@ -1,29 +1,29 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Tag } from '../types';
 
-// Predefined tag colors for enterprise use
+// Updated tag colors using Chakra UI theme colors
 export const TAG_COLORS = [
-  '#FF5733', // Red
-  '#33FF57', // Green
-  '#3357FF', // Blue
-  '#FF33A8', // Pink
-  '#33FFF6', // Cyan
-  '#F6FF33', // Yellow
-  '#FF8333', // Orange
-  '#8333FF', // Purple
-  '#33FFAA', // Mint
-  '#AA33FF', // Violet
-  '#FFD633', // Gold
-  '#33D6FF', // Sky Blue
+  '#3182CE', // blue.500
+  '#38A169', // green.500
+  '#E53E3E', // red.500
+  '#DD6B20', // orange.500
+  '#805AD5', // purple.500
+  '#D69E2E', // yellow.500
+  '#00B5D8', // cyan.500
+  '#ED64A6', // pink.500
+  '#667EEA', // indigo.500
+  '#9F7AEA', // purple.400
+  '#4FD1C5', // teal.400
+  '#718096', // gray.500
 ];
 
 // Default tags that may be useful for most users
 export const DEFAULT_TAGS: Tag[] = [
-  { id: uuidv4(), name: 'Work', color: '#FF5733' },
-  { id: uuidv4(), name: 'Personal', color: '#33FF57' },
-  { id: uuidv4(), name: 'Urgent', color: '#FF8333' },
-  { id: uuidv4(), name: 'Important', color: '#F6FF33' },
-  { id: uuidv4(), name: 'Meeting', color: '#3357FF' },
+  { id: uuidv4(), name: 'Work', color: '#3182CE' }, // blue.500
+  { id: uuidv4(), name: 'Personal', color: '#38A169' }, // green.500
+  { id: uuidv4(), name: 'Urgent', color: '#E53E3E' }, // red.500
+  { id: uuidv4(), name: 'Important', color: '#D69E2E' }, // yellow.500
+  { id: uuidv4(), name: 'Meeting', color: '#805AD5' }, // purple.500
 ];
 
 // Local storage key for tags
@@ -82,8 +82,9 @@ export class TagService {
     this.saveTags(filteredTags);
   }
 
-  // Get a random color for a new tag
+  // Get a random color from the predefined colors
   static getRandomColor(): string {
+    // Make sure we return a color from our predefined Chakra UI theme colors
     return TAG_COLORS[Math.floor(Math.random() * TAG_COLORS.length)];
   }
 

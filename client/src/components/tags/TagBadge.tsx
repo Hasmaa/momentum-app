@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tag as ChakraTag, TagLabel, TagCloseButton, Tooltip, useColorModeValue } from '@chakra-ui/react';
+import { Tag as ChakraTag, TagLabel, TagCloseButton, Tooltip, useColorModeValue, Box } from '@chakra-ui/react';
 import { Tag } from '../../types';
 
 interface TagBadgeProps {
@@ -17,28 +17,41 @@ export const TagBadge: React.FC<TagBadgeProps> = ({
   size = 'md',
   onClick,
 }) => {
-  // Determine text color based on background brightness
+  // Enhanced algorithm to determine if text should be light or dark
   const getTextColor = (bgColor: string) => {
-    // Simple algorithm to determine if text should be light or dark
     // Convert hex to RGB
     const hex = bgColor.replace('#', '');
     const r = parseInt(hex.substr(0, 2), 16);
     const g = parseInt(hex.substr(2, 2), 16);
     const b = parseInt(hex.substr(4, 2), 16);
     
-    // Calculate brightness (perceived)
-    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    // Calculate relative luminance (per WCAG 2.0)
+    const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
     
-    // If brightness is high, return dark text color, otherwise light
-    return brightness > 128 ? '#000' : '#fff';
+    // Return white for dark backgrounds and black for light backgrounds
+    // Higher threshold (155) for better contrast
+    return luminance < 155 ? 'white' : 'black';
   };
 
   const textColor = getTextColor(tag.color);
-  const hoverBgColor = useColorModeValue(
-    `${tag.color}dd`, // Slightly darker in light mode
-    `${tag.color}bb`  // Slightly lighter in dark mode
-  );
-
+  
+  // Create a slightly darker color for hover effect
+  const getHoverColor = (hexColor: string) => {
+    // Convert hex to RGB
+    const hex = hexColor.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    // Darken each component by 15%
+    const darken = (val: number) => Math.max(0, Math.floor(val * 0.85));
+    
+    // Convert back to hex
+    return `#${darken(r).toString(16).padStart(2, '0')}${darken(g).toString(16).padStart(2, '0')}${darken(b).toString(16).padStart(2, '0')}`;
+  };
+  
+  const hoverBgColor = getHoverColor(tag.color);
+  
   return (
     <Tooltip label={isRemovable ? `Remove ${tag.name}` : tag.name} placement="top">
       <ChakraTag
@@ -48,16 +61,26 @@ export const TagBadge: React.FC<TagBadgeProps> = ({
         backgroundColor={tag.color}
         color={textColor}
         cursor={onClick ? 'pointer' : 'default'}
-        _hover={onClick ? { backgroundColor: hoverBgColor } : undefined}
         onClick={onClick}
-        mb={1}
-        mr={1}
+        m={1}
+        fontWeight="medium"
+        boxShadow="sm"
+        transition="all 0.2s"
+        _hover={{
+          backgroundColor: hoverBgColor,
+          boxShadow: 'md',
+          transform: onClick ? 'translateY(-1px)' : 'none'
+        }}
       >
         <TagLabel>{tag.name}</TagLabel>
-        {isRemovable && <TagCloseButton onClick={(e) => {
-          e.stopPropagation();
-          onRemove && onRemove();
-        }} />}
+        {isRemovable && onRemove && (
+          <TagCloseButton 
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
+          />
+        )}
       </ChakraTag>
     </Tooltip>
   );
