@@ -848,376 +848,535 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
           <ModalCloseButton />
           
           <ModalBody pb={8} px={6}>
-            <VStack spacing={6} align="stretch">
-              {/* Row 1: Suggestion + Timer */}
-              <Flex direction={{ base: 'column', md: 'row' }} gap={5} align={{ md: 'center' }} justify="space-between">
-                {/* Suggested next action - made more compact */}
-                {nextSuggestion && (
-                  <Flex
-                    flex="1"
-                    align="center"
-                    p={3}
+            {!pomodoro.state.task ? (
+              // Task selection UI when no task is selected
+              <VStack spacing={6} align="stretch">
+                <Box 
+                  textAlign="center" 
+                  py={6}
+                >
+                  <Box
+                    mx="auto"
+                    boxSize="100px"
                     bg="blue.50"
-                    color="blue.700"
-                    borderRadius="md"
-                    _dark={{
-                      bg: "blue.900",
-                      color: "blue.100"
-                    }}
+                    _dark={{ bg: "blue.900" }}
+                    borderRadius="full"
+                    display="flex"
+                    alignItems="center"
+                    justifyContent="center"
+                    mb={6}
                   >
-                    <Box mr={3} color="blue.500" _dark={{ color: "blue.300" }}>
-                      <nextSuggestion.icon size={18} />
+                    <FaListUl size="32px" color={useColorModeValue('#3182CE', '#63B3ED')} />
+                  </Box>
+                  <Heading size="md" mb={2}>Select a Task to Focus On</Heading>
+                  <Text color="gray.500" _dark={{ color: "gray.400" }} mb={8}>
+                    Choose a task from your list to start the Pomodoro timer
+                  </Text>
+
+                  <Box 
+                    borderRadius="lg" 
+                    borderWidth="1px" 
+                    borderColor={borderColor} 
+                    overflow="hidden"
+                    maxH="300px"
+                    mb={6}
+                  >
+                    <Box p={4} bg={timerBgColor} borderBottomWidth="1px" borderColor={borderColor}>
+                      <Text fontWeight="medium" fontSize="sm">Available Tasks</Text>
                     </Box>
-                    <Text fontWeight="medium" fontSize="sm">
-                      {nextSuggestion.message}
-                    </Text>
-                    {nextSuggestion.action && (
-                      <Button
-                        ml="auto"
-                        size="xs"
-                        colorScheme="blue"
-                        onClick={nextSuggestion.action}
-                      >
-                        <HStack spacing={1}>
-                          <nextSuggestion.icon />
-                          <Text>Do it</Text>
-                        </HStack>
-                      </Button>
-                    )}
-                  </Flex>
-                )}
-
-                {/* Timer Display - made more visually prominent */}
-                <Box
-                  flex="1"
-                  py={5}
-                  px={4}
-                  bg={timerBgColor}
-                  borderRadius="xl"
-                  textAlign="center"
-                  position="relative"
-                  overflow="hidden"
-                >
-                  <Progress
-                    value={(pomodoro.state.totalTime - pomodoro.state.time) / pomodoro.state.totalTime * 100}
-                    size="xs"
-                    colorScheme={pomodoro.state.isPaused ? 'yellow' : pomodoro.state.isRunning ? 'red' : 'blue'}
-                    position="absolute"
-                    top={0}
-                    left={0}
-                    right={0}
-                    borderTopLeftRadius="xl"
-                    borderTopRightRadius="xl"
-                  />
-                  
-                  <Text
-                    fontSize={{ base: "4xl", md: "5xl" }}
-                    fontWeight="bold"
-                    color={textColor}
-                    fontFamily="mono"
-                  >
-                    {formatTime(pomodoro.state.time)}
-                  </Text>
-                </Box>
-              </Flex>
-
-              {/* Row 2: Timer Controls */}
-              <Flex justify="center" mt={-1}>
-                <HStack spacing={4}>
-                  {!pomodoro.state.isRunning || pomodoro.state.isPaused ? (
-                    <Tooltip label="Start/Resume (Space)" placement="top">
-                      <IconButton
-                        aria-label="Start Timer"
-                        icon={<FaPlay />}
-                        colorScheme="green"
-                        size="lg"
-                        isRound
-                        onClick={pomodoro.state.isPaused ? pomodoro.actions.resume : pomodoro.actions.start}
-                      />
-                    </Tooltip>
-                  ) : (
-                    <Tooltip label="Pause (Space)" placement="top">
-                      <IconButton
-                        aria-label="Pause Timer"
-                        icon={<FaPause />}
-                        colorScheme="yellow"
-                        size="lg"
-                        isRound
-                        onClick={pomodoro.actions.pause}
-                      />
-                    </Tooltip>
-                  )}
-                  
-                  <Tooltip label="Reset timer (R)" placement="top">
-                    <IconButton
-                      aria-label="Reset Timer"
-                      icon={<FaUndo />}
-                      colorScheme="blue"
-                      size="md"
-                      isRound
-                      onClick={pomodoro.actions.reset}
-                    />
-                  </Tooltip>
-                  
-                  {pomodoro.state.task && (
-                    <Tooltip label="Mark task as completed (C)">
-                      <IconButton
-                        aria-label="Complete Task"
-                        icon={<FaCheck />}
-                        colorScheme="green"
-                        size="md"
-                        isRound
-                        onClick={handleCompleteTask}
-                      />
-                    </Tooltip>
-                  )}
-                </HStack>
-              </Flex>
-              
-              {/* Row 3: Task Selection */}
-              <Box mt={1}>
-                <Flex justify="space-between" mb={1}>
-                  <Text fontWeight="medium" fontSize="sm">
-                    Current Task
-                  </Text>
-                  {!pomodoro.state.task && (
-                    <Text fontSize="xs" color="blue.500">
-                      Select a task to focus on
-                    </Text>
-                  )}
-                </Flex>
-                <Select
-                  value={pomodoro.state.task?.id || ''}
-                  onChange={handleTaskChange}
-                  placeholder="Select a task to focus on"
-                  borderColor={borderColor}
-                  size="md"
-                  variant="filled"
-                  bg={timerBgColor}
-                >
-                  {tasks
-                    .filter(task => task.status !== 'completed')
-                    .map(task => (
-                      <option key={task.id} value={task.id}>
-                        {task.title}
-                      </option>
-                    ))}
-                </Select>
-              </Box>
-
-              {/* Keyboard shortcuts panel - made less obtrusive */}
-              <Collapse in={showKeyboardShortcuts} animateOpacity>
-                <Box
-                  bg={timerBgColor}
-                  p={3}
-                  borderRadius="md"
-                  mb={2}
-                  fontSize="xs"
-                >
-                  <Flex justify="space-between" align="center" mb={2}>
-                    <Heading size="xs">Keyboard Shortcuts</Heading>
-                    <IconButton 
-                      icon={<FaTimes />} 
-                      aria-label="Close keyboard shortcuts" 
-                      size="xs"
-                      variant="ghost"
-                      onClick={toggleKeyboardShortcuts}
-                    />
-                  </Flex>
-                  <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={2}>
-                    <HStack>
-                      <Tag size="sm" variant="subtle" colorScheme="blue" minW="50px" justifyContent="center">Space</Tag>
-                      <Text fontSize="xs">Start/Pause timer</Text>
-                    </HStack>
-                    <HStack>
-                      <Tag size="sm" variant="subtle" colorScheme="blue" minW="50px" justifyContent="center">R</Tag>
-                      <Text fontSize="xs">Reset timer</Text>
-                    </HStack>
-                    <HStack>
-                      <Tag size="sm" variant="subtle" colorScheme="blue" minW="50px" justifyContent="center">F</Tag>
-                      <Text fontSize="xs">Enter focus mode</Text>
-                    </HStack>
-                    <HStack>
-                      <Tag size="sm" variant="subtle" colorScheme="blue" minW="50px" justifyContent="center">C</Tag>
-                      <Text fontSize="xs">Complete task</Text>
-                    </HStack>
-                    <HStack>
-                      <Tag size="sm" variant="subtle" colorScheme="blue" minW="50px" justifyContent="center">H</Tag>
-                      <Text fontSize="xs">Toggle history</Text>
-                    </HStack>
-                    <HStack>
-                      <Tag size="sm" variant="subtle" colorScheme="blue" minW="50px" justifyContent="center">K</Tag>
-                      <Text fontSize="xs">Toggle shortcuts</Text>
-                    </HStack>
-                  </SimpleGrid>
-                </Box>
-              </Collapse>
-              
-              {/* Row 4: Action Tabs */}
-              <Tabs variant="soft-rounded" colorScheme="blue" size="sm" mt={2}>
-                <TabList>
-                  <Tab>
-                    <HStack spacing={1}>
-                      <FaChartBar size="12px" />
-                      <Text fontSize="sm">Stats</Text>
-                    </HStack>
-                  </Tab>
-                  <Tab>
-                    <HStack spacing={1}>
-                      <FaHistory size="12px" />
-                      <Text fontSize="sm">History</Text>
-                    </HStack>
-                  </Tab>
-                  <Tab>
-                    <HStack spacing={1}>
-                      <FaCog size="12px" />
-                      <Text fontSize="sm">Settings</Text>
-                    </HStack>
-                  </Tab>
-                </TabList>
-                <TabPanels>
-                  <TabPanel px={0} pt={4}>
-                    {/* Stats Panel - simplified */}
-                    {pomodoro.state.task && productivityStats ? (
-                      <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={4}>
-                        <Box p={3} bg={timerBgColor} borderRadius="md" shadow="sm">
-                          <Stat size="sm">
-                            <StatLabel fontSize="xs">Today's Focus</StatLabel>
-                            <StatNumber fontSize="xl">{formatTotalTime(productivityStats.todayFocusTime)}</StatNumber>
-                            <StatHelpText fontSize="xs">{productivityStats.todaySessions} sessions today</StatHelpText>
-                          </Stat>
-                        </Box>
-                        <Box p={3} bg={timerBgColor} borderRadius="md" shadow="sm">
-                          <Stat size="sm">
-                            <StatLabel fontSize="xs">Total Focus Time</StatLabel>
-                            <StatNumber fontSize="xl">{formatTotalTime(productivityStats.totalFocusTime)}</StatNumber>
-                            <StatHelpText fontSize="xs">{productivityStats.sessionsCompleted} total sessions</StatHelpText>
-                          </Stat>
-                        </Box>
-                        <Box p={3} bg={timerBgColor} borderRadius="md" shadow="sm">
-                          <Stat size="sm">
-                            <StatLabel fontSize="xs">Average Session</StatLabel>
-                            <StatNumber fontSize="xl">{formatTotalTime(productivityStats.averageSessionDuration)}</StatNumber>
-                            <StatHelpText fontSize="xs">Per completed pomodoro</StatHelpText>
-                          </Stat>
-                        </Box>
-                        <Box p={3} bg={timerBgColor} borderRadius="md" shadow="sm">
-                          <Stat size="sm">
-                            <StatLabel fontSize="xs">Current Streak</StatLabel>
-                            <StatNumber fontSize="xl">{pomodoro.state.cycleCount}</StatNumber>
-                            <StatHelpText fontSize="xs">Consecutive pomodoros</StatHelpText>
-                          </Stat>
-                        </Box>
-                      </SimpleGrid>
-                    ) : (
-                      <Box textAlign="center" py={6} color={textColor} opacity={0.7}>
-                        <FaChartBar size={24} style={{ margin: '0 auto 12px' }} />
-                        <Text fontSize="sm">Select a task to see productivity stats</Text>
-                      </Box>
-                    )}
-                  </TabPanel>
-                  <TabPanel px={0} pt={4}>
-                    {/* History Panel - simplified */}
-                    {pomodoro.state.task ? (
-                      <Box>
-                        <Heading as="h3" size="xs" mb={3}>
-                          Session History
-                        </Heading>
-                        
-                        {completedSessions.filter(s => s.taskId === pomodoro.state.task?.id).length === 0 ? (
-                          <Text color={textColor} opacity={0.7} textAlign="center" py={4} fontSize="sm">
-                            No completed pomodoros for this task yet
+                    
+                    <Box maxH="240px" overflowY="auto" px={2}>
+                      {tasks.filter(task => task.status !== 'completed').length === 0 ? (
+                        <Box textAlign="center" py={8} px={4}>
+                          <Text color="gray.500" _dark={{ color: "gray.400" }}>
+                            You don't have any active tasks yet.
                           </Text>
-                        ) : (
-                          <VStack align="stretch" spacing={2} maxH="180px" overflowY="auto">
-                            {completedSessions
-                              .filter(s => s.taskId === pomodoro.state.task?.id)
-                              .map(session => (
-                                <Box
-                                  key={session.id}
-                                  p={2}
-                                  borderRadius="md"
-                                  bg={historyItemBg}
-                                  borderWidth="1px"
-                                  borderColor={borderColor}
-                                >
-                                  <Flex justify="space-between" align="center">
-                                    <Text fontSize="xs" fontWeight="medium">
-                                      {formatDate(session.startTime)}
-                                    </Text>
-                                    <Badge colorScheme="green" fontSize="xs">
-                                      {formatTotalTime(session.duration)}
-                                    </Badge>
-                                  </Flex>
-                                </Box>
-                              ))
-                            }
-                          </VStack>
-                        )}
-                      </Box>
-                    ) : (
-                      <Box textAlign="center" py={6} color={textColor} opacity={0.7}>
-                        <FaHistory size={24} style={{ margin: '0 auto 12px' }} />
-                        <Text fontSize="sm">Select a task to see session history</Text>
-                      </Box>
-                    )}
-                  </TabPanel>
-                  <TabPanel px={0} pt={4}>
-                    {/* Settings Panel - more streamlined */}
-                    <VStack spacing={3} align="stretch">
-                      <Flex justify="space-between" align="center">
-                        <HStack>
-                          <Text fontWeight="medium" fontSize="sm">Focus Mode</Text>
-                          <Tooltip label="Enter distraction-free environment (F)">
-                            <IconButton
-                              aria-label="Enter Focus Mode"
-                              icon={<FaCloud size="12px" />}
-                              size="xs"
-                              colorScheme="blue"
-                              variant="ghost"
-                              onClick={toggleFocusMode}
-                            />
-                          </Tooltip>
-                        </HStack>
-                        <Switch 
-                          colorScheme="blue"
-                          size="sm"
-                          isChecked={isFocusMode}
-                          onChange={toggleFocusMode}
+                          <Button
+                            mt={4}
+                            size="sm"
+                            onClick={onClose}
+                            colorScheme="blue"
+                            leftIcon={<FaListUl />}
+                          >
+                            Create a task first
+                          </Button>
+                        </Box>
+                      ) : (
+                        <VStack spacing={2} align="stretch" py={2}>
+                          {tasks
+                            .filter(task => task.status !== 'completed')
+                            .map(task => (
+                              <Box 
+                                key={task.id}
+                                p={3}
+                                borderRadius="md"
+                                _hover={{ 
+                                  bg: useColorModeValue('gray.50', 'gray.700'),
+                                  transform: 'translateY(-1px)',
+                                  boxShadow: 'sm'
+                                }}
+                                cursor="pointer"
+                                onClick={() => {
+                                  const taskToSelect = tasks.find(t => t.id === task.id);
+                                  if (taskToSelect) {
+                                    pomodoro.actions.changeTask(taskToSelect);
+                                  }
+                                }}
+                                transition="all 0.2s"
+                                display="flex"
+                                alignItems="center"
+                                justifyContent="space-between"
+                              >
+                                <HStack>
+                                  <Box
+                                    w="10px"
+                                    h="10px"
+                                    borderRadius="full"
+                                    bg={task.priority === 'high' ? 'red.400' : task.priority === 'medium' ? 'yellow.400' : 'green.400'}
+                                  />
+                                  <Text fontSize="sm" fontWeight="medium">{task.title}</Text>
+                                </HStack>
+                                <IconButton
+                                  icon={<FaPlay />}
+                                  aria-label="Start Pomodoro"
+                                  size="xs"
+                                  colorScheme="blue"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    const taskToSelect = tasks.find(t => t.id === task.id);
+                                    if (taskToSelect) {
+                                      pomodoro.actions.changeTask(taskToSelect);
+                                      pomodoro.actions.start();
+                                    }
+                                  }}
+                                />
+                              </Box>
+                            ))
+                          }
+                        </VStack>
+                      )}
+                    </Box>
+                  </Box>
+
+                  <Collapse in={showKeyboardShortcuts} animateOpacity>
+                    <Box
+                      bg={timerBgColor}
+                      p={3}
+                      borderRadius="md"
+                      mb={2}
+                      fontSize="xs"
+                    >
+                      <Flex justify="space-between" align="center" mb={2}>
+                        <Heading size="xs">Keyboard Shortcuts</Heading>
+                        <IconButton 
+                          icon={<FaTimes />} 
+                          aria-label="Close keyboard shortcuts" 
+                          size="xs"
+                          variant="ghost"
+                          onClick={toggleKeyboardShortcuts}
                         />
                       </Flex>
-                      <Divider />
-                      <Flex justify="space-between" align="center">
-                        <Text fontSize="sm">Auto-start Breaks</Text>
-                        <Switch colorScheme="blue" size="sm" />
-                      </Flex>
-                      <Flex justify="space-between" align="center">
-                        <Text fontSize="sm">Desktop Notifications</Text>
-                        <Switch colorScheme="blue" size="sm" defaultChecked />
-                      </Flex>
-                      <Flex justify="space-between" align="center">
-                        <Text fontSize="sm">Sound Alerts</Text>
-                        <Switch colorScheme="blue" size="sm" defaultChecked />
-                      </Flex>
-                    </VStack>
-                  </TabPanel>
-                </TabPanels>
-              </Tabs>
-            </VStack>
+                      <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={2}>
+                        <HStack>
+                          <Tag size="sm" variant="subtle" colorScheme="blue" minW="50px" justifyContent="center">Space</Tag>
+                          <Text fontSize="xs">Start/Pause timer</Text>
+                        </HStack>
+                        <HStack>
+                          <Tag size="sm" variant="subtle" colorScheme="blue" minW="50px" justifyContent="center">F</Tag>
+                          <Text fontSize="xs">Enter focus mode</Text>
+                        </HStack>
+                        <HStack>
+                          <Tag size="sm" variant="subtle" colorScheme="blue" minW="50px" justifyContent="center">K</Tag>
+                          <Text fontSize="xs">Toggle shortcuts</Text>
+                        </HStack>
+                      </SimpleGrid>
+                    </Box>
+                  </Collapse>
+                </Box>
+              </VStack>
+            ) : (
+              // Timer UI when a task is selected
+              <VStack spacing={6} align="stretch">
+                {/* Row 1: Suggestion + Timer */}
+                <Flex direction={{ base: 'column', md: 'row' }} gap={5} align={{ md: 'center' }} justify="space-between">
+                  {/* Suggested next action - made more compact */}
+                  {nextSuggestion && (
+                    <Flex
+                      flex="1"
+                      align="center"
+                      p={3}
+                      bg="blue.50"
+                      color="blue.700"
+                      borderRadius="md"
+                      _dark={{
+                        bg: "blue.900",
+                        color: "blue.100"
+                      }}
+                    >
+                      <Box mr={3} color="blue.500" _dark={{ color: "blue.300" }}>
+                        <nextSuggestion.icon size={18} />
+                      </Box>
+                      <Text fontWeight="medium" fontSize="sm">
+                        {nextSuggestion.message}
+                      </Text>
+                      {nextSuggestion.action && (
+                        <Button
+                          ml="auto"
+                          size="xs"
+                          colorScheme="blue"
+                          onClick={nextSuggestion.action}
+                        >
+                          <HStack spacing={1}>
+                            <nextSuggestion.icon />
+                            <Text>Do it</Text>
+                          </HStack>
+                        </Button>
+                      )}
+                    </Flex>
+                  )}
+
+                  {/* Timer Display - made more visually prominent */}
+                  <Box
+                    flex="1"
+                    py={5}
+                    px={4}
+                    bg={timerBgColor}
+                    borderRadius="xl"
+                    textAlign="center"
+                    position="relative"
+                    overflow="hidden"
+                  >
+                    <Progress
+                      value={(pomodoro.state.totalTime - pomodoro.state.time) / pomodoro.state.totalTime * 100}
+                      size="xs"
+                      colorScheme={pomodoro.state.isPaused ? 'yellow' : pomodoro.state.isRunning ? 'red' : 'blue'}
+                      position="absolute"
+                      top={0}
+                      left={0}
+                      right={0}
+                      borderTopLeftRadius="xl"
+                      borderTopRightRadius="xl"
+                    />
+                    
+                    <Text
+                      fontSize={{ base: "4xl", md: "5xl" }}
+                      fontWeight="bold"
+                      color={textColor}
+                      fontFamily="mono"
+                    >
+                      {formatTime(pomodoro.state.time)}
+                    </Text>
+                  </Box>
+                </Flex>
+
+                {/* Row 2: Timer Controls */}
+                <Flex justify="center" mt={-1}>
+                  <HStack spacing={4}>
+                    {!pomodoro.state.isRunning || pomodoro.state.isPaused ? (
+                      <Tooltip label="Start/Resume (Space)" placement="top">
+                        <IconButton
+                          aria-label="Start Timer"
+                          icon={<FaPlay />}
+                          colorScheme="green"
+                          size="lg"
+                          isRound
+                          onClick={pomodoro.state.isPaused ? pomodoro.actions.resume : pomodoro.actions.start}
+                        />
+                      </Tooltip>
+                    ) : (
+                      <Tooltip label="Pause (Space)" placement="top">
+                        <IconButton
+                          aria-label="Pause Timer"
+                          icon={<FaPause />}
+                          colorScheme="yellow"
+                          size="lg"
+                          isRound
+                          onClick={pomodoro.actions.pause}
+                        />
+                      </Tooltip>
+                    )}
+                    
+                    <Tooltip label="Reset timer (R)" placement="top">
+                      <IconButton
+                        aria-label="Reset Timer"
+                        icon={<FaUndo />}
+                        colorScheme="blue"
+                        size="md"
+                        isRound
+                        onClick={pomodoro.actions.reset}
+                      />
+                    </Tooltip>
+                    
+                    {pomodoro.state.task && (
+                      <Tooltip label="Mark task as completed (C)">
+                        <IconButton
+                          aria-label="Complete Task"
+                          icon={<FaCheck />}
+                          colorScheme="green"
+                          size="md"
+                          isRound
+                          onClick={handleCompleteTask}
+                        />
+                      </Tooltip>
+                    )}
+                  </HStack>
+                </Flex>
+                
+                {/* Row 3: Task Selection */}
+                <Box mt={1}>
+                  <Flex justify="space-between" mb={1}>
+                    <Text fontWeight="medium" fontSize="sm">
+                      Current Task
+                    </Text>
+                    <Button 
+                      size="xs" 
+                      variant="ghost" 
+                      colorScheme="blue" 
+                      leftIcon={<FaListUl size="10px" />}
+                      onClick={() => pomodoro.actions.changeTask(null)}
+                    >
+                      Change Task
+                    </Button>
+                  </Flex>
+                  
+                  <Box
+                    p={3}
+                    borderRadius="md"
+                    bg={timerBgColor}
+                    borderWidth="1px"
+                    borderColor={borderColor}
+                  >
+                    <HStack justify="space-between">
+                      <HStack>
+                        <Box
+                          w="10px"
+                          h="10px"
+                          borderRadius="full"
+                          bg={pomodoro.state.task?.priority === 'high' ? 'red.400' : pomodoro.state.task?.priority === 'medium' ? 'yellow.400' : 'green.400'}
+                        />
+                        <Text fontWeight="medium">{pomodoro.state.task.title}</Text>
+                      </HStack>
+                    </HStack>
+                  </Box>
+                </Box>
+
+                {/* Keyboard shortcuts panel - made less obtrusive */}
+                <Collapse in={showKeyboardShortcuts} animateOpacity>
+                  <Box
+                    bg={timerBgColor}
+                    p={3}
+                    borderRadius="md"
+                    mb={2}
+                    fontSize="xs"
+                  >
+                    <Flex justify="space-between" align="center" mb={2}>
+                      <Heading size="xs">Keyboard Shortcuts</Heading>
+                      <IconButton 
+                        icon={<FaTimes />} 
+                        aria-label="Close keyboard shortcuts" 
+                        size="xs"
+                        variant="ghost"
+                        onClick={toggleKeyboardShortcuts}
+                      />
+                    </Flex>
+                    <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={2}>
+                      <HStack>
+                        <Tag size="sm" variant="subtle" colorScheme="blue" minW="50px" justifyContent="center">Space</Tag>
+                        <Text fontSize="xs">Start/Pause timer</Text>
+                      </HStack>
+                      <HStack>
+                        <Tag size="sm" variant="subtle" colorScheme="blue" minW="50px" justifyContent="center">R</Tag>
+                        <Text fontSize="xs">Reset timer</Text>
+                      </HStack>
+                      <HStack>
+                        <Tag size="sm" variant="subtle" colorScheme="blue" minW="50px" justifyContent="center">F</Tag>
+                        <Text fontSize="xs">Enter focus mode</Text>
+                      </HStack>
+                      <HStack>
+                        <Tag size="sm" variant="subtle" colorScheme="blue" minW="50px" justifyContent="center">C</Tag>
+                        <Text fontSize="xs">Complete task</Text>
+                      </HStack>
+                      <HStack>
+                        <Tag size="sm" variant="subtle" colorScheme="blue" minW="50px" justifyContent="center">H</Tag>
+                        <Text fontSize="xs">Toggle history</Text>
+                      </HStack>
+                      <HStack>
+                        <Tag size="sm" variant="subtle" colorScheme="blue" minW="50px" justifyContent="center">K</Tag>
+                        <Text fontSize="xs">Toggle shortcuts</Text>
+                      </HStack>
+                    </SimpleGrid>
+                  </Box>
+                </Collapse>
+                
+                {/* Row 4: Action Tabs */}
+                <Tabs variant="soft-rounded" colorScheme="blue" size="sm" mt={2}>
+                  <TabList>
+                    <Tab>
+                      <HStack spacing={1}>
+                        <FaChartBar size="12px" />
+                        <Text fontSize="sm">Stats</Text>
+                      </HStack>
+                    </Tab>
+                    <Tab>
+                      <HStack spacing={1}>
+                        <FaHistory size="12px" />
+                        <Text fontSize="sm">History</Text>
+                      </HStack>
+                    </Tab>
+                    <Tab>
+                      <HStack spacing={1}>
+                        <FaCog size="12px" />
+                        <Text fontSize="sm">Settings</Text>
+                      </HStack>
+                    </Tab>
+                  </TabList>
+                  <TabPanels>
+                    <TabPanel px={0} pt={4}>
+                      {/* Stats Panel - simplified */}
+                      {pomodoro.state.task && productivityStats ? (
+                        <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={4}>
+                          <Box p={3} bg={timerBgColor} borderRadius="md" shadow="sm">
+                            <Stat size="sm">
+                              <StatLabel fontSize="xs">Today's Focus</StatLabel>
+                              <StatNumber fontSize="xl">{formatTotalTime(productivityStats.todayFocusTime)}</StatNumber>
+                              <StatHelpText fontSize="xs">{productivityStats.todaySessions} sessions today</StatHelpText>
+                            </Stat>
+                          </Box>
+                          <Box p={3} bg={timerBgColor} borderRadius="md" shadow="sm">
+                            <Stat size="sm">
+                              <StatLabel fontSize="xs">Total Focus Time</StatLabel>
+                              <StatNumber fontSize="xl">{formatTotalTime(productivityStats.totalFocusTime)}</StatNumber>
+                              <StatHelpText fontSize="xs">{productivityStats.sessionsCompleted} total sessions</StatHelpText>
+                            </Stat>
+                          </Box>
+                          <Box p={3} bg={timerBgColor} borderRadius="md" shadow="sm">
+                            <Stat size="sm">
+                              <StatLabel fontSize="xs">Average Session</StatLabel>
+                              <StatNumber fontSize="xl">{formatTotalTime(productivityStats.averageSessionDuration)}</StatNumber>
+                              <StatHelpText fontSize="xs">Per completed pomodoro</StatHelpText>
+                            </Stat>
+                          </Box>
+                          <Box p={3} bg={timerBgColor} borderRadius="md" shadow="sm">
+                            <Stat size="sm">
+                              <StatLabel fontSize="xs">Current Streak</StatLabel>
+                              <StatNumber fontSize="xl">{pomodoro.state.cycleCount}</StatNumber>
+                              <StatHelpText fontSize="xs">Consecutive pomodoros</StatHelpText>
+                            </Stat>
+                          </Box>
+                        </SimpleGrid>
+                      ) : (
+                        <Box textAlign="center" py={6} color={textColor} opacity={0.7}>
+                          <FaChartBar size={24} style={{ margin: '0 auto 12px' }} />
+                          <Text fontSize="sm">Select a task to see productivity stats</Text>
+                        </Box>
+                      )}
+                    </TabPanel>
+                    <TabPanel px={0} pt={4}>
+                      {/* History Panel - simplified */}
+                      {pomodoro.state.task ? (
+                        <Box>
+                          <Heading as="h3" size="xs" mb={3}>
+                            Session History
+                          </Heading>
+                          
+                          {completedSessions.filter(s => s.taskId === pomodoro.state.task?.id).length === 0 ? (
+                            <Text color={textColor} opacity={0.7} textAlign="center" py={4} fontSize="sm">
+                              No completed pomodoros for this task yet
+                            </Text>
+                          ) : (
+                            <VStack align="stretch" spacing={2} maxH="180px" overflowY="auto">
+                              {completedSessions
+                                .filter(s => s.taskId === pomodoro.state.task?.id)
+                                .map(session => (
+                                  <Box
+                                    key={session.id}
+                                    p={2}
+                                    borderRadius="md"
+                                    bg={historyItemBg}
+                                    borderWidth="1px"
+                                    borderColor={borderColor}
+                                  >
+                                    <Flex justify="space-between" align="center">
+                                      <Text fontSize="xs" fontWeight="medium">
+                                        {formatDate(session.startTime)}
+                                      </Text>
+                                      <Badge colorScheme="green" fontSize="xs">
+                                        {formatTotalTime(session.duration)}
+                                      </Badge>
+                                    </Flex>
+                                  </Box>
+                                ))
+                              }
+                            </VStack>
+                          )}
+                        </Box>
+                      ) : (
+                        <Box textAlign="center" py={6} color={textColor} opacity={0.7}>
+                          <FaHistory size={24} style={{ margin: '0 auto 12px' }} />
+                          <Text fontSize="sm">Select a task to see session history</Text>
+                        </Box>
+                      )}
+                    </TabPanel>
+                    <TabPanel px={0} pt={4}>
+                      {/* Settings Panel - more streamlined */}
+                      <VStack spacing={3} align="stretch">
+                        <Flex justify="space-between" align="center">
+                          <HStack>
+                            <Text fontWeight="medium" fontSize="sm">Focus Mode</Text>
+                            <Tooltip label="Enter distraction-free environment (F)">
+                              <IconButton
+                                aria-label="Enter Focus Mode"
+                                icon={<FaCloud size="12px" />}
+                                size="xs"
+                                colorScheme="blue"
+                                variant="ghost"
+                                onClick={toggleFocusMode}
+                              />
+                            </Tooltip>
+                          </HStack>
+                          <Switch 
+                            colorScheme="blue"
+                            size="sm"
+                            isChecked={isFocusMode}
+                            onChange={toggleFocusMode}
+                          />
+                        </Flex>
+                        <Divider />
+                        <Flex justify="space-between" align="center">
+                          <Text fontSize="sm">Auto-start Breaks</Text>
+                          <Switch colorScheme="blue" size="sm" />
+                        </Flex>
+                        <Flex justify="space-between" align="center">
+                          <Text fontSize="sm">Desktop Notifications</Text>
+                          <Switch colorScheme="blue" size="sm" defaultChecked />
+                        </Flex>
+                        <Flex justify="space-between" align="center">
+                          <Text fontSize="sm">Sound Alerts</Text>
+                          <Switch colorScheme="blue" size="sm" defaultChecked />
+                        </Flex>
+                      </VStack>
+                    </TabPanel>
+                  </TabPanels>
+                </Tabs>
+              </VStack>
+            )}
           </ModalBody>
 
           <ModalFooter pt={2}>
             <Button size="sm" mr={3} onClick={onClose} variant="ghost">Close</Button>
-            <Button 
-              colorScheme="blue"
-              size="sm"
-              onClick={toggleFocusMode}
-            >
-              <HStack spacing={1}>
-                <FaExpand />
-                <Text>Enter Focus Mode</Text>
-              </HStack>
-            </Button>
+            {pomodoro.state.task && (
+              <Button 
+                colorScheme="blue"
+                size="sm"
+                onClick={toggleFocusMode}
+              >
+                <HStack spacing={1}>
+                  <FaExpand />
+                  <Text>Enter Focus Mode</Text>
+                </HStack>
+              </Button>
+            )}
           </ModalFooter>
         </ModalContent>
       </Modal>
