@@ -24,13 +24,40 @@ import {
   StatHelpText,
   Flex,
   useToast,
-  Tooltip
+  Tooltip,
+  Switch,
+  Portal,
+  SlideFade,
+  Fade,
+  Center,
+  ScaleFade
 } from '@chakra-ui/react';
-import { FaPlay, FaPause, FaUndo, FaCheck, FaStopwatch } from 'react-icons/fa';
+import { keyframes } from '@emotion/react';
+import { 
+  FaPlay, 
+  FaPause, 
+  FaUndo, 
+  FaCheck, 
+  FaStopwatch, 
+  FaExpand, 
+  FaCompress,
+  FaTimes
+} from 'react-icons/fa';
+import { motion } from 'framer-motion';
 import { Task } from '../../../types';
 import { PomodoroModalProps } from '../types/pomodoro';
 import { useGlobalPomodoro } from '../hooks/useGlobalPomodoro';
 import { usePomodoroStore } from '../hooks/usePomodoroStore';
+
+// Create a motion component with Chakra UI
+const MotionBox = motion(Box);
+
+// Animation for the breathing effect in focus mode
+const breathingAnimation = keyframes`
+  0% { transform: scale(1); opacity: 0.8; }
+  50% { transform: scale(1.05); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.8; }
+`;
 
 const PomodoroModal: React.FC<PomodoroModalProps> = ({
   isOpen,
@@ -41,6 +68,7 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
 }) => {
   const [taskId, setTaskId] = useState<string | null>(selectedTask?.id || null);
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
+  const [isFocusMode, setIsFocusMode] = useState(false);
   const lastSelectedTaskIdRef = useRef<string | null>(selectedTask?.id || null);
   const toast = useToast();
 
@@ -61,6 +89,26 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   const timerBgColor = useColorModeValue('gray.50', 'gray.700');
   const textColor = useColorModeValue('gray.800', 'white');
+  const focusBgColor = useColorModeValue('rgba(255, 255, 255, 0.95)', 'rgba(23, 25, 35, 0.95)');
+  const focusTimerBgColor = useColorModeValue('gray.100', 'gray.900');
+  const breathingColor = useColorModeValue('blue.50', 'blue.900');
+  
+  // Handle focus mode toggle
+  const toggleFocusMode = useCallback(() => {
+    setIsFocusMode(prev => !prev);
+  }, []);
+  
+  // Handle ESC key to exit focus mode
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isFocusMode) {
+        setIsFocusMode(false);
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isFocusMode]);
   
   // Update task when selected task changes, only if it's a different task
   useEffect(() => {
@@ -148,6 +196,11 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
       // Clear task selection
       setTaskId(null);
       lastSelectedTaskIdRef.current = null;
+      
+      // Exit focus mode if active
+      if (isFocusMode) {
+        setIsFocusMode(false);
+      }
     } catch (error) {
       toast({
         title: 'Failed to complete task.',
@@ -157,7 +210,7 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
         isClosable: true,
       });
     }
-  }, [taskId, onTaskComplete, toast, pomodoro.actions]);
+  }, [taskId, onTaskComplete, toast, pomodoro.actions, isFocusMode]);
 
   // Format time as MM:SS
   const formatTime = useCallback((ms: number): string => {
@@ -178,62 +231,101 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
     }
     return `${minutes}m`;
   }, []);
-
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} size="lg" isCentered>
-      <ModalOverlay backdropFilter="blur(2px)" />
-      <ModalContent bg={bgColor} borderRadius="xl" boxShadow="xl">
-        <ModalHeader display="flex" alignItems="center" justifyContent="space-between">
-          <HStack>
-            <FaStopwatch />
-            <Text>Pomodoro Timer</Text>
-          </HStack>
-          <Badge
-            colorScheme={pomodoro.state.isPaused ? 'yellow' : pomodoro.state.isRunning ? 'red' : 'gray'}
-            fontSize="sm"
-            px={2}
-            py={1}
-            borderRadius="md"
-          >
-            {pomodoro.state.isPaused ? 'PAUSED' : pomodoro.state.isRunning ? 'FOCUS' : 'IDLE'}
-          </Badge>
-        </ModalHeader>
-        <ModalCloseButton />
-        
-        <ModalBody pb={6}>
-          <VStack spacing={6} align="stretch">
-            {/* Timer Display */}
-            <Box
-              py={10}
-              px={6}
-              bg={timerBgColor}
-              borderRadius="xl"
-              textAlign="center"
-              position="relative"
-              overflow="hidden"
-            >
-              <Progress
-                value={(pomodoro.state.totalTime - pomodoro.state.time) / pomodoro.state.totalTime * 100}
-                size="xs"
-                colorScheme={pomodoro.state.isPaused ? 'yellow' : pomodoro.state.isRunning ? 'red' : 'blue'}
-                position="absolute"
-                top={0}
-                left={0}
-                right={0}
-                borderTopLeftRadius="xl"
-                borderTopRightRadius="xl"
-              />
+  
+  // Render the focus mode UI
+  const renderFocusMode = () => {
+    const percentComplete = (pomodoro.state.totalTime - pomodoro.state.time) / pomodoro.state.totalTime * 100;
+    
+    return (
+      <Portal>
+        <Box
+          position="fixed"
+          top="0"
+          left="0"
+          right="0"
+          bottom="0"
+          zIndex="9999"
+          bg={focusBgColor}
+          backdropFilter="blur(10px)"
+          display="flex"
+          flexDirection="column"
+          alignItems="center"
+          justifyContent="center"
+          p={8}
+        >
+          <ScaleFade in={isFocusMode} initialScale={0.9}>
+            <VStack spacing={8} width="100%" maxWidth="600px">
+              {/* Floating exit button */}
+              <Box position="absolute" top={4} right={4}>
+                <IconButton
+                  icon={<FaTimes />}
+                  aria-label="Exit focus mode"
+                  variant="ghost"
+                  colorScheme="gray"
+                  size="lg"
+                  onClick={toggleFocusMode}
+                />
+              </Box>
               
-              <Text
-                fontSize="6xl"
-                fontWeight="bold"
-                color={textColor}
-                fontFamily="mono"
-              >
-                {formatTime(pomodoro.state.time)}
-              </Text>
+              {/* Task info */}
+              {currentTask && (
+                <Text
+                  fontSize="xl"
+                  fontWeight="medium"
+                  color={textColor}
+                  textAlign="center"
+                  opacity={0.8}
+                >
+                  {currentTask.title}
+                </Text>
+              )}
               
-              <HStack spacing={4} justify="center" mt={4}>
+              {/* Timer container with breathing animation */}
+              <Center position="relative" w="100%">
+                <Box
+                  position="absolute"
+                  borderRadius="full"
+                  bg={breathingColor}
+                  w="300px"
+                  h="300px"
+                  animation={`${breathingAnimation} ${
+                    pomodoro.state.isPaused ? '0s' : '10s'
+                  } infinite ease-in-out`}
+                />
+                
+                <Box
+                  bg={focusTimerBgColor}
+                  borderRadius="full"
+                  boxShadow="lg"
+                  p={16}
+                  position="relative"
+                  zIndex={1}
+                >
+                  <Text
+                    fontSize="7xl"
+                    fontWeight="bold"
+                    color={textColor}
+                    fontFamily="mono"
+                  >
+                    {formatTime(pomodoro.state.time)}
+                  </Text>
+                </Box>
+              </Center>
+              
+              {/* Progress ring */}
+              <Box position="relative" width="320px" height="20px">
+                <Progress
+                  value={percentComplete}
+                  size="sm"
+                  colorScheme={pomodoro.state.isPaused ? 'yellow' : pomodoro.state.isRunning ? 'blue' : 'blue'}
+                  borderRadius="full"
+                  height="8px"
+                  width="100%"
+                />
+              </Box>
+              
+              {/* Minimal controls */}
+              <HStack spacing={8} mt={8}>
                 {!pomodoro.state.isRunning || pomodoro.state.isPaused ? (
                   <IconButton
                     aria-label="Start Timer"
@@ -241,6 +333,7 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                     colorScheme="green"
                     size="lg"
                     isRound
+                    boxShadow="md"
                     onClick={pomodoro.state.isPaused ? pomodoro.actions.resume : pomodoro.actions.start}
                   />
                 ) : (
@@ -250,6 +343,7 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                     colorScheme="yellow"
                     size="lg"
                     isRound
+                    boxShadow="md"
                     onClick={pomodoro.actions.pause}
                   />
                 )}
@@ -260,75 +354,218 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                   colorScheme="blue"
                   size="lg"
                   isRound
+                  variant="outline"
                   onClick={pomodoro.actions.reset}
                 />
                 
                 {taskId && (
-                  <Tooltip label="Mark task as completed">
+                  <IconButton
+                    aria-label="Complete Task"
+                    icon={<FaCheck />}
+                    colorScheme="green"
+                    size="lg"
+                    isRound
+                    variant="outline"
+                    onClick={handleCompleteTask}
+                  />
+                )}
+              </HStack>
+              
+              {/* Status badge */}
+              <Badge
+                colorScheme={pomodoro.state.isPaused ? 'yellow' : pomodoro.state.isRunning ? 'blue' : 'gray'}
+                fontSize="md"
+                px={4}
+                py={2}
+                borderRadius="full"
+                opacity={0.8}
+              >
+                {pomodoro.state.isPaused ? 'PAUSED' : pomodoro.state.isRunning ? 'FOCUS' : 'IDLE'}
+              </Badge>
+            </VStack>
+          </ScaleFade>
+        </Box>
+      </Portal>
+    );
+  };
+
+  return (
+    <>
+      <Modal isOpen={isOpen && !isFocusMode} onClose={onClose} size="lg" isCentered>
+        <ModalOverlay backdropFilter="blur(2px)" />
+        <ModalContent bg={bgColor} borderRadius="xl" boxShadow="xl">
+          <ModalHeader display="flex" alignItems="center" justifyContent="space-between">
+            <HStack>
+              <FaStopwatch />
+              <Text>Pomodoro Timer</Text>
+            </HStack>
+            <Badge
+              colorScheme={pomodoro.state.isPaused ? 'yellow' : pomodoro.state.isRunning ? 'red' : 'gray'}
+              fontSize="sm"
+              px={2}
+              py={1}
+              borderRadius="md"
+            >
+              {pomodoro.state.isPaused ? 'PAUSED' : pomodoro.state.isRunning ? 'FOCUS' : 'IDLE'}
+            </Badge>
+          </ModalHeader>
+          <ModalCloseButton />
+          
+          <ModalBody pb={6}>
+            <VStack spacing={6} align="stretch">
+              {/* Timer Display */}
+              <Box
+                py={10}
+                px={6}
+                bg={timerBgColor}
+                borderRadius="xl"
+                textAlign="center"
+                position="relative"
+                overflow="hidden"
+              >
+                <Progress
+                  value={(pomodoro.state.totalTime - pomodoro.state.time) / pomodoro.state.totalTime * 100}
+                  size="xs"
+                  colorScheme={pomodoro.state.isPaused ? 'yellow' : pomodoro.state.isRunning ? 'red' : 'blue'}
+                  position="absolute"
+                  top={0}
+                  left={0}
+                  right={0}
+                  borderTopLeftRadius="xl"
+                  borderTopRightRadius="xl"
+                />
+                
+                <Text
+                  fontSize="6xl"
+                  fontWeight="bold"
+                  color={textColor}
+                  fontFamily="mono"
+                >
+                  {formatTime(pomodoro.state.time)}
+                </Text>
+                
+                <HStack spacing={4} justify="center" mt={4}>
+                  {!pomodoro.state.isRunning || pomodoro.state.isPaused ? (
                     <IconButton
-                      aria-label="Complete Task"
-                      icon={<FaCheck />}
+                      aria-label="Start Timer"
+                      icon={<FaPlay />}
                       colorScheme="green"
                       size="lg"
                       isRound
-                      onClick={handleCompleteTask}
+                      onClick={pomodoro.state.isPaused ? pomodoro.actions.resume : pomodoro.actions.start}
+                    />
+                  ) : (
+                    <IconButton
+                      aria-label="Pause Timer"
+                      icon={<FaPause />}
+                      colorScheme="yellow"
+                      size="lg"
+                      isRound
+                      onClick={pomodoro.actions.pause}
+                    />
+                  )}
+                  
+                  <IconButton
+                    aria-label="Reset Timer"
+                    icon={<FaUndo />}
+                    colorScheme="blue"
+                    size="lg"
+                    isRound
+                    onClick={pomodoro.actions.reset}
+                  />
+                  
+                  {taskId && (
+                    <Tooltip label="Mark task as completed">
+                      <IconButton
+                        aria-label="Complete Task"
+                        icon={<FaCheck />}
+                        colorScheme="green"
+                        size="lg"
+                        isRound
+                        onClick={handleCompleteTask}
+                      />
+                    </Tooltip>
+                  )}
+                </HStack>
+              </Box>
+              
+              {/* Focus Mode Toggle */}
+              <Flex justify="space-between" align="center">
+                <HStack>
+                  <Text fontWeight="medium">Focus Mode</Text>
+                  <Tooltip label="Enter fullscreen focus mode">
+                    <IconButton
+                      aria-label="Enter Focus Mode"
+                      icon={<FaExpand />}
+                      size="sm"
+                      colorScheme="blue"
+                      variant="ghost"
+                      onClick={toggleFocusMode}
                     />
                   </Tooltip>
-                )}
-              </HStack>
-            </Box>
-            
-            {/* Task Selection */}
-            <Box>
-              <Text fontWeight="medium" mb={2}>
-                Select Task
-              </Text>
-              <Select
-                value={taskId || ''}
-                onChange={handleTaskChange}
-                placeholder="Select a task to focus on"
-                borderColor={borderColor}
-              >
-                {tasks
-                  .filter(task => task.status !== 'completed')
-                  .map(task => (
-                    <option key={task.id} value={task.id}>
-                      {task.title}
-                    </option>
-                  ))}
-              </Select>
-            </Box>
-            
-            <Divider />
-            
-            {/* Stats */}
-            <Flex justify="space-between">
-              <Stat>
-                <StatLabel>Focus Time</StatLabel>
-                <StatNumber>{formatTotalTime(pomodoro.state.time)}</StatNumber>
-                <StatHelpText>Current focus time</StatHelpText>
-              </Stat>
+                </HStack>
+                <Switch 
+                  colorScheme="blue"
+                  isChecked={isFocusMode}
+                  onChange={toggleFocusMode}
+                />
+              </Flex>
               
-              <Stat>
-                <StatLabel>Cycles</StatLabel>
-                <StatNumber>{pomodoro.state.cycleCount}</StatNumber>
-                <StatHelpText>Pomodoro cycles</StatHelpText>
-              </Stat>
+              {/* Task Selection */}
+              <Box>
+                <Text fontWeight="medium" mb={2}>
+                  Select Task
+                </Text>
+                <Select
+                  value={taskId || ''}
+                  onChange={handleTaskChange}
+                  placeholder="Select a task to focus on"
+                  borderColor={borderColor}
+                >
+                  {tasks
+                    .filter(task => task.status !== 'completed')
+                    .map(task => (
+                      <option key={task.id} value={task.id}>
+                        {task.title}
+                      </option>
+                    ))}
+                </Select>
+              </Box>
               
-              <Stat>
-                <StatLabel>Tasks</StatLabel>
-                <StatNumber>{completedTasks.length}</StatNumber>
-                <StatHelpText>Completed during session</StatHelpText>
-              </Stat>
-            </Flex>
-          </VStack>
-        </ModalBody>
+              <Divider />
+              
+              {/* Stats */}
+              <Flex justify="space-between">
+                <Stat>
+                  <StatLabel>Focus Time</StatLabel>
+                  <StatNumber>{formatTotalTime(pomodoro.state.time)}</StatNumber>
+                  <StatHelpText>Current focus time</StatHelpText>
+                </Stat>
+                
+                <Stat>
+                  <StatLabel>Cycles</StatLabel>
+                  <StatNumber>{pomodoro.state.cycleCount}</StatNumber>
+                  <StatHelpText>Pomodoro cycles</StatHelpText>
+                </Stat>
+                
+                <Stat>
+                  <StatLabel>Tasks</StatLabel>
+                  <StatNumber>{completedTasks.length}</StatNumber>
+                  <StatHelpText>Completed during session</StatHelpText>
+                </Stat>
+              </Flex>
+            </VStack>
+          </ModalBody>
 
-        <ModalFooter>
-          <Button onClick={onClose}>Close</Button>
-        </ModalFooter>
-      </ModalContent>
-    </Modal>
+          <ModalFooter>
+            <Button onClick={onClose}>Close</Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+      
+      {/* Render Focus Mode UI when active */}
+      {isFocusMode && renderFocusMode()}
+    </>
   );
 };
 
