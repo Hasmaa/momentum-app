@@ -210,6 +210,11 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
         isClosable: true,
       });
       
+      // Stop the timer first if it's running
+      if (pomodoro.state.isRunning) {
+        pomodoro.actions.pause();
+      }
+      
       // Mark the timer as completed
       pomodoro.actions.complete();
       
@@ -223,6 +228,11 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
       pomodoro.actions.reset();
       pomodoro.actions.changeTask(null);
       
+      // Double-check that the timer is fully reset
+      setTimeout(() => {
+        pomodoro.actions.reset();
+      }, 100);
+      
     } catch (error) {
       toast({
         title: 'Failed to complete task.',
@@ -232,7 +242,7 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
         isClosable: true,
       });
     }
-  }, [pomodoro.state.task, pomodoro.actions, onTaskComplete, toast, isFocusMode]);
+  }, [pomodoro.state.task, pomodoro.state.isRunning, pomodoro.actions, onTaskComplete, toast, isFocusMode]);
   
   // Keyboard shortcuts handler
   useEffect(() => {
