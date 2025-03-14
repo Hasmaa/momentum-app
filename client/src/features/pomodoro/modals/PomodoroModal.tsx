@@ -30,7 +30,8 @@ import {
   SlideFade,
   Fade,
   Center,
-  ScaleFade
+  ScaleFade,
+  Heading
 } from '@chakra-ui/react';
 import { keyframes } from '@emotion/react';
 import { 
@@ -41,7 +42,8 @@ import {
   FaStopwatch, 
   FaExpand, 
   FaCompress,
-  FaTimes
+  FaTimes,
+  FaHistory
 } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import { Task } from '../../../types';
@@ -66,23 +68,16 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
   tasks,
   onTaskComplete
 }) => {
-  const [taskId, setTaskId] = useState<string | null>(selectedTask?.id || null);
-  const [completedTasks, setCompletedTasks] = useState<string[]>([]);
   const [isFocusMode, setIsFocusMode] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const lastSelectedTaskIdRef = useRef<string | null>(selectedTask?.id || null);
   const toast = useToast();
 
-  // Convert tasks array to a map for easy lookup
-  const tasksMap = tasks.reduce((acc, task) => {
-    acc[task.id] = task;
-    return acc;
-  }, {} as Record<string, Task>);
-
-  // Get current task
-  const currentTask = taskId ? tasksMap[taskId] : null;
-
-  // Initialize pomodoro hook
-  const pomodoro = useGlobalPomodoro(currentTask);
+  // Initialize pomodoro hook with the selected task
+  const pomodoro = useGlobalPomodoro(selectedTask);
+  
+  // Access the store to get completed sessions
+  const completedSessions = usePomodoroStore(state => state.completedSessions);
   
   // Colors
   const bgColor = useColorModeValue('white', 'gray.800');
@@ -92,10 +87,16 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
   const focusBgColor = useColorModeValue('rgba(255, 255, 255, 0.95)', 'rgba(23, 25, 35, 0.95)');
   const focusTimerBgColor = useColorModeValue('gray.100', 'gray.900');
   const breathingColor = useColorModeValue('blue.50', 'blue.900');
+  const historyItemBg = useColorModeValue('gray.50', 'gray.700');
   
   // Handle focus mode toggle
   const toggleFocusMode = useCallback(() => {
     setIsFocusMode(prev => !prev);
+  }, []);
+  
+  // Toggle history view
+  const toggleHistory = useCallback(() => {
+    setShowHistory(prev => !prev);
   }, []);
   
   // Handle ESC key to exit focus mode
@@ -114,73 +115,36 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
   useEffect(() => {
     // Skip if it's the same task or null
     if (!selectedTask || selectedTask.id === lastSelectedTaskIdRef.current) {
-      console.log('[PomodoroModal] Selected task unchanged, skipping update');
       return;
     }
     
-    console.log('[PomodoroModal] Selected task changed:', selectedTask?.id);
     lastSelectedTaskIdRef.current = selectedTask.id;
-    setTaskId(selectedTask.id);
     
-    // Check if we already have this timer in the store
-    const storeState = usePomodoroStore.getState();
-    const existingTimer = storeState.getTimerByTaskId(selectedTask.id);
-    
-    if (existingTimer) {
-      console.log('[PomodoroModal] Found existing timer for task:', selectedTask.id);
-    } else {
-      console.log('[PomodoroModal] No existing timer, creating new one for task:', selectedTask.id);
-    }
-    
-    // Only change the task if it's different
-    if (pomodoro.state.task?.id !== selectedTask.id) {
-      pomodoro.actions.changeTask(selectedTask);
-    }
-  // Only run when selectedTask changes, not on every pomodoro action change
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedTask]);
+    // Change task in the pomodoro system
+    pomodoro.actions.changeTask(selectedTask);
+  }, [selectedTask, pomodoro.actions]);
 
   // Handle task selection change
   const handleTaskChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newTaskId = e.target.value || null;
-    console.log('[PomodoroModal] Task selection changed to:', newTaskId);
+    const taskId = e.target.value || null;
     
-    // Skip if it's the same task
-    if (newTaskId === taskId) {
-      console.log('[PomodoroModal] Task unchanged, skipping update');
+    if (!taskId) {
+      pomodoro.actions.changeTask(null);
       return;
     }
     
-    setTaskId(newTaskId);
-    lastSelectedTaskIdRef.current = newTaskId;
-    
-    if (newTaskId) {
-      const task = tasksMap[newTaskId];
-      
-      // Check if we already have this timer in the store
-      const storeState = usePomodoroStore.getState();
-      const existingTimer = storeState.getTimerByTaskId(newTaskId);
-      
-      if (existingTimer) {
-        console.log('[PomodoroModal] Using existing timer for task:', newTaskId);
-        // Do nothing, the useGlobalPomodoro hook will handle it
-      } else {
-        console.log('[PomodoroModal] Creating new timer for task:', newTaskId);
-      }
-      
+    const task = tasks.find(t => t.id === taskId);
+    if (task) {
       pomodoro.actions.changeTask(task);
-    } else {
-      pomodoro.actions.changeTask(null);
     }
-  }, [taskId, tasksMap, pomodoro.actions]);
+  }, [tasks, pomodoro.actions]);
 
   // Handle task completion
   const handleCompleteTask = useCallback(async () => {
-    if (!taskId) return;
+    if (!pomodoro.state.task) return;
     
     try {
-      await onTaskComplete(taskId);
-      setCompletedTasks(prev => [...prev, taskId]);
+      await onTaskComplete(pomodoro.state.task.id);
       
       toast({
         title: 'Task completed!',
@@ -192,10 +156,6 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
       
       // Mark the timer as completed
       pomodoro.actions.complete();
-      
-      // Clear task selection
-      setTaskId(null);
-      lastSelectedTaskIdRef.current = null;
       
       // Exit focus mode if active
       if (isFocusMode) {
@@ -210,7 +170,7 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
         isClosable: true,
       });
     }
-  }, [taskId, onTaskComplete, toast, pomodoro.actions, isFocusMode]);
+  }, [pomodoro.state.task, pomodoro.actions, onTaskComplete, toast, isFocusMode]);
 
   // Format time as MM:SS
   const formatTime = useCallback((ms: number): string => {
@@ -230,6 +190,11 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
       return `${hours}h ${minutes}m`;
     }
     return `${minutes}m`;
+  }, []);
+  
+  // Format date for session history
+  const formatDate = useCallback((timestamp: number): string => {
+    return new Date(timestamp).toLocaleString();
   }, []);
   
   // Render the focus mode UI
@@ -268,7 +233,7 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
               </Box>
               
               {/* Task info */}
-              {currentTask && (
+              {pomodoro.state.task && (
                 <Text
                   fontSize="xl"
                   fontWeight="medium"
@@ -276,7 +241,7 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                   textAlign="center"
                   opacity={0.8}
                 >
-                  {currentTask.title}
+                  {pomodoro.state.task.title}
                 </Text>
               )}
               
@@ -358,7 +323,7 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                   onClick={pomodoro.actions.reset}
                 />
                 
-                {taskId && (
+                {pomodoro.state.task && (
                   <IconButton
                     aria-label="Complete Task"
                     icon={<FaCheck />}
@@ -386,6 +351,49 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
           </ScaleFade>
         </Box>
       </Portal>
+    );
+  };
+
+  // Render history view
+  const renderHistory = () => {
+    const taskSessions = pomodoro.state.task
+      ? completedSessions.filter(s => s.taskId === pomodoro.state.task?.id)
+      : [];
+    
+    return (
+      <Box mt={4}>
+        <Heading as="h3" size="md" mb={3}>
+          Session History
+        </Heading>
+        
+        {taskSessions.length === 0 ? (
+          <Text color={textColor} opacity={0.7} textAlign="center" py={4}>
+            No completed pomodoros for this task yet
+          </Text>
+        ) : (
+          <VStack align="stretch" spacing={2} maxH="200px" overflowY="auto">
+            {taskSessions.map(session => (
+              <Box
+                key={session.id}
+                p={3}
+                borderRadius="md"
+                bg={historyItemBg}
+                borderWidth="1px"
+                borderColor={borderColor}
+              >
+                <Flex justify="space-between" align="center">
+                  <Text fontSize="sm" fontWeight="medium">
+                    {formatDate(session.startTime)}
+                  </Text>
+                  <Badge colorScheme="green">
+                    {formatTotalTime(session.duration)}
+                  </Badge>
+                </Flex>
+              </Box>
+            ))}
+          </VStack>
+        )}
+      </Box>
     );
   };
 
@@ -474,7 +482,7 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                     onClick={pomodoro.actions.reset}
                   />
                   
-                  {taskId && (
+                  {pomodoro.state.task && (
                     <Tooltip label="Mark task as completed">
                       <IconButton
                         aria-label="Complete Task"
@@ -517,7 +525,7 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                   Select Task
                 </Text>
                 <Select
-                  value={taskId || ''}
+                  value={pomodoro.state.task?.id || ''}
                   onChange={handleTaskChange}
                   placeholder="Select a task to focus on"
                   borderColor={borderColor}
@@ -549,11 +557,23 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                 </Stat>
                 
                 <Stat>
-                  <StatLabel>Tasks</StatLabel>
-                  <StatNumber>{completedTasks.length}</StatNumber>
-                  <StatHelpText>Completed during session</StatHelpText>
+                  <StatLabel>Completed</StatLabel>
+                  <StatNumber>{pomodoro.state.completedSessions}</StatNumber>
+                  <StatHelpText>
+                    <Button 
+                      variant="link" 
+                      size="xs" 
+                      rightIcon={<FaHistory />}
+                      onClick={toggleHistory}
+                    >
+                      {showHistory ? "Hide history" : "Show history"}
+                    </Button>
+                  </StatHelpText>
                 </Stat>
               </Flex>
+              
+              {/* Session History */}
+              {showHistory && pomodoro.state.task && renderHistory()}
             </VStack>
           </ModalBody>
 

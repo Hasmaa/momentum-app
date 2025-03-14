@@ -17,183 +17,96 @@ import {
   Button,
   useColorModeValue,
   useDisclosure,
-  Drawer,
-  DrawerOverlay,
-  DrawerContent,
-  DrawerCloseButton,
-  DrawerHeader,
-  DrawerBody,
-  useBreakpointValue
+  Tooltip,
+  Progress,
+  Flex
 } from '@chakra-ui/react';
-import { FaClock, FaTimes } from 'react-icons/fa';
+import { FaClock, FaTimes, FaPlay, FaPause } from 'react-icons/fa';
 import { usePomodoroStore } from '../hooks/usePomodoroStore';
-import MiniTimer from './MiniTimer';
 
 interface ActiveTimersProps {
-  onSelectTask: (taskId: string) => void;
-  onCompleteTask: (taskId: string) => Promise<void>;
+  onOpenPomodoro: () => void;
 }
 
 export const ActiveTimers: React.FC<ActiveTimersProps> = React.memo(({ 
-  onSelectTask, 
-  onCompleteTask 
+  onOpenPomodoro
 }) => {
-  // Get timers directly from the store to stay in sync
-  const activeTimers = usePomodoroStore(state => state.activeTimers);
-  const getRunningTimersCount = usePomodoroStore(state => state.getRunningTimersCount);
-  const removeTimer = usePomodoroStore(state => state.removeTimer);
+  // Get the timer from the store
+  const timer = usePomodoroStore(state => state.timer);
+  const isActive = usePomodoroStore(state => state.isTimerActive());
+  const pauseTimer = usePomodoroStore(state => state.pauseTimer);
+  const resumeTimer = usePomodoroStore(state => state.resumeTimer);
+  const completeTimer = usePomodoroStore(state => state.completeTimer);
   
-  const [activeCount, setActiveCount] = useState(0);
+  const [timeDisplay, setTimeDisplay] = useState('');
+  const [progress, setProgress] = useState(0);
   const [isHovering, setIsHovering] = useState(false);
   const timerRef = useRef<number | null>(null);
   const { isOpen, onOpen, onClose } = useDisclosure();
-  
-  // Use a drawer on mobile, popover on desktop
-  const isMobile = useBreakpointValue({ base: true, md: false });
   
   // Colors
   const bgColor = useColorModeValue('white', 'gray.800');
   const buttonBg = useColorModeValue('gray.100', 'gray.700');
   const hoverBg = useColorModeValue('gray.200', 'gray.600');
 
-  // Update active count when timers change or every second
+  // Format time as MM:SS
+  const formatTime = useCallback((ms: number) => {
+    const totalSeconds = Math.ceil(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }, []);
+
+  // Update time display when timer changes
   useEffect(() => {
-    console.log('[ActiveTimers] Setting up timer effect');
+    if (!timer) {
+      setTimeDisplay('00:00');
+      setProgress(0);
+      return;
+    }
     
-    // Function to update active count
-    const updateActiveCount = () => {
-      const runningCount = getRunningTimersCount();
-      console.log(`[ActiveTimers] Current count: ${runningCount} running timers out of ${activeTimers.length} total`);
-      setActiveCount(runningCount);
+    const updateDisplay = () => {
+      if (timer) {
+        setTimeDisplay(formatTime(timer.remainingTime));
+        setProgress((timer.totalTime - timer.remainingTime) / timer.totalTime * 100);
+      }
     };
     
-    // Initial update
-    updateActiveCount();
+    updateDisplay();
     
-    // Set up interval for time-based updates (for timer progress)
-    timerRef.current = window.setInterval(updateActiveCount, 1000);
+    // Set up interval to update display
+    timerRef.current = window.setInterval(updateDisplay, 1000);
     
-    // Clean up on unmount
     return () => {
-      console.log('[ActiveTimers] Cleaning up timer effect');
       if (timerRef.current) {
         window.clearInterval(timerRef.current);
       }
     };
-  }, [activeTimers, getRunningTimersCount]); // Depend on the array and function to update when store changes
-  
-  const handleSelectTask = useCallback((taskId: string) => {
-    console.log('[ActiveTimers] Selecting task:', taskId);
-    onSelectTask(taskId);
+  }, [timer, formatTime]);
+
+  // Handle click on the task
+  const handleViewPomodoro = useCallback(() => {
+    onOpenPomodoro();
     onClose();
-  }, [onSelectTask, onClose]);
+  }, [onOpenPomodoro, onClose]);
   
-  const handleCompleteTask = useCallback(async (taskId: string) => {
-    console.log('[ActiveTimers] Completing task:', taskId);
-    await onCompleteTask(taskId);
-  }, [onCompleteTask]);
-  
-  // Memoize the timer list to prevent rebuilding on every render
-  const timerListMemo = useMemo(() => {
-    console.log('[ActiveTimers] Building memoized timer list. Total timers:', activeTimers.length);
+  // Toggle pause/resume
+  const handleTogglePause = useCallback(() => {
+    if (!timer) return;
     
-    if (activeTimers.length === 0) {
-      return (
-        <Text color="gray.500" textAlign="center" py={4}>
-          No active timers
-        </Text>
-      );
+    if (timer.isPaused) {
+      resumeTimer();
+    } else {
+      pauseTimer();
     }
-    
-    return activeTimers.map((timer) => {
-      console.log('[ActiveTimers] Adding timer to list:', timer.id, 'Status:', timer.isRunning ? 'running' : timer.isPaused ? 'paused' : 'idle');
-      return (
-        <Box 
-          key={timer.id}
-          mb={2}
-          p={2}
-          borderRadius="md"
-          borderWidth="1px"
-          onClick={() => timer.taskId ? handleSelectTask(timer.taskId) : null}
-          cursor={timer.taskId ? "pointer" : "default"}
-          _hover={{ bg: useColorModeValue('gray.50', 'gray.700') }}
-        >
-          <MiniTimer 
-            timer={timer}
-          />
-        </Box>
-      );
-    });
-  }, [activeTimers, handleSelectTask]);
+  }, [timer, pauseTimer, resumeTimer]);
   
-  // Determine if there are any running timers
-  const hasRunningTimers = useMemo(() => 
-    activeCount > 0,
-    [activeCount]
-  );
-  
-  // Memoize the clear all handler
-  const handleClearAll = useCallback(() => {
-    console.log('[ActiveTimers] Clearing all timers');
-    // Get a copy of the timers first so we're not modifying during iteration
-    const timersToRemove = [...activeTimers];
-    timersToRemove.forEach(timer => {
-      removeTimer(timer.id);
-    });
+  // Cancel the timer
+  const handleCancelTimer = useCallback(() => {
+    if (!timer) return;
+    completeTimer(false);
     onClose();
-  }, [activeTimers, removeTimer, onClose]);
-  
-  if (isMobile) {
-    return (
-      <>
-        <IconButton
-          icon={<FaClock />}
-          aria-label="View active timers"
-          position="fixed"
-          bottom={6}
-          right={6}
-          size="lg"
-          colorScheme={hasRunningTimers ? "red" : "gray"}
-          borderRadius="full"
-          boxShadow="lg"
-          zIndex={5}
-          onClick={onOpen}
-        />
-        {activeCount > 0 && (
-          <Badge
-            position="fixed"
-            bottom="60px"
-            right="10px"
-            colorScheme="red"
-            borderRadius="full"
-            zIndex={6}
-          >
-            {activeCount}
-          </Badge>
-        )}
-        
-        <Drawer
-          isOpen={isOpen}
-          placement="right"
-          onClose={onClose}
-          size="sm"
-        >
-          <DrawerOverlay />
-          <DrawerContent>
-            <DrawerCloseButton />
-            <DrawerHeader borderBottomWidth="1px">
-              Active Pomodoro Timers
-            </DrawerHeader>
-            <DrawerBody>
-              <VStack align="stretch" spacing={3} maxH="400px" overflowY="auto">
-                {timerListMemo}
-              </VStack>
-            </DrawerBody>
-          </DrawerContent>
-        </Drawer>
-      </>
-    );
-  }
+  }, [timer, completeTimer, onClose]);
   
   return (
     <Popover
@@ -212,14 +125,15 @@ export const ActiveTimers: React.FC<ActiveTimersProps> = React.memo(({
         >
           <IconButton
             icon={<FaClock />}
-            aria-label="View active timers"
+            aria-label="View active timer"
             size="md"
             variant={isHovering || isOpen ? "solid" : "ghost"}
-            colorScheme={hasRunningTimers ? "red" : "gray"}
-            bg={isHovering || isOpen ? (hasRunningTimers ? "red.500" : buttonBg) : "transparent"}
-            _hover={{ bg: hasRunningTimers ? "red.600" : hoverBg }}
+            colorScheme={isActive ? "red" : "gray"}
+            bg={isHovering || isOpen ? (isActive ? "red.500" : buttonBg) : "transparent"}
+            _hover={{ bg: isActive ? "red.600" : hoverBg }}
+            onClick={timer ? onOpen : onOpenPomodoro}
           />
-          {activeCount > 0 && (
+          {isActive && (
             <Badge
               position="absolute"
               top="-2px"
@@ -228,37 +142,84 @@ export const ActiveTimers: React.FC<ActiveTimersProps> = React.memo(({
               borderRadius="full"
               fontSize="xs"
             >
-              {activeCount}
+              1
             </Badge>
           )}
         </Box>
       </PopoverTrigger>
       
-      <PopoverContent width="320px" shadow="lg">
-        <PopoverArrow />
-        <PopoverCloseButton />
-        <PopoverHeader fontWeight="semibold">
-          Active Pomodoro Timers
-        </PopoverHeader>
-        <PopoverBody p={3}>
-          <VStack align="stretch" spacing={3} maxH="400px" overflowY="auto">
-            {timerListMemo}
-          </VStack>
-        </PopoverBody>
-        {activeTimers.length > 0 && (
+      {timer && (
+        <PopoverContent width="320px" shadow="lg">
+          <PopoverArrow />
+          <PopoverCloseButton />
+          <PopoverHeader fontWeight="semibold">
+            Active Pomodoro
+          </PopoverHeader>
+          <PopoverBody p={3}>
+            <VStack align="stretch" spacing={3}>
+              <Box 
+                p={3}
+                borderRadius="md"
+                borderWidth="1px"
+                bg={useColorModeValue('gray.50', 'gray.700')}
+              >
+                <Flex justifyContent="space-between" alignItems="center" mb={2}>
+                  <Text fontWeight="bold" fontSize="md" isTruncated maxWidth="70%">
+                    {timer.task?.title || 'Untitled Task'}
+                  </Text>
+                  <Badge 
+                    colorScheme={timer.isPaused ? 'yellow' : 'green'} 
+                    fontSize="xs"
+                  >
+                    {timer.isPaused ? 'PAUSED' : 'RUNNING'}
+                  </Badge>
+                </Flex>
+                
+                <Text fontSize="2xl" fontWeight="bold" textAlign="center" my={2} fontFamily="mono">
+                  {timeDisplay}
+                </Text>
+                
+                <Progress 
+                  value={progress} 
+                  size="sm" 
+                  colorScheme="blue" 
+                  borderRadius="full" 
+                  mb={3}
+                />
+                
+                <HStack spacing={3} justifyContent="center">
+                  <Tooltip label={timer.isPaused ? "Resume" : "Pause"}>
+                    <IconButton
+                      icon={timer.isPaused ? <FaPlay /> : <FaPause />}
+                      aria-label={timer.isPaused ? "Resume timer" : "Pause timer"}
+                      size="sm"
+                      colorScheme={timer.isPaused ? "green" : "yellow"}
+                      onClick={handleTogglePause}
+                    />
+                  </Tooltip>
+                  
+                  <Button size="sm" colorScheme="blue" onClick={handleViewPomodoro}>
+                    View Details
+                  </Button>
+                </HStack>
+              </Box>
+            </VStack>
+          </PopoverBody>
           <PopoverFooter p={3}>
             <HStack justifyContent="flex-end">
               <Button 
                 size="sm"
                 leftIcon={<FaTimes />}
-                onClick={handleClearAll}
+                variant="ghost"
+                colorScheme="red"
+                onClick={handleCancelTimer}
               >
-                Clear All
+                Cancel Timer
               </Button>
             </HStack>
           </PopoverFooter>
-        )}
-      </PopoverContent>
+        </PopoverContent>
+      )}
     </Popover>
   );
 });

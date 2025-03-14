@@ -1,8 +1,16 @@
 import { create } from 'zustand';
 import { Task } from '../../../types';
 
-export interface PomodoroTimer {
+export interface CompletedPomodoroSession {
   id: string;
+  taskId: string;
+  taskTitle: string;
+  startTime: number;
+  endTime: number;
+  duration: number;
+}
+
+export interface PomodoroTimer {
   taskId: string | null;
   task: Task | null;
   remainingTime: number;
@@ -10,88 +18,190 @@ export interface PomodoroTimer {
   cycleCount: number;
   isRunning: boolean;
   isPaused: boolean;
-  isCompleted: boolean;
-  lastUpdated: number; // Timestamp for tracking updates
+  startTime: number | null;
+  lastResumeTime: number | null;
 }
 
 interface PomodoroStore {
-  activeTimers: PomodoroTimer[];
-  addTimer: (timer: Omit<PomodoroTimer, 'id' | 'lastUpdated'>) => string;
-  removeTimer: (id: string) => void;
-  updateTimer: (id: string, updates: Partial<PomodoroTimer>) => void;
-  getTimerByTaskId: (taskId: string) => PomodoroTimer | undefined;
-  getRunningTimersCount: () => number;
+  // Single global timer
+  timer: PomodoroTimer | null;
+  // History of completed sessions
+  completedSessions: CompletedPomodoroSession[];
+  // Set current task
+  setTask: (task: Task | null) => void;
+  // Start timer
+  startTimer: (task: Task | null, duration?: number) => void;
+  // Pause timer
+  pauseTimer: () => void;
+  // Resume timer
+  resumeTimer: () => void;
+  // Reset timer
+  resetTimer: () => void;
+  // Complete timer and add to history
+  completeTimer: (wasCompleted: boolean) => void;
+  // Update timer
+  updateTimer: (updates: Partial<PomodoroTimer>) => void;
+  // Check if a timer is active
+  isTimerActive: () => boolean;
+  // Get total completed pomodoros for a task
+  getCompletedPomodorosForTask: (taskId: string) => number;
 }
 
-export const usePomodoroStore = create<PomodoroStore>((set, get) => ({
-  activeTimers: [],
+export const DEFAULT_POMODORO_TIME = 25 * 60 * 1000; // 25 minutes in ms
+export const DEFAULT_SHORT_BREAK = 5 * 60 * 1000; // 5 minutes in ms
+export const DEFAULT_LONG_BREAK = 15 * 60 * 1000; // 15 minutes in ms
 
-  addTimer: (timer) => {
-    const id = `timer_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const now = Date.now();
-    console.log(`[PomodoroStore] Adding new timer ${id} for task ${timer.taskId || 'no task'}`);
+export const usePomodoroStore = create<PomodoroStore>((set, get) => ({
+  timer: null,
+  completedSessions: [],
+
+  setTask: (task) => {
+    console.log('[PomodoroStore] Setting task:', task?.id || 'none');
     
     set((state) => {
-      // Check if we already have a timer for this task
-      if (timer.taskId) {
-        const existingTimer = state.activeTimers.find(t => t.taskId === timer.taskId);
-        if (existingTimer) {
-          console.log(`[PomodoroStore] Already have timer ${existingTimer.id} for task ${timer.taskId}, not adding duplicate`);
-          return state; // Don't add a duplicate timer
+      // If we have an active timer, update its task
+      if (state.timer) {
+        return {
+          timer: {
+            ...state.timer,
+            taskId: task?.id || null,
+            task: task
+          }
+        };
+      }
+      return state;
+    });
+  },
+
+  startTimer: (task, duration = DEFAULT_POMODORO_TIME) => {
+    console.log(`[PomodoroStore] Starting timer for task: ${task?.id || 'no task'}`);
+    const now = Date.now();
+    
+    set({
+      timer: {
+        taskId: task?.id || null,
+        task: task,
+        remainingTime: duration,
+        totalTime: duration,
+        cycleCount: 1,
+        isRunning: true,
+        isPaused: false,
+        startTime: now,
+        lastResumeTime: now
+      }
+    });
+  },
+
+  pauseTimer: () => {
+    console.log('[PomodoroStore] Pausing timer');
+    
+    set((state) => {
+      if (!state.timer) return state;
+      
+      return {
+        timer: {
+          ...state.timer,
+          isPaused: true,
+          isRunning: true, // Still considered running, just paused
         }
+      };
+    });
+  },
+
+  resumeTimer: () => {
+    console.log('[PomodoroStore] Resuming timer');
+    const now = Date.now();
+    
+    set((state) => {
+      if (!state.timer) return state;
+      
+      return {
+        timer: {
+          ...state.timer,
+          isPaused: false,
+          isRunning: true,
+          lastResumeTime: now
+        }
+      };
+    });
+  },
+
+  resetTimer: () => {
+    console.log('[PomodoroStore] Resetting timer');
+    
+    set((state) => {
+      if (!state.timer) return state;
+      
+      return {
+        timer: {
+          ...state.timer,
+          remainingTime: state.timer.totalTime,
+          isRunning: false,
+          isPaused: false,
+          startTime: null,
+          lastResumeTime: null
+        }
+      };
+    });
+  },
+
+  completeTimer: (wasCompleted = true) => {
+    console.log('[PomodoroStore] Completing timer');
+    const now = Date.now();
+    
+    set((state) => {
+      if (!state.timer || !state.timer.taskId) {
+        return {
+          timer: null
+        };
+      }
+      
+      // Only add to completed sessions if this is a legitimate completion
+      // (not a reset or skip)
+      if (wasCompleted && state.timer.taskId) {
+        const session: CompletedPomodoroSession = {
+          id: `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+          taskId: state.timer.taskId,
+          taskTitle: state.timer.task?.title || 'Unknown Task',
+          startTime: state.timer.startTime || now - state.timer.totalTime,
+          endTime: now,
+          duration: state.timer.totalTime
+        };
+        
+        return {
+          timer: null,
+          completedSessions: [...state.completedSessions, session]
+        };
       }
       
       return {
-        activeTimers: [
-          ...state.activeTimers,
-          { ...timer, id, lastUpdated: now }
-        ]
+        timer: null
       };
     });
-    
-    // Log the current state after the update
-    console.log(`[PomodoroStore] State after adding timer: ${get().activeTimers.length} timers, ${get().getRunningTimersCount()} running`);
-    
-    return id;
   },
 
-  removeTimer: (id) => {
-    console.log(`[PomodoroStore] Removing timer ${id}`);
-    set((state) => ({
-      activeTimers: state.activeTimers.filter((timer) => timer.id !== id)
-    }));
+  updateTimer: (updates) => {
+    console.log('[PomodoroStore] Updating timer:', updates);
     
-    // Log the current state after the update
-    console.log(`[PomodoroStore] State after removing timer: ${get().activeTimers.length} timers, ${get().getRunningTimersCount()} running`);
+    set((state) => {
+      if (!state.timer) return state;
+      
+      return {
+        timer: {
+          ...state.timer,
+          ...updates
+        }
+      };
+    });
   },
 
-  updateTimer: (id, updates) => {
-    const now = Date.now();
-    console.log(`[PomodoroStore] Updating timer ${id}`, updates);
-    
-    set((state) => ({
-      activeTimers: state.activeTimers.map((timer) =>
-        timer.id === id ? { ...timer, ...updates, lastUpdated: now } : timer
-      )
-    }));
-    
-    // Log the current state after the update
-    const timer = get().activeTimers.find(t => t.id === id);
-    console.log(`[PomodoroStore] State after updating timer: ${get().activeTimers.length} timers, ${get().getRunningTimersCount()} running`);
-    if (timer) {
-      console.log(`[PomodoroStore] Timer ${id} is now: isRunning=${timer.isRunning}, isPaused=${timer.isPaused}, isCompleted=${timer.isCompleted}`);
-    }
+  isTimerActive: () => {
+    const state = get();
+    return !!state.timer && state.timer.isRunning;
   },
 
-  getTimerByTaskId: (taskId) => {
-    return get().activeTimers.find((timer) => timer.taskId === taskId);
-  },
-  
-  getRunningTimersCount: () => {
-    const runningCount = get().activeTimers.filter(
-      (timer) => timer.isRunning && !timer.isPaused && !timer.isCompleted
-    ).length;
-    console.log(`[PomodoroStore] Running timers count: ${runningCount} out of ${get().activeTimers.length} total`);
-    return runningCount;
+  getCompletedPomodorosForTask: (taskId) => {
+    const state = get();
+    return state.completedSessions.filter(session => session.taskId === taskId).length;
   }
 })); 

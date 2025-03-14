@@ -1539,29 +1539,13 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     
     // Get the store state using getState to avoid affecting hook order
     const storeState = usePomodoroStore.getState();
-    console.log('[Dashboard] Current active timers:', storeState.activeTimers.length);
-    console.log('[Dashboard] Running timers count:', storeState.getRunningTimersCount());
     
     if (taskId) {
       // Find the task in our list
       const task = todos.find(t => t.id === taskId);
       
       if (task) {
-        // Check if there's already a timer for this task
-        const existingTimer = storeState.getTimerByTaskId(taskId);
-        
-        if (existingTimer) {
-          console.log('[Dashboard] Task already has an active timer:', existingTimer.id);
-          toast({
-            title: 'Timer already active',
-            description: `There's already an active timer for "${task.title}"`,
-            status: 'info',
-            duration: 3000,
-            isClosable: true,
-          });
-        }
-        
-        // Always set the task and open the modal
+        // Set the task for the global timer and open the modal
         console.log('[Dashboard] Setting selected task:', task.id);
         setPomodoroTask(task);
         setIsPomodoroOpen(true);
@@ -1575,12 +1559,26 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
       setPomodoroTask(null);
       setIsPomodoroOpen(true);
     }
-  }, [todos, toast]);
+  }, [todos]);
 
   // Helper function to handle Task to taskId conversion for Pomodoro
   const handlePomodoroForTask = useCallback((task: Task) => {
     onPomodoroOpen(task.id);
   }, [onPomodoroOpen]);
+
+  // Listen for the custom event to open the Pomodoro modal
+  useEffect(() => {
+    const handleOpenPomodoroEvent = () => {
+      // Open the Pomodoro modal with the current task (if any)
+      setIsPomodoroOpen(true);
+    };
+
+    window.addEventListener('open-pomodoro-modal', handleOpenPomodoroEvent);
+    
+    return () => {
+      window.removeEventListener('open-pomodoro-modal', handleOpenPomodoroEvent);
+    };
+  }, []);
 
   return (
     <Box bg={mainBg} minH="100vh" transition="background-color 0.2s">

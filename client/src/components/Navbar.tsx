@@ -1,4 +1,4 @@
-import { Box, Flex, Button, HStack, Link, useColorMode } from '@chakra-ui/react';
+import { Box, Flex, Button, HStack, Link, useColorMode, useToast } from '@chakra-ui/react';
 import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import { FiBarChart2 } from 'react-icons/fi';
 import { ActiveTimers } from '../features/pomodoro';
@@ -6,52 +6,24 @@ import { ActiveTimers } from '../features/pomodoro';
 const Navbar = () => {
   const { colorMode, toggleColorMode } = useColorMode();
   const navigate = useNavigate();
+  const toast = useToast();
 
-  // Handle selecting a task from the active timers
-  const handleSelectTask = (taskId: string) => {
+  // Handle opening the Pomodoro modal
+  const handleOpenPomodoro = () => {
     // Navigate to the dashboard (if not already there)
     navigate('/');
     
-    // Find the task element and scroll to it
-    setTimeout(() => {
-      const taskElement = document.getElementById(`task-${taskId}`);
-      if (taskElement) {
-        taskElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        // Add a temporary highlight effect
-        taskElement.classList.add('task-highlight');
-        setTimeout(() => {
-          taskElement.classList.remove('task-highlight');
-        }, 2000);
-      }
-    }, 100);
-  };
-
-  // Handle completing a task
-  const handleCompleteTask = async (taskId: string) => {
-    try {
-      // Use the same API endpoint that handleStatusChange in Dashboard uses
-      const response = await fetch(`/api/tasks/${taskId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          status: 'completed',
-          completedAt: new Date().toISOString()
-        }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to update task status');
-      }
-      
-      // Force a page refresh to update the task list
-      // This is a simple solution - ideally you would use a global state manager
-      // or context to update the task list
-      window.location.reload();
-    } catch (error) {
-      console.error('Error completing task:', error);
-    }
+    // Dispatch a custom event that Dashboard can listen for
+    const event = new CustomEvent('open-pomodoro-modal');
+    window.dispatchEvent(event);
+    
+    toast({
+      title: 'Pomodoro Timer',
+      description: 'Opening timer details',
+      status: 'info',
+      duration: 3000,
+      isClosable: true,
+    });
   };
 
   return (
@@ -82,8 +54,7 @@ const Navbar = () => {
           </Link>
           
           <ActiveTimers 
-            onSelectTask={handleSelectTask}
-            onCompleteTask={handleCompleteTask}
+            onOpenPomodoro={handleOpenPomodoro}
           />
           
           <Button onClick={toggleColorMode} size="sm" ml={4}>
