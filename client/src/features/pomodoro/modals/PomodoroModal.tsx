@@ -998,12 +998,11 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
             ) : (
               // Timer UI when a task is selected
               <VStack spacing={6} align="stretch">
-                {/* Row 1: Suggestion + Timer */}
-                <Flex direction={{ base: 'column', md: 'row' }} gap={5} align={{ md: 'center' }} justify="space-between">
-                  {/* Suggested next action - made more compact */}
+                {/* Row 1: Suggestion + Timer stacked vertically */}
+                <VStack spacing={4} align="stretch">
+                  {/* Suggested next action */}
                   {nextSuggestion && (
                     <Flex
-                      flex="1"
                       align="center"
                       p={3}
                       bg="blue.50"
@@ -1036,10 +1035,9 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                     </Flex>
                   )}
 
-                  {/* Timer Display - made more visually prominent */}
+                  {/* Timer Display - now full width and more prominent */}
                   <Box
-                    flex="1"
-                    py={5}
+                    py={6}
                     px={4}
                     bg={timerBgColor}
                     borderRadius="xl"
@@ -1060,7 +1058,7 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                     />
                     
                     <Text
-                      fontSize={{ base: "4xl", md: "5xl" }}
+                      fontSize={{ base: "5xl", md: "6xl" }}
                       fontWeight="bold"
                       color={textColor}
                       fontFamily="mono"
@@ -1068,7 +1066,7 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                       {formatTime(pomodoro.state.time)}
                     </Text>
                   </Box>
-                </Flex>
+                </VStack>
 
                 {/* Row 2: Timer Controls */}
                 <Flex justify="center" mt={-1}>
