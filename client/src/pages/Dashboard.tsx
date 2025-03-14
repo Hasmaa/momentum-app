@@ -106,6 +106,8 @@ import { SortableCard } from './SortableCard';
 import { Droppable } from './Droppable';
 import { CreateTaskModal } from './CreateTaskModal';
 import { EditTaskModal } from './EditTaskModal';
+import { PomodoroModal, PomodoroButton } from '../features/pomodoro';
+import { FaClock } from 'react-icons/fa';
 
 const MotionBox = motion(Box);
 export const MotionCard = motion(Card);
@@ -196,6 +198,8 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     onClose: onEditModalClose 
   } = useDisclosure();
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [isPomodoroOpen, setIsPomodoroOpen] = useState(false);
+  const [pomodoroTask, setPomodoroTask] = useState<Task | null>(null);
 
   const mainBg = useColorModeValue('gray.50', 'gray.900');
   const cardBg = useColorModeValue('white', 'gray.800');
@@ -1041,6 +1045,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                                   isSelected={selectedTodos.has(todo.id)}
                                   isSelectMode={isSelectMode}
                                   onToggleSelect={toggleTodoSelection}
+                                  onPomodoro={onPomodoroOpen}
                                 />
                               ))
                             ) : (
@@ -1263,6 +1268,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                               isSelected={selectedTodos.has(todo.id)}
                               isSelectMode={isSelectMode}
                               onToggleSelect={toggleTodoSelection}
+                              onPomodoro={onPomodoroOpen}
                             />
                           ))
                         ) : (
@@ -1528,6 +1534,14 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     }
   };
 
+  const onPomodoroOpen = (task?: Task) => {
+    if (task) {
+      setPomodoroTask(task);
+    } else {
+      setPomodoroTask(null);
+    }
+    setIsPomodoroOpen(true);
+  };
 
   // Update sorting function to remove order property references
 
@@ -2364,6 +2378,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                                                           isSelected={selectedTodos.has(todo.id)}
                                                           isSelectMode={isSelectMode}
                                                           onToggleSelect={toggleTodoSelection}
+                                                          onPomodoro={onPomodoroOpen}
                                                         />
                                                       ))
                                                     ) : (
@@ -2610,6 +2625,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                                                     isSelected={selectedTodos.has(todo.id)}
                                                     isSelectMode={isSelectMode}
                                                     onToggleSelect={toggleTodoSelection}
+                                                    onPomodoro={onPomodoroOpen}
                                                   />
                                                 ))
                                               ) : (
@@ -2828,6 +2844,17 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
           achievements={achievements}
           recentlyUnlocked={recentlyUnlocked}
           getProgressPercentage={getProgressPercentage}
+        />
+        
+        {/* Add the Pomodoro Modal */}
+        <PomodoroModal
+          isOpen={isPomodoroOpen}
+          onClose={() => setIsPomodoroOpen(false)}
+          selectedTask={pomodoroTask}
+          tasks={todos}
+          onTaskComplete={async (taskId: string) => {
+            await handleStatusChange(taskId, 'completed');
+          }}
         />
       </Container>
       <KeyboardShortcuts isOpen={isShortcutsOpen} onClose={onShortcutsClose} />
