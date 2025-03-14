@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Box,
   VStack,
@@ -22,6 +22,12 @@ import {
   SliderTrack,
   SliderFilledTrack,
   SliderThumb,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  MenuGroup,
+  MenuDivider,
 } from '@chakra-ui/react';
 import { 
   FaMusic, 
@@ -33,13 +39,34 @@ import {
   FaCog, 
   FaChevronUp, 
   FaChevronDown, 
-  FaRandom
+  FaRandom,
+  FaCaretDown,
+  FaTree,
+  FaWater,
+  FaCloudRain,
+  FaMugHot,
+  FaSpa,
+  FaList
 } from 'react-icons/fa';
 import { useFocusEnvironment } from './FocusEnvironmentProvider';
 import { FocusEnvironmentPanel } from './FocusEnvironmentPanel';
+import { SoundTrack } from './types';
 
 interface FocusEnvironmentCompactProps {
   isMinimal?: boolean;
+}
+
+// Function to get icon by name
+const getIconByName = (iconName: string) => {
+  switch (iconName) {
+    case 'FaTree': return FaTree;
+    case 'FaWater': return FaWater;
+    case 'FaCloudRain': return FaCloudRain;
+    case 'FaMugHot': return FaMugHot;
+    case 'FaMusic': return FaMusic;
+    case 'FaSpa': return FaSpa;
+    default: return FaMusic;
+  }
 }
 
 export const FocusEnvironmentCompact: React.FC<FocusEnvironmentCompactProps> = ({ isMinimal = false }) => {
@@ -47,6 +74,7 @@ export const FocusEnvironmentCompact: React.FC<FocusEnvironmentCompactProps> = (
     currentSoundTrack,
     isPlaying,
     volume,
+    availableSoundTracks,
     availablePresets,
     activePresetId,
     playSoundTrack,
@@ -65,23 +93,21 @@ export const FocusEnvironmentCompact: React.FC<FocusEnvironmentCompactProps> = (
   const soundBgActiveColor = useColorModeValue('blue.50', 'blue.900');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   
-  // Play a random sound
-  const playRandomSound = () => {
-    if (!activePresetId && availablePresets.length > 0) {
-      // If no active preset, pick a random one
-      const randomIndex = Math.floor(Math.random() * availablePresets.length);
-      applyPreset(availablePresets[randomIndex].id);
-    } else if (currentSoundTrack) {
-      // If sound already playing, just toggle play/pause
-      if (isPlaying) {
-        pauseSoundTrack();
-      } else {
-        playSoundTrack(currentSoundTrack.id);
-      }
-    } else if (availablePresets.length > 0) {
-      // Apply a random preset
-      const randomIndex = Math.floor(Math.random() * availablePresets.length);
-      applyPreset(availablePresets[randomIndex].id);
+  // Group sound tracks by category
+  const soundsByCategory = availableSoundTracks.reduce((acc, sound) => {
+    if (!acc[sound.category]) {
+      acc[sound.category] = [];
+    }
+    acc[sound.category].push(sound);
+    return acc;
+  }, {} as Record<string, SoundTrack[]>);
+  
+  // Play a selected sound
+  const playSelectedSound = (soundTrackId: string) => {
+    if (isPlaying && currentSoundTrack?.id === soundTrackId) {
+      pauseSoundTrack();
+    } else {
+      playSoundTrack(soundTrackId);
     }
   };
 
@@ -118,19 +144,38 @@ export const FocusEnvironmentCompact: React.FC<FocusEnvironmentCompactProps> = (
       </HStack>
       
       <HStack spacing={1}>
-        {!currentSoundTrack && (
-          <Tooltip label="Play random focus sound">
-            <IconButton
-              icon={<FaRandom />}
-              aria-label="Random sound"
+        {!currentSoundTrack ? (
+          <Menu closeOnSelect>
+            <MenuButton
+              as={IconButton}
+              icon={<FaList />}
+              aria-label="Select sound"
               size="sm"
               variant="ghost"
-              onClick={playRandomSound}
             />
-          </Tooltip>
-        )}
-        
-        {currentSoundTrack && (
+            <MenuList>
+              {Object.entries(soundsByCategory).map(([category, sounds]) => (
+                <React.Fragment key={category}>
+                  <MenuGroup title={category.charAt(0).toUpperCase() + category.slice(1)}>
+                    {sounds.map(sound => {
+                      const IconComponent = sound.iconName ? getIconByName(sound.iconName) : FaMusic;
+                      return (
+                        <MenuItem 
+                          key={sound.id} 
+                          onClick={() => playSelectedSound(sound.id)}
+                          icon={<Icon as={IconComponent} />}
+                        >
+                          {sound.name}
+                        </MenuItem>
+                      );
+                    })}
+                  </MenuGroup>
+                  <MenuDivider />
+                </React.Fragment>
+              ))}
+            </MenuList>
+          </Menu>
+        ) : (
           <>
             <IconButton
               icon={isPlaying ? <FaPause /> : <FaPlay />}
