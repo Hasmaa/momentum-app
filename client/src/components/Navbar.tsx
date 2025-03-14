@@ -5,6 +5,8 @@ import { FaClock } from 'react-icons/fa';
 import { ActiveTimers } from '../features/pomodoro';
 import { useState } from 'react';
 import { keyframes } from '@emotion/react';
+import FontSelector from './FontSelector';
+import { FontOption } from '../theme';
 
 const Navbar = () => {
   const { colorMode, toggleColorMode } = useColorMode();
@@ -45,12 +47,36 @@ const Navbar = () => {
     });
   };
 
+  const handleFontChange = (font: FontOption) => {
+    // This function will be called when the font is changed in FontSelector
+    // The App component already has a storage listener that will update the theme
+  };
+
   return (
-    <Box px={4} bg={colorMode === 'light' ? 'white' : 'gray.800'} shadow="sm">
-      <Flex h={16} alignItems="center" justifyContent="space-between">
-        <Box fontWeight="bold">Super Todo</Box>
-        
-        <HStack spacing={4}>
+    <Box
+      as="nav"
+      bg={colorMode === 'light' ? 'white' : 'gray.800'}
+      py={2}
+      px={4}
+      borderBottom="1px"
+      borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
+      position="sticky"
+      top={0}
+      zIndex={2}
+      width="100%"
+    >
+      <Flex align="center" justify="space-between" wrap="wrap">
+        <HStack spacing={4} align="center">
+          <Link as={RouterLink} to="/" _hover={{ textDecoration: 'none' }}>
+            <Text fontSize="xl" fontWeight="bold" color={colorMode === 'light' ? 'brand.600' : 'brand.300'}>
+              Todo App
+            </Text>
+          </Link>
+        </HStack>
+
+        <HStack spacing={3}>
+          <FontSelector onFontChange={handleFontChange} />
+          
           <Link as={RouterLink} to="/" px={3} py={2} _hover={{ textDecoration: 'none' }}>
             Tasks
           </Link>
