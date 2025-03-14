@@ -1,8 +1,10 @@
 import { AddIcon, WarningIcon, CalendarIcon } from "@chakra-ui/icons";
-import { Button, FocusLock, Grid, GridItem, Icon, Input, InputGroup, InputLeftElement, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Select, Textarea, VStack } from "@chakra-ui/react";
+import { Button, FocusLock, Grid, GridItem, Icon, Input, InputGroup, InputLeftElement, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Select, Textarea, VStack, Text, Divider } from "@chakra-ui/react";
 import { motion } from "framer-motion";
-import { TaskPriority, TaskStatus } from "../types";
+import { Tag, TaskPriority, TaskStatus } from "../types";
 import { getStatusIcon } from "./utils";
+import { TagsInput } from "../components/tags";
+import { MdLabel } from "react-icons/md";
 
 interface CreateTaskModalProps {
     isCreateModalOpen: boolean;
@@ -19,6 +21,8 @@ interface CreateTaskModalProps {
     dueDate: string;
     setDueDate: (dueDate: string) => void;
     isSubmitting: boolean;
+    tags: Tag[];
+    setTags: (tags: Tag[]) => void;
 }
 
 export const CreateTaskModal = ({
@@ -36,6 +40,8 @@ export const CreateTaskModal = ({
     dueDate,
     setDueDate,
     isSubmitting,
+    tags,
+    setTags,
 }: CreateTaskModalProps) => {
     return(
         <Modal 
@@ -122,6 +128,21 @@ export const CreateTaskModal = ({
                         variant="filled"
                       />
                     </InputGroup>
+                    
+                    <Divider />
+                    
+                    <VStack align="flex-start" width="full" spacing={1}>
+                      <Text fontSize="sm" fontWeight="medium" color="gray.600">
+                        <Icon as={MdLabel} mr={1} />
+                        Tags
+                      </Text>
+                      <TagsInput
+                        selectedTags={tags}
+                        onChange={setTags}
+                        placeholder="Add tags to your task..."
+                        maxTags={10}
+                      />
+                    </VStack>
                   </VStack>
                 </ModalBody>
                 <ModalFooter>

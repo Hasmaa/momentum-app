@@ -74,6 +74,12 @@ import {
   RepeatIcon,
   QuestionIcon,
   ChevronRightIcon,
+  ChevronUpIcon,
+  DeleteIcon,
+  EditIcon,
+  ExternalLinkIcon,
+  SettingsIcon,
+  InfoIcon,
 } from '@chakra-ui/icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -85,6 +91,7 @@ import {
   KeyboardSensor,
   DragStartEvent,
   DragEndEvent,
+  DragMoveEvent,
 } from '@dnd-kit/core';
 import {
   SortableContext,
@@ -108,6 +115,11 @@ import { CreateTaskModal } from './CreateTaskModal';
 import { EditTaskModal } from './EditTaskModal';
 import { PomodoroModal, PomodoroButton, usePomodoroStore } from '../features/pomodoro';
 import { FaClock } from 'react-icons/fa';
+// Import Tag type
+import type { Tag as TagType } from '../types';
+// Add import for TagManager
+import { TagManager } from '../components/tags/TagManager';
+import { MdLabel } from 'react-icons/md';
 
 const MotionBox = motion(Box);
 export const MotionCard = motion(Card);
@@ -174,6 +186,10 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
   const [isSelectMode, setIsSelectMode] = useState<boolean>(false);
+  const [todoToDelete, setTodoToDelete] = useState<Task | null>(null);
+  const [newTaskTags, setNewTaskTags] = useState<TagType[]>([]);
+  // Inside the Dashboard component, add state for TagManager
+  const [isTagManagerOpen, setIsTagManagerOpen] = useState(false);
  
   const toast = useToast({
     position: 'top-right',
@@ -212,7 +228,6 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
   const secondaryTextColor = useColorModeValue('gray.500', 'gray.400');
   const ghostButtonHoverBg = useColorModeValue('blue.50', 'whiteAlpha.200');
 
-  const [todoToDelete, setTodoToDelete] = useState<Task | null>(null);
   const cancelDeleteRef = useRef<HTMLButtonElement>(null);
   const { 
     isOpen: isDeleteAlertOpen, 
@@ -556,6 +571,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
           status,
           priority,
           dueDate: new Date(dueDate).toISOString(),
+          tags: newTaskTags, // Add tags to the request
         }),
       });
       
@@ -566,6 +582,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
       setDueDate(new Date().toISOString().split('T')[0]);
       setPriority('medium');
       setStatus('pending');
+      setNewTaskTags([]); // Reset tags
       onCreateModalClose();
       fetchTodos();
       
@@ -673,6 +690,16 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
       return;
     }
 
+    // Validate that the task has a title
+    if (!todo.title.trim()) {
+      toast({
+        title: 'Title is required',
+        status: 'error',
+        duration: 3000,
+      });
+      return;
+    }
+
     try {
       const response = await fetch(`http://localhost:5001/api/todos/${todo.id}`, {
         method: 'PUT',
@@ -685,6 +712,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
           status: todo.status,
           priority: todo.priority,
           dueDate: new Date(todo.dueDate).toISOString(),
+          tags: todo.tags || [], // Include tags in the update
         }),
       });
       
@@ -693,6 +721,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
       setEditingTodo(null);
       onEditModalClose();
       fetchTodos();
+      
       toast({
         title: 'Todo updated successfully',
         status: 'success',
@@ -1571,6 +1600,18 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     };
   }, []);
 
+  // Add openTagManager function
+  const openTagManager = () => {
+    setIsTagManagerOpen(true);
+  };
+
+  // Add closeTagManager function
+  const closeTagManager = () => {
+    setIsTagManagerOpen(false);
+    // Fetch todos after tag management to ensure UI is updated
+    fetchTodos();
+  };
+
   return (
     <Box bg={mainBg} minH="100vh" transition="background-color 0.2s">
       <Container 
@@ -1992,6 +2033,17 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                       }}
                     >
                       Use Template
+                    </Button>
+                    {/* Add the TagManager button in a good spot in the UI, like near the "Add Task" button */}
+                    <Button
+                      leftIcon={<MdLabel />}
+                      size="sm"
+                      colorScheme="teal"
+                      variant="ghost"
+                      onClick={openTagManager}
+                      ml={2}
+                    >
+                      Manage Tags
                     </Button>
                   </HStack>
                 </HStack>
@@ -2785,6 +2837,8 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
           dueDate={dueDate}
           setDueDate={setDueDate}
           isSubmitting={isSubmitting}
+          tags={newTaskTags}
+          setTags={setNewTaskTags}
         />
 
         <EditTaskModal 
@@ -2874,6 +2928,12 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
             await handleStatusChange(taskId, 'completed');
           }}
           onCreateTask={() => _onCreateModalOpen()}
+        />
+        {/* Add the TagManager modal at the end of the component, before the closing tag */}
+        <TagManager 
+          isOpen={isTagManagerOpen}
+          onClose={closeTagManager}
+          onTagsUpdated={fetchTodos}
         />
       </Container>
       <KeyboardShortcuts isOpen={isShortcutsOpen} onClose={onShortcutsClose} />

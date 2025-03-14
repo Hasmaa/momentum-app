@@ -20,6 +20,7 @@ export interface Task extends BaseTask {
   updatedAt: string;
   completedAt?: string;
   order: number;
+  tags: Tag[];
 }
 
 // Task Template Interface
@@ -175,4 +176,15 @@ export interface AchievementState {
   achievements: Achievement[];
   recentlyUnlocked: Achievement | null;
   initialized: boolean;
+}
+
+export interface Tag {
+  id: string;
+  name: string;
+  color: string;
+}
+
+export interface TagFilters {
+  selectedTags: Tag[];
+  matchType: 'any' | 'all';
 } 

@@ -1,7 +1,9 @@
-import { Button, FocusLock, Grid, GridItem, Icon, Input, InputGroup, InputLeftElement, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Select, Textarea, VStack } from "@chakra-ui/react";
+import { Button, FocusLock, Grid, GridItem, Icon, Input, InputGroup, InputLeftElement, Modal, ModalBody, ModalCloseButton, ModalContent, ModalFooter, ModalHeader, ModalOverlay, Select, Textarea, VStack, Divider, Text } from "@chakra-ui/react";
 import { Task, TaskPriority, TaskStatus } from "../types";
 import { getStatusIcon } from "./utils";
 import { EditIcon, WarningIcon, CalendarIcon, CheckIcon  } from "@chakra-ui/icons";
+import { TagsInput } from "../components/tags";
+import { MdLabel } from "react-icons/md";
 
 interface EditTaskModalProps {
     isEditModalOpen: boolean;
@@ -97,6 +99,21 @@ export const EditTaskModal = ({
                       required
                     />
                   </InputGroup>
+                  
+                  <Divider />
+                  
+                  <VStack align="flex-start" width="full" spacing={1}>
+                    <Text fontSize="sm" fontWeight="medium" color="gray.600">
+                      <Icon as={MdLabel} mr={1} />
+                      Tags
+                    </Text>
+                    <TagsInput
+                      selectedTags={editingTodo.tags || []}
+                      onChange={(tags) => setEditingTodo({ ...editingTodo, tags })}
+                      placeholder="Add tags to your task..."
+                      maxTags={10}
+                    />
+                  </VStack>
                 </VStack>
               </ModalBody>
               <ModalFooter>

@@ -1,5 +1,12 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
+// Define Tag interface
+export interface ITag {
+  id: string;
+  name: string;
+  color: string;
+}
+
 export interface ITodo extends Document {
   title: string;
   description: string;
@@ -9,7 +16,15 @@ export interface ITodo extends Document {
   userId: string;
   createdAt: Date;
   updatedAt: Date;
+  tags: ITag[]; // Add tags array
 }
+
+// Define Tag schema
+const TagSchema = new Schema({
+  id: { type: String, required: true },
+  name: { type: String, required: true },
+  color: { type: String, required: true }
+}, { _id: false });
 
 const TodoSchema: Schema = new Schema({
   title: { 
@@ -37,6 +52,10 @@ const TodoSchema: Schema = new Schema({
   userId: { 
     type: String, 
     required: true 
+  },
+  tags: { 
+    type: [TagSchema], 
+    default: [] 
   }
 }, {
   timestamps: true

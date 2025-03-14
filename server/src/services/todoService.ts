@@ -3,6 +3,12 @@ import path from 'path';
 
 const dataPath = path.join(__dirname, '../data/todos.json');
 
+export interface Tag {
+  id: string;
+  name: string;
+  color: string;
+}
+
 export interface Todo {
   id: string;
   title: string;
@@ -13,6 +19,7 @@ export interface Todo {
   createdAt: string;
   updatedAt: string;
   order: number;
+  tags: Tag[];
 }
 
 interface TodoData {
@@ -80,59 +87,57 @@ export async function writeTodos(todos: Todo[]): Promise<void> {
   await fs.writeFile(dataPath, JSON.stringify({ todos }, null, 2));
 }
 
+function getMaxOrder(status: Todo['status'], todos: Todo[]): number {
+  const statusTodos = todos.filter(t => t.status === status);
+  return statusTodos.length > 0 
+    ? Math.max(...statusTodos.map(t => t.order)) 
+    : -1;
+}
+
 export async function createTodo(todoData: Omit<Todo, 'id' | 'createdAt' | 'updatedAt' | 'order'>): Promise<Todo> {
   const todos = await readTodos();
-  const statusTodos = todos.filter(t => t.status === todoData.status);
-  const order = statusTodos.length > 0 
-    ? Math.max(...statusTodos.map(t => t.order)) + 1 
-    : 0;
-
+  
+  const now = new Date().toISOString();
   const newTodo: Todo = {
-    ...todoData,
     id: Date.now().toString(),
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    order
+    ...todoData,
+    createdAt: now,
+    updatedAt: now,
+    order: getMaxOrder(todoData.status, todos) + 1,
+    tags: todoData.tags || []
   };
   
   todos.push(newTodo);
   await writeTodos(todos);
+  
   return newTodo;
 }
 
 export async function updateTodo(id: string, updates: Partial<Todo>): Promise<Todo | null> {
   const todos = await readTodos();
-  const index = todos.findIndex(todo => todo.id === id);
+  const todoIndex = todos.findIndex(t => t.id === id);
   
-  if (index === -1) return null;
-
-  const oldTodo = todos[index];
+  if (todoIndex === -1) {
+    return null;
+  }
   
-  // If status is changing, handle the order
-  if (updates.status && updates.status !== oldTodo.status) {
-    const statusTodos = todos.filter(t => t.status === updates.status);
-    const newOrder = statusTodos.length > 0 
-      ? Math.max(...statusTodos.map(t => t.order)) + 1 
-      : 0;
-    
-    // Update orders for old status
-    todos.forEach(t => {
-      if (t.status === oldTodo.status && t.order > oldTodo.order) {
-        t.order -= 1;
-      }
-    });
-    
+  // If updating status, handle reordering
+  if (updates.status && updates.status !== todos[todoIndex].status) {
+    const newOrder = getMaxOrder(updates.status, todos) + 1;
     updates.order = newOrder;
   }
   
-  todos[index] = {
-    ...todos[index],
+  const updatedTodo = {
+    ...todos[todoIndex],
     ...updates,
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    tags: updates.tags || todos[todoIndex].tags || []
   };
   
+  todos[todoIndex] = updatedTodo;
   await writeTodos(todos);
-  return todos[index];
+  
+  return updatedTodo;
 }
 
 export async function deleteTodo(id: string): Promise<boolean> {
