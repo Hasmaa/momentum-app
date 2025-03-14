@@ -1036,16 +1036,12 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                                   todo={todo}
                                   isDragging={activeId === todo.id}
                                   isUpdating={updatingTodoIds.has(todo.id)}
-                                  onEdit={(todo) => {
-                                    setEditingTodo(todo);
-                                    onEditModalOpen();
-                                  }}
+                                  onEdit={handleEdit}
                                   onDelete={handleDeleteClick}
                                   onStatusChange={handleStatusChange}
                                   isSelected={selectedTodos.has(todo.id)}
                                   isSelectMode={isSelectMode}
                                   onToggleSelect={toggleTodoSelection}
-                                  onPomodoro={handlePomodoroForTask}
                                 />
                               ))
                             ) : (
@@ -1259,16 +1255,12 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                               todo={todo}
                               isDragging={activeId === todo.id}
                               isUpdating={updatingTodoIds.has(todo.id)}
-                              onEdit={(todo) => {
-                                setEditingTodo(todo);
-                                onEditModalOpen();
-                              }}
+                              onEdit={handleEdit}
                               onDelete={handleDeleteClick}
                               onStatusChange={handleStatusChange}
                               isSelected={selectedTodos.has(todo.id)}
                               isSelectMode={isSelectMode}
                               onToggleSelect={toggleTodoSelection}
-                              onPomodoro={handlePomodoroForTask}
                             />
                           ))
                         ) : (
@@ -1283,7 +1275,6 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                             borderStyle="dashed"
                             borderColor={useColorModeValue('gray.200', 'gray.600')}
                             bg={useColorModeValue('gray.50', 'gray.700')}
-                            transition="all 0.3s"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             whileHover={{ 
@@ -2404,16 +2395,13 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                                                           todo={todo}
                                                           isDragging={activeId === todo.id}
                                                           isUpdating={updatingTodoIds.has(todo.id)}
-                                                          onEdit={(todo) => {
-                                                            setEditingTodo(todo);
-                                                            onEditModalOpen();
-                                                          }}
+                                                          onEdit={handleEdit}
                                                           onDelete={handleDeleteClick}
                                                           onStatusChange={handleStatusChange}
                                                           isSelected={selectedTodos.has(todo.id)}
                                                           isSelectMode={isSelectMode}
                                                           onToggleSelect={toggleTodoSelection}
-                                                          onPomodoro={handlePomodoroForTask}
+                                                          
                                                         />
                                                       ))
                                                     ) : (
@@ -2428,7 +2416,6 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                                                         borderStyle="dashed"
                                                         borderColor={useColorModeValue('gray.200', 'gray.600')}
                                                         bg={useColorModeValue('gray.50', 'gray.700')}
-                                                        transition="all 0.3s"
                                                         initial={{ opacity: 0, y: 20 }}
                                                         animate={{ opacity: 1, y: 0 }}
                                                         whileHover={{ 
@@ -2651,16 +2638,13 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                                                     todo={todo}
                                                     isDragging={activeId === todo.id}
                                                     isUpdating={updatingTodoIds.has(todo.id)}
-                                                    onEdit={(todo) => {
-                                                      setEditingTodo(todo);
-                                                      onEditModalOpen();
-                                                    }}
+                                                    onEdit={handleEdit}
                                                     onDelete={handleDeleteClick}
                                                     onStatusChange={handleStatusChange}
                                                     isSelected={selectedTodos.has(todo.id)}
                                                     isSelectMode={isSelectMode}
                                                     onToggleSelect={toggleTodoSelection}
-                                                    onPomodoro={handlePomodoroForTask}
+                                                    
                                                   />
                                                 ))
                                               ) : (
@@ -2675,7 +2659,6 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                                                   borderStyle="dashed"
                                                   borderColor={useColorModeValue('gray.200', 'gray.600')}
                                                   bg={useColorModeValue('gray.50', 'gray.700')}
-                                                  transition="all 0.3s"
                                                   initial={{ opacity: 0, y: 20 }}
                                                   animate={{ opacity: 1, y: 0 }}
                                                   whileHover={{ 

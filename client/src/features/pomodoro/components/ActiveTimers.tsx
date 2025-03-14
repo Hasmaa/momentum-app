@@ -122,28 +122,28 @@ export const ActiveTimers: React.FC<ActiveTimersProps> = React.memo(({
           position="relative"
           onMouseEnter={() => setIsHovering(true)}
           onMouseLeave={() => setIsHovering(false)}
+          display="inline-flex"
+          alignItems="center"
+          cursor="pointer"
+          onClick={timer ? onOpen : onOpenPomodoro}
         >
-          <IconButton
-            icon={<FaClock />}
-            aria-label="View active timer"
-            size="md"
-            variant={isHovering || isOpen ? "solid" : "ghost"}
-            colorScheme={isActive ? "red" : "gray"}
-            bg={isHovering || isOpen ? (isActive ? "red.500" : buttonBg) : "transparent"}
-            _hover={{ bg: isActive ? "red.600" : hoverBg }}
-            onClick={timer ? onOpen : onOpenPomodoro}
-          />
-          {isActive && (
+          {isActive ? (
             <Badge
-              position="absolute"
-              top="-2px"
-              right="-2px"
               colorScheme="red"
               borderRadius="full"
-              fontSize="xs"
+              px={2}
+              py={1}
+              fontWeight="bold"
             >
-              1
+              {timeDisplay}
             </Badge>
+          ) : (
+            <Box 
+              width="6px" 
+              height="6px" 
+              borderRadius="full" 
+              bg={isHovering ? "gray.400" : "transparent"}
+            />
           )}
         </Box>
       </PopoverTrigger>

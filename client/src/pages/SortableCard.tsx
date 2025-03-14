@@ -20,8 +20,7 @@ export const SortableCard = React.forwardRef<HTMLDivElement, {
   isSelected?: boolean;
   isSelectMode?: boolean;
   onToggleSelect?: (id: string) => void;
-  onPomodoro?: (task: Task) => void;
-}>(({ todo, isDragging, isUpdating, onEdit, onDelete, onStatusChange, isSelected = false, isSelectMode = false, onToggleSelect, onPomodoro }, ref) => {
+}>(({ todo, isDragging, isUpdating, onEdit, onDelete, onStatusChange, isSelected = false, isSelectMode = false, onToggleSelect }, ref) => {
   const {
     attributes, listeners, setNodeRef, transform, transition,
   } = useSortable({
@@ -219,18 +218,6 @@ export const SortableCard = React.forwardRef<HTMLDivElement, {
                       </MenuList>
                     </Portal>
                   </Menu>
-
-                  {onPomodoro && (
-                    <Tooltip label="Start Pomodoro timer" placement="top" hasArrow>
-                      <IconButton
-                        aria-label="Start Pomodoro timer"
-                        icon={<Icon as={FaClock} />}
-                        size="sm"
-                        variant="ghost"
-                        colorScheme="purple"
-                        onClick={() => onPomodoro(todo)} />
-                    </Tooltip>
-                  )}
 
                   <Tooltip label="Edit task" placement="top" hasArrow>
                     <IconButton
