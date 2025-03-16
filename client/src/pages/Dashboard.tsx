@@ -123,6 +123,8 @@ import { MdLabel } from 'react-icons/md';
 import { TagFilterBar } from '../components/tags/TagFilterBar';
 import { TrophyIcon } from '../components/AchievementIcon';
 import { UnifiedFilterBar } from '../components/filters/UnifiedFilterBar';
+// Add import for DashboardHeader
+import { DashboardHeader } from '../components/DashboardHeader';
 
 const MotionBox = motion(Box);
 export const MotionCard = motion(Card);
@@ -1758,259 +1760,26 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
               bg="linear-gradient(90deg, #3182CE 0%, #63B3ED 100%)" 
             />
             <CardBody py={4}>
-              <Flex justify="space-between" align="center" wrap={{ base: "wrap", md: "nowrap" }} gap={4}>
-                {/* Logo/Title Section */}
-                <HStack spacing={3} align="center">
-                  <Box position="relative" h="40px" w="40px">
-                    <MotionBox
-                      position="absolute"
-                      initial={{ y: 0 }}
-                      animate={{ 
-                        y: [0, -3, 0],
-                        opacity: [0.8, 1, 0.8],
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                      }}
-                    >
-                      <Icon
-                        as={ChevronUpIcon}
-                        boxSize={6}
-                        color={accentColor}
-                        mt={1}
-                      />
-                    </MotionBox>
-                    <MotionBox
-                      position="absolute"
-                      initial={{ y: 0 }}
-                      animate={{ 
-                        y: [0, -3, 0],
-                        opacity: [0.6, 1, 0.6],
-                      }}
-                      transition={{
-                        duration: 2,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                        delay: 0.15
-                      }}
-                    >
-                      <Icon
-                        as={ChevronUpIcon}
-                        boxSize={6}
-                        color={accentColor}
-                        mt={4}
-                      />
-                    </MotionBox>
-                  </Box>
-                  <Heading size="md" fontWeight="bold" letterSpacing="tight">
-                    Momentum
-                  </Heading>
-                  <Text fontSize="sm" color={secondaryTextColor} display={{ base: "none", md: "block" }}>
-                    Keep Your Progress Moving
-                  </Text>
-                </HStack>
-                
-                {/* Action Buttons with consistent styling */}
-                <HStack spacing={{ base: 1, md: 3 }} ml="auto" flexWrap="wrap" justify="flex-end">
-                  {isSelectMode && selectedTodos.size > 0 && (
-                    <HStack bg={useColorModeValue('blue.50', 'blue.900')} px={3} py={1} borderRadius="lg">
-                      <Text fontSize="sm" fontWeight="medium" color={textColor}>
-                        {selectedTodos.size} selected
-                      </Text>
-                      <Menu>
-                        <MenuButton
-                          as={Button}
-                          size="sm"
-                          colorScheme="blue"
-                          variant="ghost"
-                          rightIcon={<ChevronDownIcon />}
-                        >
-                          Actions
-                        </MenuButton>
-                        <MenuList>
-                          <MenuItem onClick={() => handleBulkStatusChange('pending')}>
-                            <HStack>
-                              <Icon as={WarningIcon} color="gray.500" />
-                              <Text>Mark as Pending</Text>
-                            </HStack>
-                          </MenuItem>
-                          <MenuItem onClick={() => handleBulkStatusChange('in-progress')}>
-                            <HStack>
-                              <Icon as={TimeIcon} color="blue.500" />
-                              <Text>Mark as In Progress</Text>
-                            </HStack>
-                          </MenuItem>
-                          <MenuItem onClick={() => handleBulkStatusChange('completed')}>
-                            <HStack>
-                              <Icon as={CheckIcon} color="green.500" />
-                              <Text>Mark as Completed</Text>
-                            </HStack>
-                          </MenuItem>
-                          <MenuDivider />
-                          <MenuItem onClick={handleBulkCapitalize}>
-                            <HStack>
-                              <Icon as={SettingsIcon} />
-                              <Text>Title Case</Text>
-                            </HStack>
-                          </MenuItem>
-                          <MenuDivider />
-                          <MenuItem
-                            onClick={handleBulkDelete}
-                          >
-                            <HStack>
-                              <Icon as={DeleteIcon} color="red.500" />
-                              <Text color="red.500">Delete Selected</Text>
-                            </HStack>
-                          </MenuItem>
-                        </MenuList>
-                      </Menu>
-                      <IconButton
-                        aria-label="Clear selection"
-                        icon={<CloseIcon />}
-                        size="xs"
-                        variant="ghost"
-                        onClick={() => {
-                          setIsSelectMode(false);
-                          setSelectedTodos(new Set());
-                        }}
-                      />
-                    </HStack>
-                  )}
-                  
-                  {/* Create New Task Button */}
-                  <Button
-                    size="sm"
-                    leftIcon={<AddIcon />}
-                    colorScheme="blue"
-                    onClick={() => onCreateModalOpen()}
-                    fontWeight="medium"
-                    _hover={{
-                      transform: 'translateY(-1px)',
-                      boxShadow: 'sm'
-                    }}
-                  >
-                    New Task
-                  </Button>
-                  
-                  {/* Use Template Button */}
-                  <Tooltip label="Use template to create tasks" hasArrow>
-                    <Button
-                      size="sm"
-                      leftIcon={<RepeatIcon />}
-                      colorScheme="blue"
-                      variant="outline"
-                      onClick={() => setIsTemplateModalOpen(true)}
-                      fontWeight="medium"
-                    >
-                      Template
-                    </Button>
-                  </Tooltip>
-                  
-                  {/* View Toggle Button */}
-                  <Tooltip label={`Switch to ${isListView ? 'board' : 'list'} view`} hasArrow>
-                    <IconButton
-                      aria-label={`Switch to ${isListView ? 'board' : 'list'} view`}
-                      icon={isListView ? <ViewIcon /> : <HamburgerIcon />}
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setIsListView(!isListView)}
-                      _hover={{
-                        transform: 'translateY(-1px)'
-                      }}
-                    />
-                  </Tooltip>
-                  
-                  {/* Manage Tags Button */}
-                  <Tooltip label="Manage tags" hasArrow>
-                    <IconButton
-                      aria-label="Manage tags"
-                      icon={<MdLabel />}
-                      size="sm"
-                      colorScheme="teal" 
-                      variant="outline"
-                      onClick={openTagManager}
-                      _hover={{
-                        transform: 'translateY(-1px)'
-                      }}
-                    />
-                  </Tooltip>
-                  
-                  {/* Achievements Button */}
-                  <Tooltip label="View achievements" hasArrow>
-                    <IconButton
-                      aria-label="View achievements"
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setIsAchievementsModalOpen(true)}
-                      position="relative"
-                      icon={
-                        <Box position="relative">
-                          <Icon as={TrophyIcon} />
-                          {recentlyUnlocked && (
-                            <Box
-                              position="absolute"
-                              top="-2px"
-                              right="-2px"
-                              w="8px"
-                              h="8px"
-                              bg="green.400"
-                              borderRadius="full"
-                            />
-                          )}
-                        </Box>
-                      }
-                      _hover={{
-                        transform: 'translateY(-1px)'
-                      }}
-                    />
-                  </Tooltip>
-                  
-                  {/* Pomodoro Button */}
-                  <Tooltip label="Focus timer" hasArrow>
-                    <IconButton
-                      aria-label="Pomodoro timer"
-                      icon={<Icon as={FaClock} />}
-                      size="sm"
-                      colorScheme="purple"
-                      variant="outline"
-                      onClick={() => setIsPomodoroOpen(true)}
-                      _hover={{
-                        transform: 'translateY(-1px)'
-                      }}
-                    />
-                  </Tooltip>
-                  
-                  {/* Shortcuts Button */}
-                  <Tooltip label="Keyboard shortcuts" hasArrow>
-                    <IconButton
-                      aria-label="Keyboard shortcuts"
-                      icon={<QuestionIcon />}
-                      size="sm"
-                      variant="outline"
-                      onClick={onShortcutsOpen}
-                      _hover={{
-                        transform: 'translateY(-1px)'
-                      }}
-                    />
-                  </Tooltip>
-                  
-                  {/* Theme Toggle Button */}
-                  <Tooltip label={`Switch to ${colorMode === 'light' ? 'dark' : 'light'} mode`} hasArrow>
-                    <IconButton
-                      aria-label={`Switch to ${colorMode === 'light' ? 'dark' : 'light'} mode`}
-                      icon={colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
-                      size="sm"
-                      variant="outline"
-                      onClick={toggleColorMode}
-                      _hover={{
-                        transform: 'translateY(-1px)'
-                      }}
-                    />
-                  </Tooltip>
-                </HStack>
-              </Flex>
+              <DashboardHeader
+                selectedTodos={selectedTodos}
+                isSelectMode={isSelectMode}
+                onClearSelection={() => {
+                  setIsSelectMode(false);
+                  setSelectedTodos(new Set());
+                }}
+                onCreateTask={() => onCreateModalOpen()}
+                onOpenTemplate={() => setIsTemplateModalOpen(true)}
+                onToggleView={() => setIsListView(!isListView)}
+                isListView={isListView}
+                onOpenTagManager={openTagManager}
+                onOpenAchievements={() => setIsAchievementsModalOpen(true)}
+                onOpenPomodoro={() => setIsPomodoroOpen(true)}
+                onOpenShortcuts={onShortcutsOpen}
+                onBulkStatusChange={handleBulkStatusChange}
+                onBulkCapitalize={handleBulkCapitalize}
+                onBulkDelete={handleBulkDelete}
+                recentlyUnlocked={!!recentlyUnlocked}
+              />
             </CardBody>
           </Card>
           
