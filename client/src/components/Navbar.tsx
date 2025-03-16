@@ -248,50 +248,6 @@ const Navbar = () => {
                   Analytics
                 </Link>
               </Tooltip>
-              
-              <Tooltip label="Create New Task" hasArrow placement="bottom">
-                <Box
-                  as="button"
-                  onClick={handleNewTask}
-                  px={3}
-                  py={2}
-                  borderRadius="md"
-                  fontWeight="medium"
-                  display="flex"
-                  alignItems="center"
-                  _hover={{
-                    bg: hoverBg
-                  }}
-                  aria-label="Create new task"
-                >
-                  <FiPlus style={{ marginRight: '8px' }} />
-                  New Task
-                </Box>
-              </Tooltip>
-
-              <Tooltip label="Manage Tags" hasArrow placement="bottom">
-                <Box
-                  as="button"
-                  onClick={() => {
-                    navigate('/');
-                    const event = new CustomEvent('open-tag-manager');
-                    window.dispatchEvent(event);
-                  }}
-                  px={3}
-                  py={2}
-                  borderRadius="md"
-                  fontWeight="medium"
-                  display="flex"
-                  alignItems="center"
-                  _hover={{
-                    bg: hoverBg
-                  }}
-                  aria-label="Manage tags"
-                >
-                  <FiTag style={{ marginRight: '8px' }} />
-                  Tags
-                </Box>
-              </Tooltip>
             </ButtonGroup>
           </HStack>
         )}
@@ -371,8 +327,6 @@ const Navbar = () => {
               _hover={{ bg: hoverBg }}
             />
           </Tooltip>
-          
-          {/* View Toggle is moved to Dashboard header */}
           
           {/* More Menu for mobile */}
           {isMobile && (
