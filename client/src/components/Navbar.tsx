@@ -1,18 +1,74 @@
-import { Box, Flex, Button, HStack, Link, useColorMode, useToast, Text, Tooltip } from '@chakra-ui/react';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
-import { FiBarChart2 } from 'react-icons/fi';
-import { FaClock } from 'react-icons/fa';
+import { 
+  Box, 
+  Flex, 
+  HStack, 
+  Link, 
+  useColorMode, 
+  useToast, 
+  Text, 
+  Tooltip, 
+  IconButton,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  Divider,
+  useBreakpointValue,
+  ButtonGroup,
+  MenuDivider,
+  Badge,
+  VisuallyHidden,
+  useColorModeValue
+} from '@chakra-ui/react';
+import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
+import { 
+  FiBarChart2, 
+  FiSettings, 
+  FiHelpCircle, 
+  FiUser, 
+  FiMenu, 
+  FiGrid, 
+  FiList,
+  FiHome,
+  FiPlus,
+  FiTag
+} from 'react-icons/fi';
+import { 
+  FaClock, 
+  FaSun, 
+  FaMoon, 
+  FaTrophy 
+} from 'react-icons/fa';
 import { ActiveTimers } from '../features/pomodoro';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { keyframes } from '@emotion/react';
 import FontSelector from './FontSelector';
 import { FontOption } from '../theme';
+import { motion } from 'framer-motion';
+
+const MotionBox = motion(Box);
 
 const Navbar = () => {
   const { colorMode, toggleColorMode } = useColorMode();
   const navigate = useNavigate();
+  const location = useLocation();
   const toast = useToast();
   const [isHovered, setIsHovered] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  
+  // Responsive design
+  const isMobile = useBreakpointValue({ base: true, md: false });
+  
+  // Theme colors
+  const bgColor = useColorModeValue('white', 'gray.800');
+  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const primaryColor = useColorModeValue('blue.500', 'blue.300');
+  const activeItemBg = useColorModeValue('blue.50', 'gray.700');
+  const hoverBg = useColorModeValue('gray.100', 'gray.700');
+  const pomodoroGradient = useColorModeValue(
+    'linear-gradient(90deg, #E9D8FD 0%, #D6BCFA 100%)',
+    'linear-gradient(90deg, #44337A 0%, #6B46C1 100%)'
+  );
 
   // Keyframes for the pulse animation
   const pulseAnimation = keyframes`
@@ -44,6 +100,7 @@ const Navbar = () => {
       status: 'info',
       duration: 3000,
       isClosable: true,
+      position: 'top-right'
     });
   };
 
@@ -51,60 +108,206 @@ const Navbar = () => {
     // This function will be called when the font is changed in FontSelector
     // The App component already has a storage listener that will update the theme
   };
+  
+  // Add scroll listener to change navbar appearance on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 20) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+    
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+  
+  // Check if a path is active
+  const isActive = (path: string) => location.pathname === path;
+  
+  // Handle new task
+  const handleNewTask = () => {
+    navigate('/');
+    
+    // Dispatch a custom event that Dashboard can listen for
+    const event = new CustomEvent('create-new-task');
+    window.dispatchEvent(event);
+  };
 
   return (
     <Box
       as="nav"
-      bg={colorMode === 'light' ? 'white' : 'gray.800'}
-      py={2}
-      px={4}
+      bg={bgColor}
+      py={3}
+      px={{ base: 3, md: 6 }}
       borderBottom="1px"
-      borderColor={colorMode === 'light' ? 'gray.200' : 'gray.700'}
+      borderColor={isScrolled ? borderColor : 'transparent'}
       position="sticky"
       top={0}
-      zIndex={2}
+      zIndex={100}
       width="100%"
+      boxShadow={isScrolled ? 'sm' : 'none'}
+      transition="all 0.2s ease"
+      backdropFilter="blur(10px)"
+      aria-label="Main navigation"
     >
-      <Flex align="center" justify="space-between" wrap="wrap">
-        <HStack spacing={4} align="center">
-          <Link as={RouterLink} to="/" _hover={{ textDecoration: 'none' }}>
-            <Text fontSize="xl" fontWeight="bold" color={colorMode === 'light' ? 'brand.600' : 'brand.300'}>
-              Todo App
+      <Flex align="center" justify="space-between" wrap="wrap" maxW="container.xl" mx="auto">
+        {/* Logo and Brand */}
+        <HStack spacing={{ base: 2, md: 4 }} align="center">
+          <Link 
+            as={RouterLink} 
+            to="/" 
+            _hover={{ textDecoration: 'none' }}
+            aria-label="Home page"
+            display="flex" 
+            alignItems="center"
+          >
+            <MotionBox
+              initial={{ rotate: 0 }}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 2, repeat: Infinity, ease: "linear", repeatType: "loop" }}
+              display="inline-block"
+              mr={2}
+            >
+              <Box 
+                w="28px" 
+                h="28px" 
+                borderRadius="md" 
+                bg={useColorModeValue('blue.500', 'blue.200')}
+                display="flex"
+                alignItems="center"
+                justifyContent="center"
+                color="white"
+                fontWeight="bold"
+              >
+                <Text fontSize="md">T</Text>
+              </Box>
+            </MotionBox>
+            <Text 
+              fontSize="lg" 
+              fontWeight="bold" 
+              bgGradient={useColorModeValue(
+                'linear-gradient(90deg, #3182CE 0%, #63B3ED 100%)',
+                'linear-gradient(90deg, #90CDF4 0%, #BEE3F8 100%)'
+              )}
+              bgClip="text"
+              letterSpacing="tight"
+            >
+              Momentum
             </Text>
           </Link>
         </HStack>
 
-        <HStack spacing={3}>
-          <FontSelector onFontChange={handleFontChange} />
+        {/* Desktop Navigation */}
+        {!isMobile && (
+          <HStack spacing={2} flex="1" justifyContent="center">
+            <ButtonGroup variant="ghost" spacing={1} size="sm">
+              <Tooltip label="Tasks Dashboard" hasArrow placement="bottom">
+                <Link
+                  as={RouterLink}
+                  to="/"
+                  px={3}
+                  py={2}
+                  borderRadius="md"
+                  fontWeight="medium"
+                  display="flex"
+                  alignItems="center"
+                  bg={isActive('/') ? activeItemBg : 'transparent'}
+                  color={isActive('/') ? primaryColor : 'inherit'}
+                  _hover={{
+                    textDecoration: 'none',
+                    bg: hoverBg
+                  }}
+                  aria-current={isActive('/') ? 'page' : undefined}
+                >
+                  <FiHome style={{ marginRight: '8px' }} />
+                  Tasks
+                </Link>
+              </Tooltip>
+
+              <Tooltip label="Analytics Dashboard" hasArrow placement="bottom">
+                <Link
+                  as={RouterLink}
+                  to="/analytics"
+                  px={3}
+                  py={2}
+                  borderRadius="md"
+                  fontWeight="medium"
+                  display="flex"
+                  alignItems="center"
+                  bg={isActive('/analytics') ? activeItemBg : 'transparent'}
+                  color={isActive('/analytics') ? primaryColor : 'inherit'}
+                  _hover={{
+                    textDecoration: 'none',
+                    bg: hoverBg
+                  }}
+                  aria-current={isActive('/analytics') ? 'page' : undefined}
+                >
+                  <FiBarChart2 style={{ marginRight: '8px' }} />
+                  Analytics
+                </Link>
+              </Tooltip>
+              
+              <Tooltip label="Create New Task" hasArrow placement="bottom">
+                <Box
+                  as="button"
+                  onClick={handleNewTask}
+                  px={3}
+                  py={2}
+                  borderRadius="md"
+                  fontWeight="medium"
+                  display="flex"
+                  alignItems="center"
+                  _hover={{
+                    bg: hoverBg
+                  }}
+                  aria-label="Create new task"
+                >
+                  <FiPlus style={{ marginRight: '8px' }} />
+                  New Task
+                </Box>
+              </Tooltip>
+
+              <Tooltip label="Manage Tags" hasArrow placement="bottom">
+                <Box
+                  as="button"
+                  onClick={() => {
+                    navigate('/');
+                    const event = new CustomEvent('open-tag-manager');
+                    window.dispatchEvent(event);
+                  }}
+                  px={3}
+                  py={2}
+                  borderRadius="md"
+                  fontWeight="medium"
+                  display="flex"
+                  alignItems="center"
+                  _hover={{
+                    bg: hoverBg
+                  }}
+                  aria-label="Manage tags"
+                >
+                  <FiTag style={{ marginRight: '8px' }} />
+                  Tags
+                </Box>
+              </Tooltip>
+            </ButtonGroup>
+          </HStack>
+        )}
+
+        {/* Right Side Tools */}
+        <HStack spacing={{ base: 2, md: 3 }}>
+          {!isMobile && <FontSelector onFontChange={handleFontChange} />}
           
-          <Link as={RouterLink} to="/" px={3} py={2} _hover={{ textDecoration: 'none' }}>
-            Tasks
-          </Link>
-          
-          <Link 
-            as={RouterLink} 
-            to="/analytics" 
-            px={3} 
-            py={2} 
-            display="flex" 
-            alignItems="center"
-            borderRadius="md"
-            _hover={{ 
-              textDecoration: 'none', 
-              bg: colorMode === 'light' ? 'gray.100' : 'gray.700' 
-            }}
-          >
-            <FiBarChart2 style={{ marginRight: '8px' }} />
-            Analytics
-          </Link>
-          
+          {/* Pomodoro Button */}
           <Tooltip label="Track your focus time with Pomodoro" hasArrow placement="bottom">
             <Box
-              px={4}
+              px={3}
               py={2}
               borderRadius="full"
-              bg={colorMode === 'light' ? 'purple.50' : 'purple.900'}
-              color={colorMode === 'light' ? 'purple.600' : 'purple.200'}
+              bg={useColorModeValue('purple.50', 'purple.900')}
+              color={useColorModeValue('purple.600', 'purple.200')}
               boxShadow={isHovered ? 
                 (colorMode === 'light' ? '0 0 8px rgba(128, 90, 213, 0.6)' : '0 0 8px rgba(214, 188, 250, 0.4)') 
                 : 'none'}
@@ -116,11 +319,11 @@ const Navbar = () => {
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
               _hover={{ 
-                bg: colorMode === 'light' ? 'purple.100' : 'purple.800',
+                bg: useColorModeValue('purple.100', 'purple.800'),
                 transform: 'translateY(-2px)'
               }}
               _active={{
-                bg: colorMode === 'light' ? 'purple.200' : 'purple.700',
+                bg: useColorModeValue('purple.200', 'purple.700'),
                 transform: 'translateY(0)'
               }}
               sx={{
@@ -141,23 +344,81 @@ const Navbar = () => {
               }}
               display="flex"
               alignItems="center"
+              aria-label="Open Pomodoro Timer"
             >
               <Box 
                 animation={isHovered ? `${rotateAnimation} 1s infinite ease-in-out` : 'none'}
                 mr={2}
               >
-                <FaClock size="18px" />
+                <FaClock size="16px" />
               </Box>
-              <Text fontWeight="medium" mr={2}>Pomodoro</Text>
+              <Text fontWeight="medium" mr={2} display={{ base: "none", md: "block" }}>Pomodoro</Text>
               <ActiveTimers 
                 onOpenPomodoro={handleOpenPomodoro}
               />
             </Box>
           </Tooltip>
           
-          <Button onClick={toggleColorMode} size="sm" ml={4}>
-            {colorMode === 'light' ? 'Dark' : 'Light'} Mode
-          </Button>
+          {/* Theme Toggle Button */}
+          <Tooltip label={`Switch to ${colorMode === 'light' ? 'dark' : 'light'} mode`} hasArrow placement="bottom">
+            <IconButton
+              aria-label={`Switch to ${colorMode === 'light' ? 'dark' : 'light'} mode`}
+              variant="ghost"
+              icon={colorMode === 'light' ? <FaMoon /> : <FaSun />}
+              onClick={toggleColorMode}
+              size="sm"
+              borderRadius="md"
+              _hover={{ bg: hoverBg }}
+            />
+          </Tooltip>
+          
+          {/* View Toggle is moved to Dashboard header */}
+          
+          {/* More Menu for mobile */}
+          {isMobile && (
+            <Menu>
+              <MenuButton
+                as={IconButton}
+                aria-label="Open menu"
+                icon={<FiMenu />}
+                variant="ghost"
+                size="sm"
+                borderRadius="md"
+              />
+              <MenuList zIndex={200}>
+                <Link as={RouterLink} to="/" _hover={{ textDecoration: 'none' }}>
+                  <MenuItem icon={<FiHome />} isDisabled={isActive('/')}>
+                    Tasks
+                  </MenuItem>
+                </Link>
+                <Link as={RouterLink} to="/analytics" _hover={{ textDecoration: 'none' }}>
+                  <MenuItem icon={<FiBarChart2 />} isDisabled={isActive('/analytics')}>
+                    Analytics
+                  </MenuItem>
+                </Link>
+                <MenuItem icon={<FiPlus />} onClick={handleNewTask}>
+                  New Task
+                </MenuItem>
+                <MenuItem 
+                  icon={<FiTag />} 
+                  onClick={() => {
+                    navigate('/');
+                    const event = new CustomEvent('open-tag-manager');
+                    window.dispatchEvent(event);
+                  }}
+                >
+                  Manage Tags
+                </MenuItem>
+                <MenuDivider />
+                <MenuItem icon={<FiSettings />}>Settings</MenuItem>
+                <MenuItem icon={<FiHelpCircle />}>Help & Support</MenuItem>
+                <MenuDivider />
+                <MenuItem>
+                  <FontSelector onFontChange={handleFontChange} />
+                </MenuItem>
+              </MenuList>
+            </Menu>
+          )}
         </HStack>
       </Flex>
     </Box>

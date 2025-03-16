@@ -121,6 +121,7 @@ import { FaClock } from 'react-icons/fa';
 import { TagManager } from '../components/tags/TagManager';
 import { MdLabel } from 'react-icons/md';
 import { TagFilterBar } from '../components/tags/TagFilterBar';
+import { TrophyIcon } from '../components/AchievementIcon';
 
 const MotionBox = motion(Box);
 export const MotionCard = motion(Card);
@@ -1644,6 +1645,84 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     });
   };
 
+  // Add useEffect for custom events from Navbar
+  useEffect(() => {
+    // Event listener for opening the Pomodoro modal from Navbar
+    const handleOpenPomodoroEvent = () => {
+      setIsPomodoroOpen(true);
+    };
+    
+    // Event listener for creating a new task from Navbar
+    const handleCreateNewTask = () => {
+      onCreateModalOpen();
+    };
+    
+    // Event listener for opening the tag manager from Navbar
+    const handleOpenTagManager = () => {
+      openTagManager();
+    };
+    
+    // Add event listeners
+    window.addEventListener('open-pomodoro-modal', handleOpenPomodoroEvent);
+    window.addEventListener('create-new-task', handleCreateNewTask);
+    window.addEventListener('open-tag-manager', handleOpenTagManager);
+    
+    // Cleanup event listeners on unmount
+    return () => {
+      window.removeEventListener('open-pomodoro-modal', handleOpenPomodoroEvent);
+      window.removeEventListener('create-new-task', handleCreateNewTask);
+      window.removeEventListener('open-tag-manager', handleOpenTagManager);
+    };
+  }, []);
+
+  // Add keyboard navigation for the task cards 
+  useEffect(() => {
+    const handleKeyNavigation = (e: KeyboardEvent) => {
+      // Only enable these shortcuts when not editing text fields
+      if (
+        document.activeElement &&
+        (document.activeElement.tagName === 'INPUT' ||
+          document.activeElement.tagName === 'TEXTAREA')
+      ) {
+        return;
+      }
+
+      // If in select mode, allow using arrow keys to navigate between tasks
+      if (isSelectMode && todos.length > 0) {
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          
+          // Find the currently focused task
+          const focusedTodoId = Array.from(selectedTodos).pop();
+          const todoIndex = focusedTodoId 
+            ? todos.findIndex(t => t.id === focusedTodoId) 
+            : -1;
+          
+          let newIndex = 0;
+          if (e.key === 'ArrowDown') {
+            newIndex = todoIndex >= 0 ? Math.min(todoIndex + 1, todos.length - 1) : 0;
+          } else {
+            newIndex = todoIndex > 0 ? todoIndex - 1 : 0;
+          }
+          
+          // Toggle the selection
+          toggleTodoSelection(todos[newIndex].id);
+        }
+      }
+    };
+    
+    window.addEventListener('keydown', handleKeyNavigation);
+    return () => window.removeEventListener('keydown', handleKeyNavigation);
+  }, [isSelectMode, todos, selectedTodos, toggleTodoSelection]);
+
+  // Add transition effects for view switching
+  const getPageTransition = () => ({
+    initial: { opacity: 0, y: 20 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -20 },
+    transition: { duration: 0.2 }
+  });
+
   return (
     <Box bg={mainBg} minH="100vh" transition="background-color 0.2s">
       <Container 
@@ -1660,282 +1739,83 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
           overflow={isListView ? "visible" : "hidden"}
           minHeight={0}
         >
-          <Card bg={headerBg} borderRadius="lg" borderColor={borderColor} borderWidth="1px" flexShrink={0}>
-            <CardBody>
-              <Flex justify="space-between" align="center">
-                {/* Logo Section */}
+          <Card 
+            bg={headerBg} 
+            borderRadius="xl" 
+            boxShadow="sm"
+            borderColor={borderColor} 
+            borderWidth="1px" 
+            flexShrink={0}
+            overflow="hidden"
+          >
+            <Box 
+              position="absolute" 
+              top={0} 
+              left={0} 
+              right={0} 
+              height="3px" 
+              bg="linear-gradient(90deg, #3182CE 0%, #63B3ED 100%)" 
+            />
+            <CardBody py={4}>
+              <Flex justify="space-between" align="center" wrap={{ base: "wrap", md: "nowrap" }} gap={4}>
+                {/* Logo/Title Section */}
                 <HStack spacing={3} align="center">
-                  <Box>
-                    <VStack gap={-5} pt={5}>
-                      <MotionBox
-                        initial={{ y: 0 }}
-                        animate={{ 
-                          y: [0, -4, 0],
-                          scale: [1, 1.1, 1],
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "easeInOut",
-                        }}
-                      >
-                        <Icon
-                          as={ChevronRightIcon}
-                          boxSize={8}
-                          color={accentColor}
-                          transform="rotate(-90deg)"
-                          mt={-4}
-                        />
-                      </MotionBox>
-                      <MotionBox
-                        initial={{ y: 0 }}
-                        animate={{ 
-                          y: [0, -4, 0],
-                          scale: [1, 1.1, 1],
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "easeInOut",
-                          delay: 0.15
-                        }}
-                      >
-                        <Icon
-                          as={ChevronRightIcon}
-                          boxSize={8}
-                          color={accentColor}
-                          opacity={0.7}
-                          transform="rotate(-90deg)"
-                          mt={-4}
-                        />
-                      </MotionBox>
-                      <MotionBox
-                        initial={{ y: 0 }}
-                        animate={{ 
-                          y: [0, -4, 0],
-                          scale: [1, 1.1, 1],
-                        }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          ease: "easeInOut",
-                          delay: 0.3
-                        }}
-                      >
-                        <Icon
-                          as={ChevronRightIcon}
-                          boxSize={8}
-                          color={accentColor}
-                          opacity={0.4}
-                          transform="rotate(-90deg)"
-                          mt={-4}
-                        />
-                      </MotionBox>
-                    </VStack>
-                  </Box>
-                  {/* Title Section */}
-                  <MotionBox
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{
-                      duration: 0.5,
-                      ease: "easeOut"
-                    }}
-                  >
-                    <VStack spacing={0} align="flex-start">
-                      <Heading size="lg" color={textColor}>Momentum</Heading>
-                      <Text color={secondaryTextColor} fontSize="sm">
-                        Keep Your Progress Moving
-                      </Text>
-                    </VStack>
-                  </MotionBox>
-                </HStack>
-                <HStack spacing={6}>
-                  <Popover placement="bottom-start">
-                    <PopoverTrigger>
-                      <IconButton
-                        aria-label="Keyboard shortcuts"
-                        icon={<QuestionIcon />}
-                        size="sm"
-                        variant="ghost"
-                        color={secondaryTextColor}
-                        _hover={{
-                          color: accentColor,
-                          bg: ghostButtonHoverBg
-                        }}
+                  <Box position="relative" h="40px" w="40px">
+                    <MotionBox
+                      position="absolute"
+                      initial={{ y: 0 }}
+                      animate={{ 
+                        y: [0, -3, 0],
+                        opacity: [0.8, 1, 0.8],
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                      }}
+                    >
+                      <Icon
+                        as={ChevronUpIcon}
+                        boxSize={6}
+                        color={accentColor}
+                        mt={1}
                       />
-                    </PopoverTrigger>
-                    <PopoverContent p={4} width="320px" boxShadow="lg">
-                      <PopoverArrow />
-                      <PopoverCloseButton />
-                      <VStack spacing={4} align="stretch">
-                        <Heading size="sm" mb={2}>Keyboard Shortcuts</Heading>
-                        <Box 
-                          borderWidth="1px" 
-                          borderRadius="md" 
-                          overflow="hidden"
-                        >
-                          <VStack spacing={0} align="stretch" divider={<Box borderBottomWidth="1px" />}>
-                            <HStack 
-                              justify="space-between" 
-                              p={3}
-                              bg={useColorModeValue('gray.50', 'whiteAlpha.50')}
-                              _hover={{
-                                bg: useColorModeValue('blue.50', 'whiteAlpha.100')
-                              }}
-                              as={Button}
-                              variant="ghost"
-                              height="auto"
-                              onClick={() => {
-                                const searchInput = document.querySelector('[placeholder="Search tasks..."]') as HTMLInputElement;
-                                if (searchInput) {
-                                  searchInput.focus();
-                                }
-                              }}
-                            >
-                              <HStack>
-                                <SearchIcon boxSize="3" />
-                                <Text fontSize="sm">Search</Text>
-                              </HStack>
-                              <Tag size="sm" variant="subtle" colorScheme="blue">⌘/Ctrl + K</Tag>
-                            </HStack>
-
-                            <HStack 
-                              justify="space-between" 
-                              p={3}
-                              _hover={{
-                                bg: useColorModeValue('blue.50', 'whiteAlpha.100')
-                              }}
-                              as={Button}
-                              variant="ghost"
-                              height="auto"
-                              onClick={() => _onCreateModalOpen()}
-                            >
-                              <HStack>
-                                <AddIcon boxSize="3" />
-                                <Text fontSize="sm">New Task</Text>
-                              </HStack>
-                              <Tag size="sm" variant="subtle" colorScheme="blue">⌘/Ctrl + N</Tag>
-                            </HStack>
-
-                            <HStack 
-                              justify="space-between" 
-                              p={3}
-                              _hover={{
-                                bg: useColorModeValue('blue.50', 'whiteAlpha.100')
-                              }}
-                              as={Button}
-                              variant="ghost"
-                              height="auto"
-                              onClick={() => setIsTemplateModalOpen(true)}
-                            >
-                              <HStack>
-                                <RepeatIcon boxSize="3" />
-                                <Text fontSize="sm">Use Template</Text>
-                              </HStack>
-                              <Tag size="sm" variant="subtle" colorScheme="blue">⌘/Ctrl + T</Tag>
-                            </HStack>
-
-                            <HStack 
-                              justify="space-between" 
-                              p={3}
-                              _hover={{
-                                bg: useColorModeValue('blue.50', 'whiteAlpha.100')
-                              }}
-                              as={Button}
-                              variant="ghost"
-                              height="auto"
-                              onClick={() => setIsListView(!isListView)}
-                            >
-                              <HStack>
-                                <ViewIcon boxSize="3" />
-                                <Text fontSize="sm">Toggle View</Text>
-                              </HStack>
-                              <Tag size="sm" variant="subtle" colorScheme="blue">⌘/Ctrl + /</Tag>
-                            </HStack>
-
-                            <HStack 
-                              justify="space-between" 
-                              p={3}
-                              _hover={{
-                                bg: useColorModeValue('blue.50', 'whiteAlpha.100')
-                              }}
-                              as={Button}
-                              variant="ghost"
-                              height="auto"
-                              onClick={() => {
-                                setIsSelectMode(!isSelectMode);
-                              }}
-                            >
-                              <HStack>
-                                <CheckIcon boxSize="3" />
-                                <Text fontSize="sm">Toggle Select Mode</Text>
-                              </HStack>
-                              <Tag size="sm" variant="subtle" colorScheme="blue">⌘/Ctrl + S</Tag>
-                            </HStack>
-
-                            <HStack 
-                              justify="space-between" 
-                              p={3}
-                              _hover={{
-                                bg: useColorModeValue('blue.50', 'whiteAlpha.100')
-                              }}
-                              as={Button}
-                              variant="ghost"
-                              height="auto"
-                              onClick={() => {
-                                setIsSelectMode(!isSelectMode);
-                                if (!isSelectMode) {
-                                  const visibleTodos = todos.filter(todo => {
-                                    const matchesStatus = filterStatus.has('all') || filterStatus.has(todo.status);
-                                    const matchesPriority = filterPriority.has('all') || filterPriority.has(todo.priority);
-                                    const matchesSearch = !searchQuery || 
-                                      todo.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                                      (todo.description?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false);
-                                    return matchesStatus && matchesPriority && matchesSearch;
-                                  });
-                                  setSelectedTodos(new Set(visibleTodos.map(t => t.id)));
-                                } else {
-                                  setSelectedTodos(new Set());
-                                }
-                              }}
-                            >
-                              <HStack>
-                                <Icon as={HamburgerIcon} boxSize="3" />
-                                <Text fontSize="sm">Select All</Text>
-                              </HStack>
-                              <Tag size="sm" variant="subtle" colorScheme="blue">⌘/Ctrl + A</Tag>
-                            </HStack>
-
-                            <HStack 
-                              justify="space-between" 
-                              p={3}
-                              _hover={{
-                                bg: useColorModeValue('blue.50', 'whiteAlpha.100')
-                              }}
-                              as={Button}
-                              variant="ghost"
-                              height="auto"
-                              onClick={() => {
-                                setIsSelectMode(false);
-                                setSelectedTodos(new Set());
-                              }}
-                            >
-                              <HStack>
-                                <CloseIcon boxSize="3" />
-                                <Text fontSize="sm">Clear Selection</Text>
-                              </HStack>
-                              <Tag size="sm" variant="subtle" colorScheme="blue">Esc</Tag>
-                            </HStack>
-                          </VStack>
-                        </Box>
-                      </VStack>
-                    </PopoverContent>
-                  </Popover>
-                  {/* Add bulk action buttons */}
+                    </MotionBox>
+                    <MotionBox
+                      position="absolute"
+                      initial={{ y: 0 }}
+                      animate={{ 
+                        y: [0, -3, 0],
+                        opacity: [0.6, 1, 0.6],
+                      }}
+                      transition={{
+                        duration: 2,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                        delay: 0.15
+                      }}
+                    >
+                      <Icon
+                        as={ChevronUpIcon}
+                        boxSize={6}
+                        color={accentColor}
+                        mt={4}
+                      />
+                    </MotionBox>
+                  </Box>
+                  <Heading size="md" fontWeight="bold" letterSpacing="tight">
+                    Momentum
+                  </Heading>
+                  <Text fontSize="sm" color={secondaryTextColor} display={{ base: "none", md: "block" }}>
+                    Keep Your Progress Moving
+                  </Text>
+                </HStack>
+                
+                {/* Action Buttons with consistent styling */}
+                <HStack spacing={{ base: 1, md: 3 }} ml="auto" flexWrap="wrap" justify="flex-end">
                   {isSelectMode && selectedTodos.size > 0 && (
-                    <HStack spacing={2}>
-                      <Text fontSize="sm" color={textColor}>
+                    <HStack bg={useColorModeValue('blue.50', 'blue.900')} px={3} py={1} borderRadius="lg">
+                      <Text fontSize="sm" fontWeight="medium" color={textColor}>
                         {selectedTodos.size} selected
                       </Text>
                       <Menu>
@@ -1943,37 +1823,52 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                           as={Button}
                           size="sm"
                           colorScheme="blue"
-                          variant="outline"
+                          variant="ghost"
+                          rightIcon={<ChevronDownIcon />}
                         >
-                          Bulk Actions
+                          Actions
                         </MenuButton>
                         <MenuList>
                           <MenuItem onClick={() => handleBulkStatusChange('pending')}>
-                            Mark as Pending
+                            <HStack>
+                              <Icon as={WarningIcon} color="gray.500" />
+                              <Text>Mark as Pending</Text>
+                            </HStack>
                           </MenuItem>
                           <MenuItem onClick={() => handleBulkStatusChange('in-progress')}>
-                            Mark as In Progress
+                            <HStack>
+                              <Icon as={TimeIcon} color="blue.500" />
+                              <Text>Mark as In Progress</Text>
+                            </HStack>
                           </MenuItem>
                           <MenuItem onClick={() => handleBulkStatusChange('completed')}>
-                            Mark as Completed
+                            <HStack>
+                              <Icon as={CheckIcon} color="green.500" />
+                              <Text>Mark as Completed</Text>
+                            </HStack>
                           </MenuItem>
                           <MenuDivider />
                           <MenuItem onClick={handleBulkCapitalize}>
-                            Title Case
+                            <HStack>
+                              <Icon as={SettingsIcon} />
+                              <Text>Title Case</Text>
+                            </HStack>
                           </MenuItem>
                           <MenuDivider />
                           <MenuItem
                             onClick={handleBulkDelete}
-                            color="red.500"
                           >
-                            Delete Selected
+                            <HStack>
+                              <Icon as={DeleteIcon} color="red.500" />
+                              <Text color="red.500">Delete Selected</Text>
+                            </HStack>
                           </MenuItem>
                         </MenuList>
                       </Menu>
                       <IconButton
                         aria-label="Clear selection"
                         icon={<CloseIcon />}
-                        size="sm"
+                        size="xs"
                         variant="ghost"
                         onClick={() => {
                           setIsSelectMode(false);
@@ -1983,101 +1878,136 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                     </HStack>
                   )}
                   
-                  {/* Add Achievements Button */}
-                  <AchievementsButton 
-                    count={achievements.filter(a => a.unlockedAt).length}
-                    totalCount={achievements.length}
-                    hasRecentUnlock={!!recentlyUnlocked}
-                    onClick={() => setIsAchievementsModalOpen(true)}
-                  />
-                  
-                  {/* Keep existing buttons */}
-                  <HStack spacing={3}>
-                    <Icon 
-                      as={HamburgerIcon} 
-                      color={isListView ? accentColor : secondaryTextColor}
-                      transition="all 0.2s"
-                      opacity={isListView ? 1 : 0.5}
-
-                    />
-                    <Switch
-                      colorScheme="blue"
-                      isChecked={!isListView}
-                      onChange={() => setIsListView(!isListView)}
-                      sx={{
-                        '& .chakra-switch__track': {
-                          bg: isListView ? 'gray.400' : accentColor,
-                        }
-                      }}
-                    />
-                    <Icon 
-                      as={HamburgerIcon} 
-                      color={!isListView ? accentColor : secondaryTextColor}
-                      opacity={!isListView ? 1 : 0.5}
-                      transition="all 0.2s"
-                      transform={ 'rotate(90deg)'}
-                    />
-                  </HStack>
-                  <IconButton
-                    aria-label="Toggle color mode"
-                    icon={
-                      <MotionBox
-                        initial={{ rotate: 0 }}
-                        animate={{ rotate: colorMode === 'light' ? 0 : 180 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        {colorMode === 'light' ? <SunIcon /> : <MoonIcon />}
-                      </MotionBox>
-                    }
-                    variant="ghost"
-                    onClick={toggleColorMode}
-                    color={accentColor}
+                  {/* Create New Task Button */}
+                  <Button
+                    size="sm"
+                    leftIcon={<AddIcon />}
+                    colorScheme="blue"
+                    onClick={() => onCreateModalOpen()}
+                    fontWeight="medium"
                     _hover={{
-                      bg: ghostButtonHoverBg
+                      transform: 'translateY(-1px)',
+                      boxShadow: 'sm'
                     }}
-                  />
-                  <HStack spacing={3}>
+                  >
+                    New Task
+                  </Button>
+                  
+                  {/* Use Template Button */}
+                  <Tooltip label="Use template to create tasks" hasArrow>
                     <Button
-                      leftIcon={<AddIcon />}
-                      colorScheme="blue"
-                      onClick={() => onCreateModalOpen()}
-                      size="md"
-                      borderRadius="full"
-                      px={6}
-                      _hover={{
-                        transform: 'translateY(-1px)',
-                        boxShadow: 'md',
-                      }}
-                    >
-                      New Task
-                    </Button>
-                    <Button
-                      leftIcon={<RepeatIcon />}
-                      variant="outline"
-                      colorScheme="blue"
-                      onClick={() => setIsTemplateModalOpen(true)}
-                      size="md"
-                      borderRadius="full"
-                      px={6}
-                      _hover={{
-                        transform: 'translateY(-1px)',
-                        boxShadow: 'md',
-                      }}
-                    >
-                      Use Template
-                    </Button>
-                    {/* Add the TagManager button in a good spot in the UI, like near the "Add Task" button */}
-                    <Button
-                      leftIcon={<MdLabel />}
                       size="sm"
-                      colorScheme="teal"
-                      variant="ghost"
-                      onClick={openTagManager}
-                      ml={2}
+                      leftIcon={<RepeatIcon />}
+                      colorScheme="blue"
+                      variant="outline"
+                      onClick={() => setIsTemplateModalOpen(true)}
+                      fontWeight="medium"
                     >
-                      Manage Tags
+                      Template
                     </Button>
-                  </HStack>
+                  </Tooltip>
+                  
+                  {/* View Toggle Button */}
+                  <Tooltip label={`Switch to ${isListView ? 'board' : 'list'} view`} hasArrow>
+                    <IconButton
+                      aria-label={`Switch to ${isListView ? 'board' : 'list'} view`}
+                      icon={isListView ? <ViewIcon /> : <HamburgerIcon />}
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setIsListView(!isListView)}
+                      _hover={{
+                        transform: 'translateY(-1px)'
+                      }}
+                    />
+                  </Tooltip>
+                  
+                  {/* Manage Tags Button */}
+                  <Tooltip label="Manage tags" hasArrow>
+                    <IconButton
+                      aria-label="Manage tags"
+                      icon={<MdLabel />}
+                      size="sm"
+                      colorScheme="teal" 
+                      variant="outline"
+                      onClick={openTagManager}
+                      _hover={{
+                        transform: 'translateY(-1px)'
+                      }}
+                    />
+                  </Tooltip>
+                  
+                  {/* Achievements Button */}
+                  <Tooltip label="View achievements" hasArrow>
+                    <IconButton
+                      aria-label="View achievements"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setIsAchievementsModalOpen(true)}
+                      position="relative"
+                      icon={
+                        <Box position="relative">
+                          <Icon as={TrophyIcon} />
+                          {recentlyUnlocked && (
+                            <Box
+                              position="absolute"
+                              top="-2px"
+                              right="-2px"
+                              w="8px"
+                              h="8px"
+                              bg="green.400"
+                              borderRadius="full"
+                            />
+                          )}
+                        </Box>
+                      }
+                      _hover={{
+                        transform: 'translateY(-1px)'
+                      }}
+                    />
+                  </Tooltip>
+                  
+                  {/* Pomodoro Button */}
+                  <Tooltip label="Focus timer" hasArrow>
+                    <IconButton
+                      aria-label="Pomodoro timer"
+                      icon={<Icon as={FaClock} />}
+                      size="sm"
+                      colorScheme="purple"
+                      variant="outline"
+                      onClick={() => setIsPomodoroOpen(true)}
+                      _hover={{
+                        transform: 'translateY(-1px)'
+                      }}
+                    />
+                  </Tooltip>
+                  
+                  {/* Shortcuts Button */}
+                  <Tooltip label="Keyboard shortcuts" hasArrow>
+                    <IconButton
+                      aria-label="Keyboard shortcuts"
+                      icon={<QuestionIcon />}
+                      size="sm"
+                      variant="outline"
+                      onClick={onShortcutsOpen}
+                      _hover={{
+                        transform: 'translateY(-1px)'
+                      }}
+                    />
+                  </Tooltip>
+                  
+                  {/* Theme Toggle Button */}
+                  <Tooltip label={`Switch to ${colorMode === 'light' ? 'dark' : 'light'} mode`} hasArrow>
+                    <IconButton
+                      aria-label={`Switch to ${colorMode === 'light' ? 'dark' : 'light'} mode`}
+                      icon={colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
+                      size="sm"
+                      variant="outline"
+                      onClick={toggleColorMode}
+                      _hover={{
+                        transform: 'translateY(-1px)'
+                      }}
+                    />
+                  </Tooltip>
                 </HStack>
               </Flex>
             </CardBody>
