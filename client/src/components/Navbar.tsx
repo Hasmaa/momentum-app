@@ -153,7 +153,7 @@ const Navbar = () => {
       aria-label="Main navigation"
     >
       <Flex align="center" justify="space-between" wrap="wrap" maxW="container.xl" mx="auto">
-        {/* Logo and Brand */}
+        {/* Enhanced Logo and Brand */}
         <HStack spacing={{ base: 2, md: 4 }} align="center">
           <Link 
             as={RouterLink} 
@@ -162,40 +162,85 @@ const Navbar = () => {
             aria-label="Home page"
             display="flex" 
             alignItems="center"
+            position="relative"
+            role="group"
           >
             <MotionBox
               initial={{ rotate: 0 }}
               animate={{ rotate: 360 }}
-              transition={{ duration: 2, repeat: Infinity, ease: "linear", repeatType: "loop" }}
+              transition={{ duration: 10, repeat: Infinity, ease: "linear", repeatType: "loop" }}
               display="inline-block"
-              mr={2}
+              mr={3}
+              position="relative"
+              _groupHover={{ scale: 1.1 }}
             >
               <Box 
-                w="28px" 
-                h="28px" 
-                borderRadius="md" 
-                bg={useColorModeValue('blue.500', 'blue.200')}
+                w="36px" 
+                h="36px" 
+                borderRadius="xl" 
+                bg={useColorModeValue(
+                  'linear-gradient(135deg, #3182CE 0%, #63B3ED 100%)',
+                  'linear-gradient(135deg, #90CDF4 0%, #BEE3F8 100%)'
+                )}
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
                 color="white"
                 fontWeight="bold"
+                position="relative"
+                overflow="hidden"
+                _after={{
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 60%)',
+                }}
               >
-                <Text fontSize="md">T</Text>
+                <Text 
+                  fontSize="xl" 
+                  fontWeight="black"
+                  textShadow="0 2px 4px rgba(0,0,0,0.1)"
+                >
+                  M
+                </Text>
               </Box>
             </MotionBox>
-            <Text 
-              fontSize="lg" 
-              fontWeight="bold" 
-              bgGradient={useColorModeValue(
-                'linear-gradient(90deg, #3182CE 0%, #63B3ED 100%)',
-                'linear-gradient(90deg, #90CDF4 0%, #BEE3F8 100%)'
-              )}
-              bgClip="text"
-              letterSpacing="tight"
-            >
-              Momentum
-            </Text>
+            <Box>
+              <Text 
+                fontSize="xl" 
+                fontWeight="bold" 
+                bgGradient={useColorModeValue(
+                  'linear-gradient(135deg, #3182CE 0%, #63B3ED 100%)',
+                  'linear-gradient(135deg, #90CDF4 0%, #BEE3F8 100%)'
+                )}
+                bgClip="text"
+                letterSpacing="tight"
+                mb={-1}
+                _groupHover={{
+                  bgGradient: useColorModeValue(
+                    'linear-gradient(135deg, #2C5282 0%, #3182CE 100%)',
+                    'linear-gradient(135deg, #BEE3F8 0%, #E9F3FB 100%)'
+                  )
+                }}
+              >
+                Momentum
+              </Text>
+              <Text 
+                fontSize="xs" 
+                color={useColorModeValue('gray.600', 'gray.400')}
+                fontWeight="medium"
+                letterSpacing="wider"
+                textTransform="uppercase"
+                opacity={0.8}
+                _groupHover={{ opacity: 1 }}
+                transition="all 0.2s"
+              >
+                Task Management
+              </Text>
+            </Box>
           </Link>
         </HStack>
 

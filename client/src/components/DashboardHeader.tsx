@@ -97,43 +97,16 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
   return (
     <Flex 
-      justify="space-between" 
+      justify="flex-end" 
       align="center" 
       wrap={{ base: "wrap", md: "nowrap" }} 
       gap={4}
     >
-      {/* Logo/Title Section */}
-      <HStack 
-        spacing={3} 
-        align="center"
-        flex={{ base: "1 1 100%", md: "0 1 auto" }}
-        mb={{ base: 4, md: 0 }}
-      >
-        <Heading 
-          size="md" 
-          fontWeight="bold" 
-          letterSpacing="tight"
-          bgGradient="linear(to-r, blue.400, blue.600)"
-          bgClip="text"
-        >
-          Momentum
-        </Heading>
-        <Text 
-          fontSize="sm" 
-          color="gray.500" 
-          display={{ base: "none", md: "block" }}
-          fontWeight="medium"
-        >
-          Keep Your Progress Moving
-        </Text>
-      </HStack>
-
       {/* Action Buttons */}
       <Flex 
         gap={3} 
         align="center" 
         justify="flex-end"
-        flex="1"
         flexWrap="wrap"
       >
         {/* Selection Mode Actions */}
