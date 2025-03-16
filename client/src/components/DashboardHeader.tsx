@@ -15,6 +15,9 @@ import {
   MenuDivider,
   Flex,
   Heading,
+  Divider,
+  useBreakpointValue,
+  useColorModeValue,
 } from '@chakra-ui/react';
 import {
   AddIcon,
@@ -72,24 +75,80 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   recentlyUnlocked,
 }) => {
   const { colorMode, toggleColorMode } = useColorMode();
+  const isMobile = useBreakpointValue({ base: true, md: false });
+  
+  const bgColor = useColorModeValue('white', 'gray.800');
+  const buttonGroupBg = useColorModeValue('gray.50', 'gray.700');
+  const dividerColor = useColorModeValue('gray.200', 'gray.600');
+  const selectionBg = useColorModeValue('blue.50', 'blue.900');
+
+  const ButtonGroup = ({ children }: { children: React.ReactNode }) => (
+    <HStack
+      spacing={2}
+      bg={buttonGroupBg}
+      p={1}
+      borderRadius="lg"
+      transition="all 0.2s"
+      _hover={{ bg: useColorModeValue('gray.100', 'gray.600') }}
+    >
+      {children}
+    </HStack>
+  );
 
   return (
-    <Flex justify="space-between" align="center" wrap={{ base: "wrap", md: "nowrap" }} gap={4}>
+    <Flex 
+      justify="space-between" 
+      align="center" 
+      wrap={{ base: "wrap", md: "nowrap" }} 
+      gap={4}
+    >
       {/* Logo/Title Section */}
-      <HStack spacing={3} align="center">
-        <Heading size="md" fontWeight="bold" letterSpacing="tight">
+      <HStack 
+        spacing={3} 
+        align="center"
+        flex={{ base: "1 1 100%", md: "0 1 auto" }}
+        mb={{ base: 4, md: 0 }}
+      >
+        <Heading 
+          size="md" 
+          fontWeight="bold" 
+          letterSpacing="tight"
+          bgGradient="linear(to-r, blue.400, blue.600)"
+          bgClip="text"
+        >
           Momentum
         </Heading>
-        <Text fontSize="sm" color="gray.500" display={{ base: "none", md: "block" }}>
+        <Text 
+          fontSize="sm" 
+          color="gray.500" 
+          display={{ base: "none", md: "block" }}
+          fontWeight="medium"
+        >
           Keep Your Progress Moving
         </Text>
       </HStack>
 
       {/* Action Buttons */}
-      <HStack spacing={{ base: 1, md: 3 }} ml="auto" flexWrap="wrap" justify="flex-end">
+      <Flex 
+        gap={3} 
+        align="center" 
+        justify="flex-end"
+        flex="1"
+        flexWrap="wrap"
+      >
         {/* Selection Mode Actions */}
         {isSelectMode && selectedTodos.size > 0 && (
-          <HStack bg="blue.50" _dark={{ bg: 'blue.900' }} px={3} py={1} borderRadius="lg">
+          <Box
+            bg={selectionBg}
+            px={3}
+            py={1}
+            borderRadius="lg"
+            display="flex"
+            alignItems="center"
+            gap={2}
+            flexGrow={1}
+            maxW={{ base: "100%", md: "auto" }}
+          >
             <Text fontSize="sm" fontWeight="medium">
               {selectedTodos.size} selected
             </Text>
@@ -145,47 +204,51 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               variant="ghost"
               onClick={onClearSelection}
             />
-          </HStack>
+          </Box>
         )}
 
         {/* Primary Actions */}
-        <HStack spacing={2}>
-          <Button
-            size="sm"
-            leftIcon={<AddIcon />}
-            colorScheme="blue"
-            onClick={onCreateTask}
-            fontWeight="medium"
-            _hover={{
-              transform: 'translateY(-1px)',
-              boxShadow: 'sm'
-            }}
-          >
-            New Task
-          </Button>
+        <ButtonGroup>
+          <Tooltip label="Create new task (⌘N)" hasArrow>
+            <Button
+              size="sm"
+              leftIcon={<AddIcon />}
+              colorScheme="blue"
+              onClick={onCreateTask}
+              fontWeight="medium"
+              _hover={{
+                transform: 'translateY(-1px)',
+                boxShadow: 'sm'
+              }}
+            >
+              {isMobile ? <AddIcon /> : "New Task"}
+            </Button>
+          </Tooltip>
 
-          <Tooltip label="Use template to create tasks" hasArrow>
+          <Tooltip label="Use template (⌘T)" hasArrow>
             <Button
               size="sm"
               leftIcon={<RepeatIcon />}
               colorScheme="blue"
-              variant="outline"
+              variant="ghost"
               onClick={onOpenTemplate}
               fontWeight="medium"
             >
-              Template
+              {isMobile ? <RepeatIcon /> : "Template"}
             </Button>
           </Tooltip>
-        </HStack>
+        </ButtonGroup>
+
+        {!isMobile && <Divider orientation="vertical" h="20px" borderColor={dividerColor} />}
 
         {/* Secondary Actions */}
-        <HStack spacing={2}>
-          <Tooltip label={`Switch to ${isListView ? 'board' : 'list'} view`} hasArrow>
+        <ButtonGroup>
+          <Tooltip label={`Switch to ${isListView ? 'board' : 'list'} view (⌘/)`} hasArrow>
             <IconButton
               aria-label={`Switch to ${isListView ? 'board' : 'list'} view`}
               icon={isListView ? <ViewIcon /> : <HamburgerIcon />}
               size="sm"
-              variant="outline"
+              variant="ghost"
               onClick={onToggleView}
             />
           </Tooltip>
@@ -196,7 +259,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               icon={<MdLabel />}
               size="sm"
               colorScheme="teal"
-              variant="outline"
+              variant="ghost"
               onClick={onOpenTagManager}
             />
           </Tooltip>
@@ -205,7 +268,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             <IconButton
               aria-label="View achievements"
               size="sm"
-              variant="outline"
+              variant="ghost"
               onClick={onOpenAchievements}
               position="relative"
               icon={
@@ -233,20 +296,22 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               icon={<Icon as={FaClock} />}
               size="sm"
               colorScheme="purple"
-              variant="outline"
+              variant="ghost"
               onClick={onOpenPomodoro}
             />
           </Tooltip>
-        </HStack>
+        </ButtonGroup>
+
+        {!isMobile && <Divider orientation="vertical" h="20px" borderColor={dividerColor} />}
 
         {/* Utility Actions */}
-        <HStack spacing={2}>
-          <Tooltip label="Keyboard shortcuts" hasArrow>
+        <ButtonGroup>
+          <Tooltip label="Keyboard shortcuts (?)" hasArrow>
             <IconButton
               aria-label="Keyboard shortcuts"
               icon={<QuestionIcon />}
               size="sm"
-              variant="outline"
+              variant="ghost"
               onClick={onOpenShortcuts}
             />
           </Tooltip>
@@ -256,12 +321,12 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               aria-label={`Switch to ${colorMode === 'light' ? 'dark' : 'light'} mode`}
               icon={colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
               size="sm"
-              variant="outline"
+              variant="ghost"
               onClick={toggleColorMode}
             />
           </Tooltip>
-        </HStack>
-      </HStack>
+        </ButtonGroup>
+      </Flex>
     </Flex>
   );
 }; 
