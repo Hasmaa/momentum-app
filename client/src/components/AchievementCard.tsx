@@ -10,10 +10,12 @@ import {
   Progress,
   Flex,
   useTheme,
+  Icon,
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import { Achievement } from '../types';
 import AchievementIcon from './AchievementIcon';
+import { FiLock } from 'react-icons/fi';
 
 const MotionBox = motion(Box);
 
@@ -41,82 +43,119 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
   const isUnlocked = !!unlockedAt;
   const progressPercentage = getProgressPercentage(achievement);
 
-  // Refined color scheme based on rarity - more subdued for enterprise look
+  // Enhanced color scheme with more vibrant colors for unlocked achievements
   const rarityColors = {
-    common: useColorModeValue('gray.600', 'gray.400'),
-    uncommon: useColorModeValue('teal.600', 'teal.400'),
-    rare: useColorModeValue('blue.600', 'blue.400'),
-    epic: useColorModeValue('purple.600', 'purple.400'),
-    legendary: useColorModeValue('orange.600', 'orange.400'),
+    common: {
+      bg: useColorModeValue('gray.50', 'gray.800'),
+      border: useColorModeValue('gray.200', 'gray.600'),
+      text: useColorModeValue('gray.700', 'gray.300'),
+      accent: useColorModeValue('gray.500', 'gray.400'),
+    },
+    uncommon: {
+      bg: useColorModeValue('teal.50', 'teal.900'),
+      border: useColorModeValue('teal.200', 'teal.700'),
+      text: useColorModeValue('teal.800', 'teal.200'),
+      accent: useColorModeValue('teal.500', 'teal.400'),
+    },
+    rare: {
+      bg: useColorModeValue('blue.50', 'blue.900'),
+      border: useColorModeValue('blue.200', 'blue.700'),
+      text: useColorModeValue('blue.800', 'blue.200'),
+      accent: useColorModeValue('blue.500', 'blue.400'),
+    },
+    epic: {
+      bg: useColorModeValue('purple.50', 'purple.900'),
+      border: useColorModeValue('purple.200', 'purple.700'),
+      text: useColorModeValue('purple.800', 'purple.200'),
+      accent: useColorModeValue('purple.500', 'purple.400'),
+    },
+    legendary: {
+      bg: useColorModeValue('orange.50', 'orange.900'),
+      border: useColorModeValue('orange.200', 'orange.700'),
+      text: useColorModeValue('orange.800', 'orange.200'),
+      accent: useColorModeValue('orange.500', 'orange.400'),
+    },
   };
 
-  // More subtle category colors for enterprise look
   const categoryColors = {
-    completion: useColorModeValue('green.50', 'green.900'),
-    productivity: useColorModeValue('blue.50', 'blue.900'),
-    consistency: useColorModeValue('purple.50', 'purple.900'),
-    explorer: useColorModeValue('orange.50', 'orange.900'),
-  };
-
-  const categoryTextColors = {
-    completion: useColorModeValue('green.700', 'green.200'),
-    productivity: useColorModeValue('blue.700', 'blue.200'),
-    consistency: useColorModeValue('purple.700', 'purple.200'),
-    explorer: useColorModeValue('orange.700', 'orange.200'),
+    completion: useColorModeValue('green.100', 'green.900'),
+    productivity: useColorModeValue('blue.100', 'blue.900'),
+    consistency: useColorModeValue('purple.100', 'purple.900'),
+    explorer: useColorModeValue('orange.100', 'orange.900'),
   };
 
   const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
   const textColor = useColorModeValue('gray.700', 'gray.300');
-  const progressBgColor = useColorModeValue('gray.100', 'gray.700');
+  const mutedTextColor = useColorModeValue('gray.600', 'gray.400');
   
-  // More subtle box shadow for a refined look
-  const boxShadow = isRecent ? 
-    `0 0 0 1px ${rarityColors[rarity]}, 0 4px 8px rgba(0, 0, 0, 0.08)` : 
-    isUnlocked ? '0 2px 4px rgba(0, 0, 0, 0.06)' : 'none';
-
-  // Format rarity text
-  const formatRarity = (rarity: string) => {
-    return rarity.charAt(0).toUpperCase() + rarity.slice(1);
-  };
-
-  // Format category text
-  const formatCategory = (category: string) => {
-    return category.charAt(0).toUpperCase() + category.slice(1);
+  const cardVariants = {
+    initial: { scale: 0.98, opacity: 0 },
+    animate: { 
+      scale: 1, 
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 200,
+        damping: 20
+      }
+    },
+    hover: {
+      y: -4,
+      transition: {
+        type: "spring",
+        stiffness: 400,
+        damping: 25
+      }
+    }
   };
 
   return (
     <MotionBox
+      initial={isRecent ? "initial" : false}
+      animate="animate"
+      whileHover="hover"
+      variants={cardVariants}
       borderWidth="1px"
-      borderColor={isUnlocked ? rarityColors[rarity] : borderColor}
-      borderRadius="md"
+      borderColor={isUnlocked ? rarityColors[rarity].border : 'transparent'}
+      borderRadius="xl"
       overflow="hidden"
-      bg={bgColor}
-      p={4}
-      boxShadow={boxShadow}
-      opacity={isUnlocked ? 1 : 0.85}
-      transition="all 0.2s ease"
-      initial={isRecent ? { scale: 0.98, opacity: 0 } : {}}
-      animate={isRecent ? { 
-        scale: 1, 
-        opacity: 1,
-        transition: {
-          type: "spring",
-          stiffness: 200,
-          damping: 25
-        }
-      } : {}}
-      whileHover={{ 
-        y: -2,
-        boxShadow: `0 6px 12px rgba(0, 0, 0, 0.06)${isUnlocked ? `, 0 0 0 1px ${rarityColors[rarity]}` : ''}` 
-      }}
-      height="100%"
+      bg={isUnlocked ? rarityColors[rarity].bg : bgColor}
+      p={6}
       position="relative"
+      height="100%"
       display="flex"
       flexDirection="column"
+      role="group"
+      transition="all 0.2s ease"
+      _hover={{
+        borderColor: rarityColors[rarity].border,
+        boxShadow: isUnlocked ? 'lg' : 'md',
+        transform: 'translateY(-2px)',
+      }}
     >
-      {/* Header section with badges */}
-      <Flex justify="space-between" mb={3} align="center">
+      {/* Locked Overlay */}
+      {!isUnlocked && (
+        <Box
+          position="absolute"
+          top={0}
+          left={0}
+          right={0}
+          bottom={0}
+          bg={useColorModeValue('whiteAlpha.75', 'blackAlpha.75')}
+          backdropFilter="blur(2px)"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
+          zIndex={1}
+          transition="opacity 0.2s"
+          _groupHover={{ opacity: 0.9 }}
+        >
+          <Icon as={FiLock} boxSize={8} color={mutedTextColor} />
+        </Box>
+      )}
+
+      {/* Header with badges */}
+      <Flex justify="space-between" mb={4} align="center">
         <Badge
           colorScheme={isUnlocked ? {
             common: 'gray',
@@ -125,36 +164,41 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
             epic: 'purple',
             legendary: 'orange'
           }[rarity] : 'gray'}
-          borderRadius="sm"
-          px={2}
-          py={0.5}
-          opacity={isUnlocked ? 1 : 0.7}
-          fontSize="xs"
-          fontWeight="medium"
+          px={3}
+          py={1}
+          borderRadius="lg"
           textTransform="uppercase"
+          fontSize="xs"
+          fontWeight="bold"
           letterSpacing="0.5px"
+          bg={useColorModeValue(`${rarityColors[rarity].accent}20`, `${rarityColors[rarity].accent}30`)}
+          color={isUnlocked ? rarityColors[rarity].text : textColor}
         >
-          {formatRarity(rarity)}
+          {rarity}
         </Badge>
         
         <Badge
+          px={3}
+          py={1}
+          borderRadius="lg"
           bg={categoryColors[category]}
-          color={categoryTextColors[category]}
-          borderRadius="sm"
-          px={2}
-          py={0.5}
+          color={textColor}
           fontSize="xs"
           fontWeight="medium"
-          textTransform="uppercase"
           letterSpacing="0.5px"
         >
-          {formatCategory(category)}
+          {category}
         </Badge>
       </Flex>
 
-      {/* Content section */}
-      <HStack spacing={4} align="flex-start" mb={3}>
-        <Box flexShrink={0} pt={1}>
+      {/* Content */}
+      <HStack spacing={4} align="flex-start" mb={4} flex="1">
+        <Box 
+          flexShrink={0}
+          position="relative"
+          transition="transform 0.2s"
+          _groupHover={{ transform: 'scale(1.1) rotate(3deg)' }}
+        >
           <AchievementIcon 
             icon={icon} 
             isUnlocked={isUnlocked} 
@@ -166,21 +210,19 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
         
         <VStack align="flex-start" spacing={1} flex="1">
           <Heading 
-            size="sm" 
-            color={isUnlocked ? rarityColors[rarity] : textColor}
-            fontWeight="600"
-            letterSpacing="-0.2px"
-            lineHeight="1.3"
+            size="md" 
+            color={isUnlocked ? rarityColors[rarity].text : textColor}
+            fontWeight="bold"
+            letterSpacing="tight"
+            lineHeight="1.2"
           >
             {name}
           </Heading>
           <Text 
-            fontSize="xs" 
-            color={textColor} 
-            opacity={0.85} 
+            fontSize="sm" 
+            color={mutedTextColor}
+            lineHeight="1.5"
             noOfLines={2}
-            lineHeight="1.4"
-            fontWeight="normal"
           >
             {description}
           </Text>
@@ -188,10 +230,10 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
       </HStack>
 
       {/* Progress section */}
-      <Box mt="auto" pt={2}>
+      <Box mt="auto">
         <Progress 
           value={progressPercentage} 
-          size="xs" 
+          size="sm" 
           colorScheme={{
             common: 'gray',
             uncommon: 'teal',
@@ -200,41 +242,39 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
             legendary: 'orange'
           }[rarity]} 
           borderRadius="full"
-          bg={progressBgColor}
+          bg={useColorModeValue('gray.100', 'whiteAlpha.100')}
           hasStripe={isUnlocked && progressPercentage < 100}
           isAnimated={isUnlocked && progressPercentage < 100}
+          height="6px"
         />
-        <Flex justify="space-between" mt={1}>
+        <Flex justify="space-between" mt={2} align="center">
           <Text 
-            fontSize="xs" 
-            color={textColor} 
-            opacity={0.7}
-            fontWeight="normal"
+            fontSize="sm" 
+            color={mutedTextColor}
+            fontWeight="medium"
           >
             Progress
           </Text>
           <Text 
-            fontSize="xs" 
-            fontWeight="medium" 
-            color={isUnlocked ? rarityColors[rarity] : textColor}
+            fontSize="md" 
+            fontWeight="bold" 
+            color={isUnlocked ? rarityColors[rarity].accent : mutedTextColor}
           >
             {progressPercentage}%
           </Text>
         </Flex>
       </Box>
 
-      {/* Unlocked date - more subtle and professional */}
+      {/* Unlock date */}
       {isUnlocked && (
         <Text 
-          fontSize="2xs" 
-          color={textColor} 
-          opacity={0.6} 
-          mt={2} 
+          fontSize="xs" 
+          color={mutedTextColor}
+          mt={3} 
           textAlign="right"
           fontStyle="italic"
-          letterSpacing="0.1px"
         >
-          Unlocked: {new Date(unlockedAt).toLocaleDateString(undefined, {
+          Unlocked {new Date(unlockedAt).toLocaleDateString(undefined, {
             year: 'numeric',
             month: 'short',
             day: 'numeric'
@@ -242,33 +282,34 @@ const AchievementCard: React.FC<AchievementCardProps> = ({
         </Text>
       )}
 
-      {/* More subtle NEW indicator for recently unlocked achievements */}
+      {/* NEW badge */}
       {isRecent && (
         <MotionBox
           position="absolute"
-          top="-6px"
-          right="-6px"
+          top={-2}
+          right={-2}
           animate={{
-            rotate: [0, 5, 0, -5, 0],
+            rotate: [0, 10, 0, -10, 0],
           }}
           transition={{
-            duration: 3,
+            duration: 2,
             repeat: Infinity,
+            ease: "easeInOut"
           }}
         >
           <Badge
             colorScheme="red"
             variant="solid"
-            borderRadius="sm"
+            borderRadius="lg"
             px={2}
-            py={0.5}
+            py={1}
             transform="rotate(15deg)"
-            boxShadow="sm"
-            fontSize="2xs"
-            letterSpacing="0.5px"
+            fontSize="xs"
             fontWeight="bold"
+            boxShadow="md"
+            letterSpacing="wider"
           >
-            NEW
+            NEW!
           </Badge>
         </MotionBox>
       )}

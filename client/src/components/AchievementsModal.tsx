@@ -34,6 +34,7 @@ import {
   MenuItem,
   useBreakpointValue,
   IconButton,
+  InputRightElement,
 } from '@chakra-ui/react';
 import { SearchIcon, ChevronDownIcon, SmallCloseIcon } from '@chakra-ui/icons';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -148,64 +149,105 @@ const AchievementsModal: React.FC<AchievementsModalProps> = ({
       size="6xl" 
       scrollBehavior="inside"
       motionPreset="slideInBottom"
+      isCentered
     >
-      <ModalOverlay backdropFilter="blur(2px)" />
+      <ModalOverlay backdropFilter="blur(12px)" bg="blackAlpha.700" />
       <ModalContent 
         bg={bgColor}
-        boxShadow="xl"
-        borderRadius="xl"
+        boxShadow="2xl"
+        borderRadius="2xl"
         overflow="hidden"
+        maxH="90vh"
+        mx={4}
       >
         <ModalHeader 
-          bg={useColorModeValue('blue.50', 'blue.900')}
+          bg={useColorModeValue('white', 'gray.800')}
           borderBottomWidth="1px"
           borderColor={borderColor}
-          py={4}
+          py={6}
+          px={8}
         >
           <Flex justify="space-between" align="center" width="full">
-            <Heading size="lg" color={headerColor}>Achievements</Heading>
             <HStack spacing={4}>
+              <Heading size="lg" color={headerColor} letterSpacing="tight" fontWeight="bold">
+                Achievements
+              </Heading>
               <Badge 
                 colorScheme="blue" 
-                fontSize="md" 
-                py={1} 
-                px={3} 
+                fontSize="sm" 
+                py={1.5} 
+                px={4} 
                 borderRadius="full"
+                variant="subtle"
+                bg={useColorModeValue('blue.50', 'blue.900')}
+                color={useColorModeValue('blue.600', 'blue.200')}
               >
                 {unlockedCount}/{totalAchievements}
               </Badge>
-              <ModalCloseButton position="static" />
             </HStack>
+            <ModalCloseButton 
+              position="static" 
+              size="md" 
+              borderRadius="full"
+              _hover={{
+                bg: useColorModeValue('gray.100', 'gray.700')
+              }}
+            />
           </Flex>
         </ModalHeader>
 
         <ModalBody p={0}>
-          <Box p={{ base: 4, md: 6 }} bg={statsBgColor}>
-            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={{ base: 4, md: 6 }}>
-              {/* Overall progress */}
-              <Box>
-                <Text fontWeight="bold" mb={2}>Overall Progress</Text>
+          {/* Stats Section */}
+          <Box p={8} bg={useColorModeValue('gray.50', 'gray.900')}>
+            <SimpleGrid columns={{ base: 1, md: 2 }} spacing={6}>
+              {/* Overall Progress */}
+              <Box 
+                bg={useColorModeValue('white', 'gray.800')} 
+                p={6} 
+                borderRadius="xl"
+                boxShadow="md"
+              >
+                <Text fontWeight="bold" mb={3} fontSize="lg" letterSpacing="tight">
+                  Overall Progress
+                </Text>
                 <Progress 
                   value={completionPercentage} 
-                  size="lg" 
+                  size="md" 
                   colorScheme="blue" 
-                  borderRadius="md"
-                  mb={2}
+                  borderRadius="full"
+                  mb={3}
                   hasStripe={completionPercentage < 100}
                   isAnimated={completionPercentage < 100}
+                  bg={useColorModeValue('blue.50', 'blue.900')}
+                  height="8px"
                 />
-                <HStack justify="space-between">
-                  <Text fontSize="sm">{unlockedCount} Unlocked</Text>
-                  <Text fontWeight="bold" fontSize="sm">{completionPercentage}%</Text>
+                <HStack justify="space-between" mt={2}>
+                  <Text fontSize="sm" color={textColor}>
+                    {unlockedCount} Achievement{unlockedCount !== 1 ? 's' : ''} Unlocked
+                  </Text>
+                  <Text fontWeight="bold" fontSize="xl" color="blue.500">
+                    {completionPercentage}%
+                  </Text>
                 </HStack>
               </Box>
               
-              {/* Most recent achievement */}
-              <Box>
-                <Text fontWeight="bold" mb={2}>Latest Achievement</Text>
+              {/* Latest Achievement */}
+              <Box 
+                bg={useColorModeValue('white', 'gray.800')} 
+                p={6} 
+                borderRadius="xl"
+                boxShadow="md"
+              >
+                <Text fontWeight="bold" mb={3} fontSize="lg" letterSpacing="tight">
+                  Latest Achievement
+                </Text>
                 {mostRecentAchievement ? (
                   <HStack spacing={4} align="center">
-                    <Box>
+                    <Box
+                      p={4}
+                      borderRadius="xl"
+                      bg={useColorModeValue('blue.50', 'blue.900')}
+                    >
                       <AchievementIcon 
                         icon={mostRecentAchievement.icon} 
                         rarity={mostRecentAchievement.rarity}
@@ -214,20 +256,31 @@ const AchievementsModal: React.FC<AchievementsModalProps> = ({
                         size="3rem"
                       />
                     </Box>
-                    <VStack align="start" spacing={0}>
-                      <Text fontWeight="bold">{mostRecentAchievement.name}</Text>
-                      <Text fontSize="sm">{new Date(mostRecentAchievement.unlockedAt!).toLocaleDateString()}</Text>
+                    <VStack align="start" spacing={1}>
+                      <Text fontWeight="bold" fontSize="lg">{mostRecentAchievement.name}</Text>
+                      <Text fontSize="sm" color={textColor}>
+                        Unlocked {new Date(mostRecentAchievement.unlockedAt!).toLocaleDateString()}
+                      </Text>
                     </VStack>
                   </HStack>
                 ) : (
-                  <Text fontSize="sm" fontStyle="italic">No achievements unlocked yet</Text>
+                  <Flex 
+                    direction="column" 
+                    align="center" 
+                    justify="center" 
+                    py={4}
+                    color={textColor}
+                  >
+                    <Text fontSize="lg" fontWeight="medium">No achievements yet</Text>
+                    <Text fontSize="sm" mt={1}>Complete tasks to earn achievements!</Text>
+                  </Flex>
                 )}
               </Box>
             </SimpleGrid>
           </Box>
           
-          <Box p={{ base: 4, md: 6 }}>
-            {/* Filters and search */}
+          {/* Filters Section */}
+          <Box px={8} py={6}>
             <Flex 
               direction={{ base: 'column', md: 'row' }} 
               justify="space-between" 
@@ -235,26 +288,34 @@ const AchievementsModal: React.FC<AchievementsModalProps> = ({
               mb={6} 
               gap={4}
             >
-              <InputGroup maxW={{ base: '100%', md: '300px' }}>
-                <InputLeftElement pointerEvents="none">
-                  <SearchIcon color="gray.400" />
+              <InputGroup maxW={{ base: '100%', md: '320px' }}>
+                <InputLeftElement pointerEvents="none" h="full" pl={3}>
+                  <SearchIcon color="gray.400" boxSize={4} />
                 </InputLeftElement>
                 <Input 
                   placeholder="Search achievements..." 
                   value={searchQuery} 
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  borderRadius="full"
+                  borderRadius="lg"
+                  size="md"
+                  pl={10}
+                  fontSize="sm"
+                  _focus={{
+                    borderColor: 'blue.400',
+                    boxShadow: '0 0 0 1px var(--chakra-colors-blue-400)'
+                  }}
                 />
                 {searchQuery && (
-                  <Box position="absolute" right="8px" top="50%" transform="translateY(-50%)">
+                  <InputRightElement h="full" pr={2}>
                     <IconButton
-                      icon={<SmallCloseIcon />}
+                      icon={<SmallCloseIcon boxSize={3} />}
                       size="sm"
                       aria-label="Clear search"
                       variant="ghost"
                       onClick={() => setSearchQuery('')}
+                      borderRadius="full"
                     />
-                  </Box>
+                  </InputRightElement>
                 )}
               </InputGroup>
 
@@ -264,16 +325,27 @@ const AchievementsModal: React.FC<AchievementsModalProps> = ({
                     as={Button} 
                     rightIcon={<ChevronDownIcon />}
                     variant="outline"
-                    borderRadius="full"
+                    borderRadius="lg"
                     size="md"
+                    px={4}
+                    borderWidth={1}
+                    _hover={{
+                      bg: useColorModeValue('gray.50', 'gray.700')
+                    }}
                   >
                     {showUnlocked === null ? 'All Achievements' : 
                       showUnlocked ? 'Unlocked' : 'Locked'}
                   </MenuButton>
-                  <MenuList>
-                    <MenuItem onClick={() => setShowUnlocked(null)}>All Achievements</MenuItem>
-                    <MenuItem onClick={() => setShowUnlocked(true)}>Unlocked</MenuItem>
-                    <MenuItem onClick={() => setShowUnlocked(false)}>Locked</MenuItem>
+                  <MenuList borderRadius="lg" p={1}>
+                    <MenuItem borderRadius="md" p={2} onClick={() => setShowUnlocked(null)}>
+                      All Achievements
+                    </MenuItem>
+                    <MenuItem borderRadius="md" p={2} onClick={() => setShowUnlocked(true)}>
+                      Unlocked
+                    </MenuItem>
+                    <MenuItem borderRadius="md" p={2} onClick={() => setShowUnlocked(false)}>
+                      Locked
+                    </MenuItem>
                   </MenuList>
                 </Menu>
 
@@ -282,71 +354,102 @@ const AchievementsModal: React.FC<AchievementsModalProps> = ({
                     as={Button} 
                     rightIcon={<ChevronDownIcon />}
                     variant="outline"
-                    borderRadius="full"
+                    borderRadius="lg"
                     size="md"
+                    px={4}
+                    borderWidth={1}
+                    _hover={{
+                      bg: useColorModeValue('gray.50', 'gray.700')
+                    }}
                   >
                     Sort: {sortBy === 'default' ? 'Default' : 
                            sortBy === 'progress' ? 'Progress' : 
                            sortBy === 'name' ? 'Name' : 'Rarity'}
                   </MenuButton>
-                  <MenuList>
-                    <MenuItem onClick={() => setSortBy('default')}>Default</MenuItem>
-                    <MenuItem onClick={() => setSortBy('progress')}>Progress</MenuItem>
-                    <MenuItem onClick={() => setSortBy('name')}>Name</MenuItem>
-                    <MenuItem onClick={() => setSortBy('rarity')}>Rarity</MenuItem>
+                  <MenuList borderRadius="lg" p={1}>
+                    <MenuItem borderRadius="md" p={2} onClick={() => setSortBy('default')}>
+                      Default
+                    </MenuItem>
+                    <MenuItem borderRadius="md" p={2} onClick={() => setSortBy('progress')}>
+                      Progress
+                    </MenuItem>
+                    <MenuItem borderRadius="md" p={2} onClick={() => setSortBy('name')}>
+                      Name
+                    </MenuItem>
+                    <MenuItem borderRadius="md" p={2} onClick={() => setSortBy('rarity')}>
+                      Rarity
+                    </MenuItem>
                   </MenuList>
                 </Menu>
               </HStack>
             </Flex>
 
-            {/* Categories tabs */}
-            <Tabs colorScheme="blue" mb={6}>
-              <TabList overflow="auto" css={{
-                scrollbarWidth: 'thin',
-                '&::-webkit-scrollbar': {
-                  height: '6px',
-                },
-                '&::-webkit-scrollbar-thumb': {
-                  backgroundColor: useColorModeValue('rgba(0, 0, 0, 0.2)', 'rgba(255, 255, 255, 0.2)'),
-                  borderRadius: '3px',
-                },
-              }}>
+            {/* Categories */}
+            <Tabs 
+              colorScheme="blue" 
+              mb={6}
+              variant="soft-rounded"
+              size="md"
+            >
+              <TabList 
+                overflow="auto" 
+                py={1}
+                px={1}
+                mx={-1}
+                borderRadius="lg"
+                bg={useColorModeValue('gray.50', 'gray.900')}
+                css={{
+                  scrollbarWidth: 'thin',
+                  '&::-webkit-scrollbar': {
+                    height: '4px',
+                  },
+                  '&::-webkit-scrollbar-thumb': {
+                    backgroundColor: useColorModeValue('rgba(0, 0, 0, 0.2)', 'rgba(255, 255, 255, 0.2)'),
+                    borderRadius: '2px',
+                  },
+                }}
+              >
                 <Tab 
                   onClick={() => setActiveCategory('all')}
-                  fontWeight={activeCategory === 'all' ? 'bold' : 'normal'}
+                  fontWeight={activeCategory === 'all' ? 'bold' : 'medium'}
+                  px={6}
+                  py={2}
+                  fontSize="sm"
+                  _selected={{
+                    bg: useColorModeValue('white', 'gray.800'),
+                    color: useColorModeValue('blue.500', 'blue.200'),
+                    boxShadow: 'md'
+                  }}
                 >
                   All
                 </Tab>
-                <Tab 
-                  onClick={() => setActiveCategory('completion')}
-                  fontWeight={activeCategory === 'completion' ? 'bold' : 'normal'}
-                >
-                  Completion
-                </Tab>
-                <Tab 
-                  onClick={() => setActiveCategory('productivity')}
-                  fontWeight={activeCategory === 'productivity' ? 'bold' : 'normal'}
-                >
-                  Productivity
-                </Tab>
-                <Tab 
-                  onClick={() => setActiveCategory('consistency')}
-                  fontWeight={activeCategory === 'consistency' ? 'bold' : 'normal'}
-                >
-                  Consistency
-                </Tab>
-                <Tab 
-                  onClick={() => setActiveCategory('explorer')}
-                  fontWeight={activeCategory === 'explorer' ? 'bold' : 'normal'}
-                >
-                  Explorer
-                </Tab>
+                {['completion', 'productivity', 'consistency', 'explorer'].map((category) => (
+                  <Tab 
+                    key={category}
+                    onClick={() => setActiveCategory(category as AchievementCategory)}
+                    fontWeight={activeCategory === category ? 'bold' : 'medium'}
+                    px={6}
+                    py={2}
+                    fontSize="sm"
+                    _selected={{
+                      bg: useColorModeValue('white', 'gray.800'),
+                      color: useColorModeValue('blue.500', 'blue.200'),
+                      boxShadow: 'md'
+                    }}
+                  >
+                    {category.charAt(0).toUpperCase() + category.slice(1)}
+                  </Tab>
+                ))}
               </TabList>
               
               <TabPanels>
-                <TabPanel p={0} pt={4}>
+                <TabPanel px={0} pt={6}>
                   {filteredAchievements.length > 0 ? (
-                    <SimpleGrid columns={columns} spacing={6} minChildWidth="300px">
+                    <SimpleGrid 
+                      columns={columns} 
+                      spacing={6} 
+                      minChildWidth="320px"
+                    >
                       <AnimatePresence>
                         {filteredAchievements.map((achievement) => (
                           <MotionBox
@@ -374,20 +477,22 @@ const AchievementsModal: React.FC<AchievementsModalProps> = ({
                       py={12}
                       textAlign="center"
                     >
-                      <Icon as={SearchIcon} boxSize={12} color={emptyStateColor} mb={4} />
-                      <Heading size="md" color={textColor} mb={2}>No achievements found</Heading>
-                      <Text color={textColor}>
+                      <Icon as={SearchIcon} boxSize={10} color={emptyStateColor} mb={4} />
+                      <Heading size="lg" color={textColor} mb={2}>No achievements found</Heading>
+                      <Text color={textColor} fontSize="md" mb={6}>
                         {searchQuery ? 
                           `No achievements match "${searchQuery}"` : 
                           'Try adjusting your filters'}
                       </Text>
                       {searchQuery && (
                         <Button 
-                          mt={4} 
                           onClick={() => setSearchQuery('')}
-                          size="sm"
+                          size="md"
                           variant="outline"
                           colorScheme="blue"
+                          borderRadius="lg"
+                          px={6}
+                          fontSize="sm"
                         >
                           Clear Search
                         </Button>
@@ -396,28 +501,32 @@ const AchievementsModal: React.FC<AchievementsModalProps> = ({
                   )}
                 </TabPanel>
                 
-                {/* Duplicate panel for each category */}
+                {/* Duplicate the TabPanel for each category with the same content structure */}
                 {['completion', 'productivity', 'consistency', 'explorer'].map((category) => (
-                  <TabPanel key={category} p={0} pt={4}>
+                  <TabPanel key={category} px={0} pt={6}>
                     {filteredAchievements.length > 0 ? (
-                      <SimpleGrid columns={columns} spacing={6} minChildWidth="300px">
+                      <SimpleGrid 
+                        columns={columns} 
+                        spacing={6} 
+                        minChildWidth="320px"
+                      >
                         <AnimatePresence>
                           {filteredAchievements.map((achievement) => (
-                            <MotionBox
-                              key={achievement.id}
-                              layout
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: -20 }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              <AchievementCard 
-                                achievement={achievement}
-                                getProgressPercentage={getProgressPercentage}
-                                isRecent={achievement.id === recentlyUnlocked?.id}
-                              />
-                            </MotionBox>
-                          ))}
+                          <MotionBox
+                            key={achievement.id}
+                            layout
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <AchievementCard 
+                              achievement={achievement}
+                              getProgressPercentage={getProgressPercentage}
+                              isRecent={achievement.id === recentlyUnlocked?.id}
+                            />
+                          </MotionBox>
+                        ))}
                         </AnimatePresence>
                       </SimpleGrid>
                     ) : (
@@ -428,20 +537,22 @@ const AchievementsModal: React.FC<AchievementsModalProps> = ({
                         py={12}
                         textAlign="center"
                       >
-                        <Icon as={SearchIcon} boxSize={12} color={emptyStateColor} mb={4} />
-                        <Heading size="md" color={textColor} mb={2}>No achievements found</Heading>
-                        <Text color={textColor}>
+                        <Icon as={SearchIcon} boxSize={10} color={emptyStateColor} mb={4} />
+                        <Heading size="lg" color={textColor} mb={2}>No achievements found</Heading>
+                        <Text color={textColor} fontSize="md" mb={6}>
                           {searchQuery ? 
                             `No achievements match "${searchQuery}"` : 
                             'Try adjusting your filters'}
                         </Text>
                         {searchQuery && (
                           <Button 
-                            mt={4} 
                             onClick={() => setSearchQuery('')}
-                            size="sm"
+                            size="md"
                             variant="outline"
                             colorScheme="blue"
+                            borderRadius="lg"
+                            px={6}
+                            fontSize="sm"
                           >
                             Clear Search
                           </Button>
@@ -455,8 +566,23 @@ const AchievementsModal: React.FC<AchievementsModalProps> = ({
           </Box>
         </ModalBody>
 
-        <ModalFooter borderTopWidth="1px" borderColor={borderColor}>
-          <Button colorScheme="blue" onClick={onClose}>Close</Button>
+        <ModalFooter 
+          borderTopWidth="1px" 
+          borderColor={borderColor}
+          py={6}
+          px={8}
+        >
+          <Button 
+            colorScheme="blue" 
+            onClick={onClose}
+            size="md"
+            px={6}
+            borderRadius="lg"
+            fontSize="sm"
+            fontWeight="bold"
+          >
+            Close
+          </Button>
         </ModalFooter>
       </ModalContent>
     </Modal>
