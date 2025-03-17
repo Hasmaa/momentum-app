@@ -1761,6 +1761,14 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     return () => unsubscribe();
   }, []);
 
+  // Add state for filter sidebar
+  const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
+
+  // Function to toggle the filter sidebar
+  const toggleFilterSidebar = () => {
+    setIsFilterSidebarOpen(!isFilterSidebarOpen);
+  };
+
   return (
     <Box bg={mainBg} minH="100vh" transition="background-color 0.2s">
       <Container 
@@ -1816,6 +1824,9 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                 recentlyUnlocked={!!recentlyUnlocked}
                 pomodoroActive={pomodoroActive}
                 pomodoroTimeRemaining={pomodoroTimeRemaining}
+                searchQuery={searchQuery}
+                onSearchQueryChange={setSearchQuery}
+                onToggleFilterSidebar={toggleFilterSidebar}
               />
             </CardBody>
           </Card>
@@ -1823,17 +1834,18 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
           <Card borderRadius="lg" bg={cardBg} borderColor={borderColor} borderWidth="1px">
             <CardBody>
               <VStack spacing={4} align="stretch">
-                {/* Unified Filter Bar */}
+                {/* Filter Sidebar (replaces the inline UnifiedFilterBar) */}
                 <UnifiedFilterBar
                   filterStatus={filterStatus}
                   onStatusFilterChange={handleStatusFilter}
                   filterPriority={filterPriority}
                   onPriorityFilterChange={handlePriorityFilter}
                   searchQuery={searchQuery}
-                  onSearchQueryChange={setSearchQuery}
                   tagFilters={tagFilters}
                   onTagFiltersChange={handleTagFiltersChange}
                   onClearAllFilters={clearFilters}
+                  isOpen={isFilterSidebarOpen}
+                  onClose={() => setIsFilterSidebarOpen(false)}
                 />
 
                 <Box>

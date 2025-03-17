@@ -5,10 +5,6 @@ import {
   VStack,
   Text,
   Flex,
-  InputGroup,
-  InputLeftElement,
-  InputRightElement,
-  Input,
   IconButton,
   Button,
   Menu,
@@ -21,36 +17,29 @@ import {
   TagLabel,
   TagCloseButton,
   useBreakpointValue,
-  Accordion,
-  AccordionItem,
-  AccordionButton,
-  AccordionPanel,
-  AccordionIcon,
   Select,
   ButtonGroup,
   Tooltip,
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-  PopoverBody,
-  PopoverFooter,
-  Portal,
   Badge,
-  SimpleGrid
+  SimpleGrid,
+  Drawer,
+  DrawerBody,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerOverlay,
+  DrawerContent,
+  DrawerCloseButton,
 } from '@chakra-ui/react';
 import {
-  SearchIcon,
   CloseIcon,
   CheckIcon,
   ChevronDownIcon,
-  SmallCloseIcon,
   WarningIcon,
   TimeIcon,
-  HamburgerIcon,
   SettingsIcon
 } from '@chakra-ui/icons';
-import { MdFilterAlt, MdFilterAltOff, MdOutlineLabel } from 'react-icons/md';
-import { FiFilter, FiTag, FiSearch, FiX } from 'react-icons/fi';
+import { MdFilterAlt, MdFilterAltOff } from 'react-icons/md';
+import { FiTag, FiFilter } from 'react-icons/fi';
 import { TagService } from '../../services/TagService';
 import { Tag, TagFilters, TaskPriority, TaskStatus } from '../../types';
 import { TagBadge } from '../tags/TagBadge';
@@ -68,9 +57,8 @@ export interface UnifiedFilterProps {
   filterPriority: Set<PriorityType>;
   onPriorityFilterChange: (priority: PriorityType) => void;
   
-  // Search filter
+  // Search filter - keep for sync but handled in header
   searchQuery: string;
-  onSearchQueryChange: (query: string) => void;
   
   // Tag filter
   tagFilters: TagFilters;
@@ -78,6 +66,10 @@ export interface UnifiedFilterProps {
   
   // Clear all filters
   onClearAllFilters: () => void;
+
+  // Drawer control
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 export const UnifiedFilterBar: React.FC<UnifiedFilterProps> = ({
@@ -86,14 +78,14 @@ export const UnifiedFilterBar: React.FC<UnifiedFilterProps> = ({
   filterPriority,
   onPriorityFilterChange,
   searchQuery,
-  onSearchQueryChange,
   tagFilters,
   onTagFiltersChange,
-  onClearAllFilters
+  onClearAllFilters,
+  isOpen,
+  onClose
 }) => {
   // State
   const [allTags, setAllTags] = useState<Tag[]>([]);
-  const [isCompact, setIsCompact] = useState(false);
   
   // Check if there are any active filters
   const hasActiveFilters = filterStatus.size > 1 || 
@@ -117,8 +109,8 @@ export const UnifiedFilterBar: React.FC<UnifiedFilterProps> = ({
   const filterBadgeBg = useColorModeValue('blue.50', 'blue.900');
   
   // Responsive design
-  const displayLabels = useBreakpointValue({ base: false, md: true });
   const isMobile = useBreakpointValue({ base: true, md: false });
+  const drawerSize = useBreakpointValue({ base: "full", md: "sm" });
   
   // Load all available tags
   useEffect(() => {
@@ -177,7 +169,6 @@ export const UnifiedFilterBar: React.FC<UnifiedFilterProps> = ({
               colorScheme="blue"
             >
               <TagLabel>Search: {searchQuery}</TagLabel>
-              <TagCloseButton onClick={() => onSearchQueryChange('')} />
             </ChakraTag>
           )}
           
@@ -276,546 +267,243 @@ export const UnifiedFilterBar: React.FC<UnifiedFilterProps> = ({
     );
   };
   
-  // Render the compact view
-  const renderCompactView = () => {
-    return (
-      <Popover placement="bottom-start">
-        <PopoverTrigger>
-          <Button 
-            rightIcon={<FiFilter />} 
-            colorScheme={hasActiveFilters ? "blue" : "gray"}
-            variant={hasActiveFilters ? "solid" : "outline"}
-            borderRadius="full"
-          >
-            Filters
-            {activeFilterCount > 0 && (
-              <Badge ml={2} borderRadius="full" colorScheme="blue">
-                {activeFilterCount}
-              </Badge>
-            )}
-          </Button>
-        </PopoverTrigger>
-        <Portal>
-          <PopoverContent width="300px" maxWidth="95vw">
-            <PopoverBody p={4}>
-              <VStack spacing={4} align="stretch">
-                {/* Search */}
-                <Box>
-                  <Text fontWeight="medium" mb={2}>Search</Text>
-                  <InputGroup size="md">
-                    <InputLeftElement pointerEvents="none">
-                      <SearchIcon color={searchQuery ? accentColor : secondaryTextColor} />
-                    </InputLeftElement>
-                    <Input
-                      placeholder="Search tasks..."
-                      value={searchQuery}
-                      onChange={(e) => onSearchQueryChange(e.target.value)}
-                      borderRadius="md"
-                    />
-                    {searchQuery && (
-                      <InputRightElement>
-                        <IconButton
-                          aria-label="Clear search"
-                          icon={<CloseIcon />}
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => onSearchQueryChange('')}
-                        />
-                      </InputRightElement>
-                    )}
-                  </InputGroup>
-                </Box>
-                
-                {/* Status Filter */}
-                <Box>
-                  <Text fontWeight="medium" mb={2}>Status</Text>
-                  <SimpleGrid columns={2} spacing={2}>
-                    <Button
-                      size="sm"
-                      variant={filterStatus.has('all') ? "solid" : "outline"}
-                      colorScheme={filterStatus.has('all') ? "blue" : "gray"}
-                      onClick={() => onStatusFilterChange('all')}
-                      justifyContent="flex-start"
-                    >
-                      All
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={filterStatus.has('pending') ? "solid" : "outline"}
-                      colorScheme={filterStatus.has('pending') ? "blue" : "gray"}
-                      onClick={() => onStatusFilterChange('pending')}
-                      justifyContent="flex-start"
-                      leftIcon={<WarningIcon />}
-                    >
-                      Pending
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={filterStatus.has('in-progress') ? "solid" : "outline"}
-                      colorScheme={filterStatus.has('in-progress') ? "blue" : "gray"}
-                      onClick={() => onStatusFilterChange('in-progress')}
-                      justifyContent="flex-start"
-                      leftIcon={<TimeIcon />}
-                    >
-                      In Progress
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={filterStatus.has('completed') ? "solid" : "outline"}
-                      colorScheme={filterStatus.has('completed') ? "blue" : "gray"}
-                      onClick={() => onStatusFilterChange('completed')}
-                      justifyContent="flex-start"
-                      leftIcon={<CheckIcon />}
-                    >
-                      Completed
-                    </Button>
-                  </SimpleGrid>
-                </Box>
-                
-                {/* Priority Filter */}
-                <Box>
-                  <Text fontWeight="medium" mb={2}>Priority</Text>
-                  <SimpleGrid columns={2} spacing={2}>
-                    <Button
-                      size="sm"
-                      variant={filterPriority.has('all') ? "solid" : "outline"}
-                      colorScheme={filterPriority.has('all') ? "blue" : "gray"}
-                      onClick={() => onPriorityFilterChange('all')}
-                      justifyContent="flex-start"
-                    >
-                      All
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={filterPriority.has('low') ? "solid" : "outline"}
-                      colorScheme={filterPriority.has('low') ? "blue" : "gray"}
-                      onClick={() => onPriorityFilterChange('low')}
-                      justifyContent="flex-start"
-                      leftIcon={<WarningIcon color="green.500" />}
-                    >
-                      Low
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={filterPriority.has('medium') ? "solid" : "outline"}
-                      colorScheme={filterPriority.has('medium') ? "blue" : "gray"}
-                      onClick={() => onPriorityFilterChange('medium')}
-                      justifyContent="flex-start"
-                      leftIcon={<WarningIcon color="yellow.500" />}
-                    >
-                      Medium
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant={filterPriority.has('high') ? "solid" : "outline"}
-                      colorScheme={filterPriority.has('high') ? "blue" : "gray"}
-                      onClick={() => onPriorityFilterChange('high')}
-                      justifyContent="flex-start"
-                      leftIcon={<WarningIcon color="red.500" />}
-                    >
-                      High
-                    </Button>
-                  </SimpleGrid>
-                </Box>
-                
-                {/* Tag Filter */}
-                <Box>
-                  <Text fontWeight="medium" mb={2}>Tags</Text>
-                  <VStack spacing={2} align="stretch">
-                    <Menu closeOnSelect={false}>
-                      <MenuButton 
-                        as={Button} 
-                        rightIcon={<ChevronDownIcon />}
-                        size="sm"
-                        width="100%"
-                        variant="outline"
-                        colorScheme={tagFilters.selectedTags.length > 0 ? "blue" : "gray"}
-                      >
-                        {tagFilters.selectedTags.length > 0 ? 
-                          `${tagFilters.selectedTags.length} selected` : 
-                          'Select Tags'}
-                      </MenuButton>
-                      <MenuList maxH="200px" overflowY="auto">
-                        {allTags.length > 0 ? (
-                          allTags.map((tag) => (
-                            <MenuItem 
-                              key={tag.id} 
-                              onClick={() => handleTagSelect(tag)}
-                              isDisabled={tagFilters.selectedTags.some(t => t.id === tag.id)}
-                            >
-                              <TagBadge tag={tag} />
-                            </MenuItem>
-                          ))
-                        ) : (
-                          <MenuItem isDisabled>No tags available</MenuItem>
-                        )}
-                      </MenuList>
-                    </Menu>
-                    
-                    {tagFilters.selectedTags.length > 0 && (
-                      <HStack spacing={2}>
-                        <Select
-                          value={tagFilters.matchType}
-                          onChange={(e) => handleTagMatchTypeChange(e.target.value as 'any' | 'all')}
-                          size="sm"
-                          flex="1"
-                        >
-                          <option value="any">Match Any Tag</option>
-                          <option value="all">Match All Tags</option>
-                        </Select>
-                        <Button
-                          size="sm"
-                          colorScheme="red"
-                          variant="ghost"
-                          onClick={handleClearTagFilters}
-                        >
-                          Clear
-                        </Button>
-                      </HStack>
-                    )}
-                    
-                    {tagFilters.selectedTags.length > 0 && (
-                      <Flex mt={1} flexWrap="wrap" gap={2}>
-                        {tagFilters.selectedTags.map((tag) => (
-                          <TagBadge
-                            key={tag.id}
-                            tag={tag}
-                            isRemovable
-                            onRemove={() => handleTagRemove(tag.id)}
-                          />
-                        ))}
-                      </Flex>
-                    )}
-                  </VStack>
-                </Box>
-              </VStack>
-            </PopoverBody>
-            <PopoverFooter
-              border="0"
-              display="flex"
-              alignItems="center"
-              justifyContent="space-between"
-              pb={4}
-              px={4}
-            >
-              <Button 
-                size="sm"
-                colorScheme="gray" 
-                onClick={() => setIsCompact(false)}
-              >
-                Expand Filters
-              </Button>
-              
-              <Button 
-                size="sm"
-                colorScheme="red" 
-                variant="outline"
-                onClick={onClearAllFilters}
-                isDisabled={!hasActiveFilters}
-              >
-                Clear All
-              </Button>
-            </PopoverFooter>
-          </PopoverContent>
-        </Portal>
-      </Popover>
-    );
-  };
-  
-  // Render the expanded view
-  const renderExpandedView = () => {
-    return (
+  // Main filter sidebar content
+  const sidebarContent = (
+    <VStack spacing={6} align="stretch">
       <Box>
-        <Flex 
-          justifyContent="space-between" 
-          alignItems="center" 
-          flexWrap={{ base: "wrap", md: "nowrap" }}
-          gap={3}
-        >
-          {/* Search Input */}
-          <InputGroup size="md" maxW={{ base: "100%", md: "280px" }}>
-            <InputLeftElement pointerEvents="none">
-              <SearchIcon color={searchQuery ? accentColor : secondaryTextColor} />
-            </InputLeftElement>
-            <Input
-              placeholder="Search tasks..."
-              value={searchQuery}
-              onChange={(e) => onSearchQueryChange(e.target.value)}
-              borderRadius="full"
-              borderWidth="2px"
-              borderColor={searchQuery ? 'blue.500' : 'transparent'}
-              _hover={{
-                borderColor: searchQuery ? 'blue.600' : 'gray.300'
-              }}
-              _focus={{
-                borderColor: 'blue.500'
-              }}
-            />
-            {searchQuery && (
-              <InputRightElement>
-                <IconButton
-                  aria-label="Clear search"
-                  icon={<CloseIcon />}
-                  size="sm"
-                  variant="ghost"
-                  colorScheme="gray"
-                  onClick={() => onSearchQueryChange('')}
-                />
-              </InputRightElement>
-            )}
-          </InputGroup>
-          
-          <HStack spacing={3} flexWrap="wrap" justifyContent="flex-end">
-            {/* Status Filter */}
-            <Menu closeOnSelect={false}>
-              <MenuButton
-                as={Button}
-                rightIcon={<ChevronDownIcon />}
-                variant="outline"
-                colorScheme={!filterStatus.has('all') ? 'blue' : 'gray'}
-                borderRadius="full"
-                px={6}
-                fontWeight={!filterStatus.has('all') ? 'bold' : 'normal'}
-              >
-                <HStack spacing={2}>
-                  <HamburgerIcon />
-                  <Text>Status</Text>
-                  {!filterStatus.has('all') && (
-                    <Badge colorScheme="blue" borderRadius="full">
-                      {filterStatus.size}
-                    </Badge>
-                  )}
-                </HStack>
-              </MenuButton>
-              <MenuList>
-                <MenuItem
-                  onClick={() => onStatusFilterChange('all')}
-                  closeOnSelect={false}
-                >
-                  <Flex justify="space-between" align="center" width="100%">
-                    <Text>All Status</Text>
-                    {filterStatus.has('all') && <CheckIcon color="blue.500" />}
-                  </Flex>
-                </MenuItem>
-                <MenuItem
-                  onClick={() => onStatusFilterChange('pending')}
-                  closeOnSelect={false}
-                >
-                  <Flex justify="space-between" align="center" width="100%">
-                    <HStack>
-                      <WarningIcon color="gray.500" />
-                      <Text>Pending</Text>
-                    </HStack>
-                    {filterStatus.has('pending') && <CheckIcon color="blue.500" />}
-                  </Flex>
-                </MenuItem>
-                <MenuItem
-                  onClick={() => onStatusFilterChange('in-progress')}
-                  closeOnSelect={false}
-                >
-                  <Flex justify="space-between" align="center" width="100%">
-                    <HStack>
-                      <TimeIcon color="blue.500" />
-                      <Text>In Progress</Text>
-                    </HStack>
-                    {filterStatus.has('in-progress') && <CheckIcon color="blue.500" />}
-                  </Flex>
-                </MenuItem>
-                <MenuItem
-                  onClick={() => onStatusFilterChange('completed')}
-                  closeOnSelect={false}
-                >
-                  <Flex justify="space-between" align="center" width="100%">
-                    <HStack>
-                      <CheckIcon color="green.500" />
-                      <Text>Completed</Text>
-                    </HStack>
-                    {filterStatus.has('completed') && <CheckIcon color="blue.500" />}
-                  </Flex>
-                </MenuItem>
-              </MenuList>
-            </Menu>
-            
-            {/* Priority Filter */}
-            <Menu closeOnSelect={false}>
-              <MenuButton
-                as={Button}
-                rightIcon={<ChevronDownIcon />}
-                variant="outline"
-                colorScheme={!filterPriority.has('all') ? 'blue' : 'gray'}
-                borderRadius="full"
-                px={6}
-                fontWeight={!filterPriority.has('all') ? 'bold' : 'normal'}
-              >
-                <HStack spacing={2}>
-                  <WarningIcon />
-                  <Text>Priority</Text>
-                  {!filterPriority.has('all') && (
-                    <Badge colorScheme="blue" borderRadius="full">
-                      {filterPriority.size}
-                    </Badge>
-                  )}
-                </HStack>
-              </MenuButton>
-              <MenuList>
-                <MenuItem
-                  onClick={() => onPriorityFilterChange('all')}
-                  closeOnSelect={false}
-                >
-                  <Flex justify="space-between" align="center" width="100%">
-                    <Text>All Priority</Text>
-                    {filterPriority.has('all') && <CheckIcon color="blue.500" />}
-                  </Flex>
-                </MenuItem>
-                <MenuItem
-                  onClick={() => onPriorityFilterChange('low')}
-                  closeOnSelect={false}
-                >
-                  <Flex justify="space-between" align="center" width="100%">
-                    <HStack>
-                      <WarningIcon color="green.500" />
-                      <Text>Low</Text>
-                    </HStack>
-                    {filterPriority.has('low') && <CheckIcon color="blue.500" />}
-                  </Flex>
-                </MenuItem>
-                <MenuItem
-                  onClick={() => onPriorityFilterChange('medium')}
-                  closeOnSelect={false}
-                >
-                  <Flex justify="space-between" align="center" width="100%">
-                    <HStack>
-                      <WarningIcon color="yellow.500" />
-                      <Text>Medium</Text>
-                    </HStack>
-                    {filterPriority.has('medium') && <CheckIcon color="blue.500" />}
-                  </Flex>
-                </MenuItem>
-                <MenuItem
-                  onClick={() => onPriorityFilterChange('high')}
-                  closeOnSelect={false}
-                >
-                  <Flex justify="space-between" align="center" width="100%">
-                    <HStack>
-                      <WarningIcon color="red.500" />
-                      <Text>High</Text>
-                    </HStack>
-                    {filterPriority.has('high') && <CheckIcon color="blue.500" />}
-                  </Flex>
-                </MenuItem>
-              </MenuList>
-            </Menu>
-            
-            {/* Tag Filter */}
-            <Menu closeOnSelect={false}>
-              <MenuButton
-                as={Button}
-                rightIcon={<ChevronDownIcon />}
-                variant="outline"
-                colorScheme={tagFilters.selectedTags.length > 0 ? 'blue' : 'gray'}
-                borderRadius="full"
-                px={6}
-                fontWeight={tagFilters.selectedTags.length > 0 ? 'bold' : 'normal'}
-              >
-                <HStack spacing={2}>
-                  <FiTag />
-                  <Text>Tags</Text>
-                  {tagFilters.selectedTags.length > 0 && (
-                    <Badge colorScheme="blue" borderRadius="full">
-                      {tagFilters.selectedTags.length}
-                    </Badge>
-                  )}
-                </HStack>
-              </MenuButton>
-              <MenuList>
-                {allTags.length > 0 ? (
-                  <>
-                    {allTags.map((tag) => (
-                      <MenuItem 
-                        key={tag.id} 
-                        onClick={() => handleTagSelect(tag)}
-                        closeOnSelect={false}
-                        isDisabled={tagFilters.selectedTags.some(t => t.id === tag.id)}
-                      >
-                        <Flex justify="space-between" align="center" width="100%">
-                          <TagBadge tag={tag} />
-                          {tagFilters.selectedTags.some(t => t.id === tag.id) && <CheckIcon color="blue.500" />}
-                        </Flex>
-                      </MenuItem>
-                    ))}
-                    
-                    {tagFilters.selectedTags.length > 0 && (
-                      <>
-                        <Divider my={2} />
-                        <MenuItem closeOnSelect={false}>
-                          <Flex justify="space-between" align="center" width="100%">
-                            <Select
-                              value={tagFilters.matchType}
-                              onChange={(e) => handleTagMatchTypeChange(e.target.value as 'any' | 'all')}
-                              size="sm"
-                              width="full"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <option value="any">Match Any Tag</option>
-                              <option value="all">Match All Tags</option>
-                            </Select>
-                          </Flex>
-                        </MenuItem>
-                        <MenuItem onClick={handleClearTagFilters}>
-                          Clear Tag Filters
-                        </MenuItem>
-                      </>
-                    )}
-                  </>
-                ) : (
-                  <MenuItem isDisabled>No tags available</MenuItem>
-                )}
-              </MenuList>
-            </Menu>
-            
-            {hasActiveFilters && (
-              <Tooltip label="Clear all filters" hasArrow>
-                <IconButton
-                  aria-label="Clear all filters"
-                  icon={<MdFilterAltOff />}
-                  colorScheme="red"
-                  variant="outline"
-                  onClick={onClearAllFilters}
-                  borderRadius="full"
-                />
-              </Tooltip>
-            )}
-            
-            {/* Toggle Compact Mode */}
-            <Tooltip label="Compact filter view" hasArrow>
-              <IconButton
-                aria-label="Compact filter view"
-                icon={<SettingsIcon />}
-                variant="outline"
-                onClick={() => setIsCompact(true)}
-                borderRadius="full"
-              />
-            </Tooltip>
-          </HStack>
-        </Flex>
-        
-        {/* Active Filter Badges */}
-        {renderActiveFilterBadges()}
+        <Text fontWeight="bold" fontSize="lg" mb={3}>Filters</Text>
+        {hasActiveFilters && (
+          <Flex justify="space-between" align="center" mb={4}>
+            <Badge colorScheme="blue" fontSize="sm" borderRadius="full" px={2} py={1}>
+              {activeFilterCount} active {activeFilterCount === 1 ? 'filter' : 'filters'}
+            </Badge>
+            <Button
+              size="sm"
+              leftIcon={<MdFilterAltOff />}
+              colorScheme="red"
+              variant="outline"
+              onClick={onClearAllFilters}
+            >
+              Clear All Filters
+            </Button>
+          </Flex>
+        )}
       </Box>
-    );
-  };
+      
+      {/* Status Filter */}
+      <Box>
+        <Text fontWeight="semibold" mb={3}>Status</Text>
+        <SimpleGrid columns={2} spacing={2}>
+          <Button
+            size="md"
+            variant={filterStatus.has('all') ? "solid" : "outline"}
+            colorScheme={filterStatus.has('all') ? "blue" : "gray"}
+            onClick={() => onStatusFilterChange('all')}
+            justifyContent="flex-start"
+            borderRadius="md"
+          >
+            All Statuses
+          </Button>
+          <Button
+            size="md"
+            variant={filterStatus.has('pending') ? "solid" : "outline"}
+            colorScheme={filterStatus.has('pending') ? "blue" : "gray"}
+            onClick={() => onStatusFilterChange('pending')}
+            justifyContent="flex-start"
+            leftIcon={<WarningIcon />}
+            borderRadius="md"
+          >
+            Pending
+          </Button>
+          <Button
+            size="md"
+            variant={filterStatus.has('in-progress') ? "solid" : "outline"}
+            colorScheme={filterStatus.has('in-progress') ? "blue" : "gray"}
+            onClick={() => onStatusFilterChange('in-progress')}
+            justifyContent="flex-start"
+            leftIcon={<TimeIcon />}
+            borderRadius="md"
+          >
+            In Progress
+          </Button>
+          <Button
+            size="md"
+            variant={filterStatus.has('completed') ? "solid" : "outline"}
+            colorScheme={filterStatus.has('completed') ? "blue" : "gray"}
+            onClick={() => onStatusFilterChange('completed')}
+            justifyContent="flex-start"
+            leftIcon={<CheckIcon />}
+            borderRadius="md"
+          >
+            Completed
+          </Button>
+        </SimpleGrid>
+      </Box>
+      
+      <Divider />
+      
+      {/* Priority Filter */}
+      <Box>
+        <Text fontWeight="semibold" mb={3}>Priority</Text>
+        <SimpleGrid columns={2} spacing={2}>
+          <Button
+            size="md"
+            variant={filterPriority.has('all') ? "solid" : "outline"}
+            colorScheme={filterPriority.has('all') ? "blue" : "gray"}
+            onClick={() => onPriorityFilterChange('all')}
+            justifyContent="flex-start"
+            borderRadius="md"
+          >
+            All Priorities
+          </Button>
+          <Button
+            size="md"
+            variant={filterPriority.has('low') ? "solid" : "outline"}
+            colorScheme={filterPriority.has('low') ? "blue" : "gray"}
+            onClick={() => onPriorityFilterChange('low')}
+            justifyContent="flex-start"
+            leftIcon={<WarningIcon color="green.500" />}
+            borderRadius="md"
+          >
+            Low
+          </Button>
+          <Button
+            size="md"
+            variant={filterPriority.has('medium') ? "solid" : "outline"}
+            colorScheme={filterPriority.has('medium') ? "blue" : "gray"}
+            onClick={() => onPriorityFilterChange('medium')}
+            justifyContent="flex-start"
+            leftIcon={<WarningIcon color="yellow.500" />}
+            borderRadius="md"
+          >
+            Medium
+          </Button>
+          <Button
+            size="md"
+            variant={filterPriority.has('high') ? "solid" : "outline"}
+            colorScheme={filterPriority.has('high') ? "blue" : "gray"}
+            onClick={() => onPriorityFilterChange('high')}
+            justifyContent="flex-start"
+            leftIcon={<WarningIcon color="red.500" />}
+            borderRadius="md"
+          >
+            High
+          </Button>
+        </SimpleGrid>
+      </Box>
+      
+      <Divider />
+      
+      {/* Tag Filter */}
+      <Box>
+        <Text fontWeight="semibold" mb={3}>Tags</Text>
+        <VStack spacing={3} align="stretch">
+          <Menu closeOnSelect={false}>
+            <MenuButton 
+              as={Button} 
+              rightIcon={<ChevronDownIcon />}
+              width="100%"
+              variant="outline"
+              colorScheme={tagFilters.selectedTags.length > 0 ? "blue" : "gray"}
+              borderRadius="md"
+            >
+              {tagFilters.selectedTags.length > 0 ? 
+                `${tagFilters.selectedTags.length} selected` : 
+                'Select Tags'}
+            </MenuButton>
+            <MenuList maxH="300px" overflowY="auto">
+              {allTags.length > 0 ? (
+                allTags.map((tag) => (
+                  <MenuItem 
+                    key={tag.id} 
+                    onClick={() => handleTagSelect(tag)}
+                    isDisabled={tagFilters.selectedTags.some(t => t.id === tag.id)}
+                  >
+                    <TagBadge tag={tag} />
+                  </MenuItem>
+                ))
+              ) : (
+                <MenuItem isDisabled>No tags available</MenuItem>
+              )}
+            </MenuList>
+          </Menu>
+          
+          {tagFilters.selectedTags.length > 0 && (
+            <HStack spacing={2}>
+              <Select
+                value={tagFilters.matchType}
+                onChange={(e) => handleTagMatchTypeChange(e.target.value as 'any' | 'all')}
+                flex="1"
+                borderRadius="md"
+              >
+                <option value="any">Match Any Tag</option>
+                <option value="all">Match All Tags</option>
+              </Select>
+              <Button
+                colorScheme="red"
+                variant="ghost"
+                onClick={handleClearTagFilters}
+              >
+                Clear
+              </Button>
+            </HStack>
+          )}
+          
+          {tagFilters.selectedTags.length > 0 && (
+            <Flex mt={1} flexWrap="wrap" gap={2}>
+              {tagFilters.selectedTags.map((tag) => (
+                <TagBadge
+                  key={tag.id}
+                  tag={tag}
+                  isRemovable
+                  onRemove={() => handleTagRemove(tag.id)}
+                />
+              ))}
+            </Flex>
+          )}
+        </VStack>
+      </Box>
+      
+      {/* Active Filter Summary */}
+      {hasActiveFilters && (
+        <>
+          <Divider />
+          <Box>
+            <Text fontWeight="semibold" mb={3}>Active Filters</Text>
+            {renderActiveFilterBadges()}
+          </Box>
+        </>
+      )}
+    </VStack>
+  );
   
   return (
-    <Box 
-      p={4} 
-      borderWidth="1px" 
-      borderRadius="lg" 
-      bg={bgColor} 
-      borderColor={borderColor}
-      boxShadow="sm"
-      transition="all 0.2s"
+    <Drawer
+      isOpen={isOpen}
+      placement="right"
+      onClose={onClose}
+      size={drawerSize}
     >
-      {isCompact ? renderCompactView() : renderExpandedView()}
-    </Box>
+      <DrawerOverlay />
+      <DrawerContent>
+        <DrawerCloseButton />
+        <DrawerHeader borderBottomWidth="1px">
+          <Flex align="center" gap={2}>
+            <FiFilter />
+            <Text>Filter Tasks</Text>
+          </Flex>
+        </DrawerHeader>
+
+        <DrawerBody py={4}>
+          {sidebarContent}
+        </DrawerBody>
+
+        <DrawerFooter borderTopWidth="1px">
+          <Button colorScheme="blue" mr={3} onClick={onClose}>
+            Apply Filters
+          </Button>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   );
 }; 

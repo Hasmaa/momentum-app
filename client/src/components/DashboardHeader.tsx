@@ -18,6 +18,10 @@ import {
   Divider,
   useBreakpointValue,
   useColorModeValue,
+  InputGroup,
+  InputLeftElement,
+  Input,
+  InputRightElement,
 } from '@chakra-ui/react';
 import {
   AddIcon,
@@ -34,9 +38,11 @@ import {
   ViewIcon,
   WarningIcon,
   CheckIcon,
+  SearchIcon,
 } from '@chakra-ui/icons';
 import { MdLabel } from 'react-icons/md';
 import { FaClock } from 'react-icons/fa';
+import { FiFilter } from 'react-icons/fi';
 import { TrophyIcon, MedalIcon } from './AchievementIcon';
 
 interface DashboardHeaderProps {
@@ -57,6 +63,9 @@ interface DashboardHeaderProps {
   recentlyUnlocked: boolean;
   pomodoroActive?: boolean;
   pomodoroTimeRemaining?: string;
+  searchQuery: string;
+  onSearchQueryChange: (query: string) => void;
+  onToggleFilterSidebar: () => void;
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
@@ -77,6 +86,9 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   recentlyUnlocked,
   pomodoroActive = false,
   pomodoroTimeRemaining = '',
+  searchQuery = '',
+  onSearchQueryChange,
+  onToggleFilterSidebar,
 }) => {
   const { colorMode, toggleColorMode } = useColorMode();
   const isMobile = useBreakpointValue({ base: true, md: false });
@@ -85,6 +97,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   const buttonGroupBg = useColorModeValue('gray.50', 'gray.700');
   const dividerColor = useColorModeValue('gray.200', 'gray.600');
   const selectionBg = useColorModeValue('blue.50', 'blue.900');
+  const accentColor = useColorModeValue('blue.500', 'blue.400');
+  const secondaryTextColor = useColorModeValue('gray.500', 'gray.400');
 
   const ButtonGroup = ({ children }: { children: React.ReactNode }) => (
     <HStack
@@ -101,11 +115,44 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
   return (
     <Flex 
-      justify="flex-end" 
+      justify="space-between" 
       align="center" 
       wrap={{ base: "wrap", md: "nowrap" }} 
       gap={4}
     >
+      {/* Search Bar */}
+      <InputGroup size="md" maxW={{ base: "100%", md: "280px" }} mb={{ base: 3, md: 0 }}>
+        <InputLeftElement pointerEvents="none">
+          <SearchIcon color={searchQuery ? accentColor : secondaryTextColor} />
+        </InputLeftElement>
+        <Input
+          placeholder="Search tasks..."
+          value={searchQuery}
+          onChange={(e) => onSearchQueryChange(e.target.value)}
+          borderRadius="full"
+          borderWidth="2px"
+          borderColor={searchQuery ? 'blue.500' : 'transparent'}
+          _hover={{
+            borderColor: searchQuery ? 'blue.600' : 'gray.300'
+          }}
+          _focus={{
+            borderColor: 'blue.500'
+          }}
+        />
+        {searchQuery && (
+          <InputRightElement>
+            <IconButton
+              aria-label="Clear search"
+              icon={<CloseIcon />}
+              size="sm"
+              variant="ghost"
+              colorScheme="gray"
+              onClick={() => onSearchQueryChange('')}
+            />
+          </InputRightElement>
+        )}
+      </InputGroup>
+
       {/* Action Buttons */}
       <Flex 
         gap={3} 
@@ -220,6 +267,17 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
 
         {/* Secondary Actions */}
         <ButtonGroup>
+          <Tooltip label="Filters" hasArrow>
+            <IconButton
+              aria-label="Toggle filter sidebar"
+              icon={<Icon as={FiFilter} />}
+              size="sm"
+              colorScheme="blue"
+              variant="ghost"
+              onClick={onToggleFilterSidebar}
+            />
+          </Tooltip>
+
           <Tooltip label={`Switch to ${isListView ? 'board' : 'list'} view (⌘/)`} hasArrow>
             <IconButton
               aria-label={`Switch to ${isListView ? 'board' : 'list'} view`}
