@@ -31,7 +31,6 @@ import {
   useDisclosure,
   Switch,
   Icon,
-  useColorMode,
   AlertDialog,
   AlertDialogBody,
   AlertDialogFooter,
@@ -171,7 +170,6 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     onClose: onShortcutsClose 
   } = useDisclosure();
 
-  const { colorMode, toggleColorMode } = useColorMode();
   const [title, setTitle] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [status, setStatus] = useState<TaskStatus>('pending');
@@ -249,7 +247,19 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     onClose: onDeleteAlertClose 
   } = useDisclosure();
 
-  const hasActiveFilters = filterStatus.size > 1 || filterPriority.size > 1 || searchQuery.trim() !== '' || tagFilters.selectedTags.length > 0;
+  // Add state for filter sidebar
+  const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
+
+  // Function to toggle the filter sidebar
+  const toggleFilterSidebar = () => {
+    setIsFilterSidebarOpen(!isFilterSidebarOpen);
+  };
+
+  // Check if any filters are active
+  const hasActiveFilters = filterStatus.size > 1 || 
+                          filterPriority.size > 1 || 
+                          searchQuery.trim() !== '' || 
+                          tagFilters.selectedTags.length > 0;
   
   const clearFilters = () => {
     setFilterStatus(new Set(['all']));
@@ -1730,7 +1740,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     transition: { duration: 0.2 }
   });
 
-  // Add effect to listen for Pomodoro timer changes
+  // Effect for Pomodoro timer changes
   useEffect(() => {
     // Subscribe to Pomodoro store changes
     const unsubscribe = usePomodoroStore.subscribe(() => {
@@ -1760,14 +1770,6 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     
     return () => unsubscribe();
   }, []);
-
-  // Add state for filter sidebar
-  const [isFilterSidebarOpen, setIsFilterSidebarOpen] = useState(false);
-
-  // Function to toggle the filter sidebar
-  const toggleFilterSidebar = () => {
-    setIsFilterSidebarOpen(!isFilterSidebarOpen);
-  };
 
   return (
     <Box bg={mainBg} minH="100vh" transition="background-color 0.2s">
@@ -1827,6 +1829,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                 searchQuery={searchQuery}
                 onSearchQueryChange={setSearchQuery}
                 onToggleFilterSidebar={toggleFilterSidebar}
+                hasActiveFilters={hasActiveFilters}
               />
             </CardBody>
           </Card>

@@ -22,6 +22,7 @@ import {
   InputLeftElement,
   Input,
   InputRightElement,
+  Badge,
 } from '@chakra-ui/react';
 import {
   AddIcon,
@@ -66,6 +67,7 @@ interface DashboardHeaderProps {
   searchQuery: string;
   onSearchQueryChange: (query: string) => void;
   onToggleFilterSidebar: () => void;
+  hasActiveFilters?: boolean;
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
@@ -89,6 +91,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   searchQuery = '',
   onSearchQueryChange,
   onToggleFilterSidebar,
+  hasActiveFilters = false,
 }) => {
   const { colorMode, toggleColorMode } = useColorMode();
   const isMobile = useBreakpointValue({ base: true, md: false });
@@ -120,8 +123,15 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       wrap={{ base: "wrap", md: "nowrap" }} 
       gap={4}
     >
-      {/* Search Bar */}
-      <InputGroup size="md" maxW={{ base: "100%", md: "280px" }} mb={{ base: 3, md: 0 }}>
+      {/* Search Bar - Make it bigger and match styling with other elements */}
+      <InputGroup 
+        size="md" 
+        maxW={{ base: "100%", md: "350px" }} 
+        mb={{ base: 3, md: 0 }}
+        bg={buttonGroupBg}
+        borderRadius="lg"
+        p={1}
+      >
         <InputLeftElement pointerEvents="none">
           <SearchIcon color={searchQuery ? accentColor : secondaryTextColor} />
         </InputLeftElement>
@@ -129,14 +139,11 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           placeholder="Search tasks..."
           value={searchQuery}
           onChange={(e) => onSearchQueryChange(e.target.value)}
-          borderRadius="full"
-          borderWidth="2px"
-          borderColor={searchQuery ? 'blue.500' : 'transparent'}
-          _hover={{
-            borderColor: searchQuery ? 'blue.600' : 'gray.300'
-          }}
+          borderRadius="md"
+          bg="transparent"
+          border="none"
           _focus={{
-            borderColor: 'blue.500'
+            boxShadow: "none",
           }}
         />
         {searchQuery && (
@@ -268,14 +275,26 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         {/* Secondary Actions */}
         <ButtonGroup>
           <Tooltip label="Filters" hasArrow>
-            <IconButton
-              aria-label="Toggle filter sidebar"
-              icon={<Icon as={FiFilter} />}
-              size="sm"
-              colorScheme="blue"
-              variant="ghost"
-              onClick={onToggleFilterSidebar}
-            />
+            <Box position="relative">
+              <IconButton
+                aria-label="Toggle filter sidebar"
+                icon={<Icon as={FiFilter} />}
+                size="sm"
+                colorScheme={hasActiveFilters ? "blue" : "gray"}
+                variant={hasActiveFilters ? "solid" : "ghost"}
+                onClick={onToggleFilterSidebar}
+              />
+              {hasActiveFilters && (
+                <Badge 
+                  position="absolute" 
+                  top="-2px" 
+                  right="-2px" 
+                  colorScheme="blue" 
+                  borderRadius="full" 
+                  boxSize="8px"
+                />
+              )}
+            </Box>
           </Tooltip>
 
           <Tooltip label={`Switch to ${isListView ? 'board' : 'list'} view (⌘/)`} hasArrow>
