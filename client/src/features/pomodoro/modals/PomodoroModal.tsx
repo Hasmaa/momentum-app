@@ -97,12 +97,17 @@ const moonRockAnimation = keyframes`
 
 // Add ambient sound options
 const AMBIENT_SOUNDS = [
-  { id: 'coffee-shop', name: 'Coffee Shop', url: 'https://assets.mixkit.co/sfx/preview/mixkit-coffee-shop-ambience-614.mp3' },
-  { id: 'rain', name: 'Rain', url: 'https://assets.mixkit.co/sfx/preview/mixkit-light-rain-ambience-1253.mp3' },
-  { id: 'forest', name: 'Forest', url: 'https://assets.mixkit.co/sfx/preview/mixkit-forest-birds-ambience-1242.mp3' },
-  { id: 'waves', name: 'Ocean Waves', url: 'https://assets.mixkit.co/sfx/preview/mixkit-sea-waves-ambience-1189.mp3' },
-  { id: 'white-noise', name: 'White Noise', url: 'https://assets.mixkit.co/sfx/preview/mixkit-restaurant-ambience-109.mp3' },
+  { id: 'forest', name: 'Forest', url: '/sounds/forest-ambience.mp3' },
+  { id: 'rain', name: 'Rain', url: '/sounds/gentle-rain.mp3' },
+  { id: 'white-noise', name: 'White Noise', url: '/sounds/white-noise.mp3' },
+  { id: 'meditation', name: 'Meditation Bells', url: '/sounds/meditation-bells.mp3' },
 ];
+
+// Timer completion sounds - using local files except bell which was explicitly excluded
+const COMPLETION_SOUNDS = {
+  focus: '/sounds/meditation-bells.mp3',
+  break: '/sounds/meditation-bells.mp3'
+};
 
 interface PomodoroModalProps {
   isOpen: boolean;
@@ -151,6 +156,10 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
   const textColor = useColorModeValue('gray.800', 'white');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
   
+  // Focus and Break colors - changed to make focus blue and break green
+  const focusColor = "blue.500";
+  const breakColor = "green.500";
+  
   // Focus mode colors and styles
   const focusBgColor = useColorModeValue(
     'linear-gradient(180deg, #87CEEB 0%, #E0F7FA 100%)',
@@ -176,16 +185,34 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
   // Handle sound selection change
   const handleSoundChange = (soundId: string) => {
     setCurrentSound(soundId === 'none' ? null : soundId);
+    
     if (audioRef.current) {
+      // Stop any current audio
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      
       if (soundId === 'none') {
-        audioRef.current.pause();
         audioRef.current.src = '';
       } else {
         const sound = AMBIENT_SOUNDS.find(s => s.id === soundId);
         if (sound) {
+          // Set the new sound source
           audioRef.current.src = sound.url;
           audioRef.current.load();
-          audioRef.current.play().catch(err => console.error('Error playing sound:', err));
+          
+          // Only autoplay if timer is running and not paused
+          if (isRunning && !isPaused) {
+            audioRef.current.play().catch(err => {
+              console.error('Error playing sound:', err);
+              toast({
+                title: 'Could not play sound',
+                description: 'There was an issue playing the selected sound.',
+                status: 'error',
+                duration: 3000,
+                isClosable: true,
+              });
+            });
+          }
         }
       }
     }
@@ -197,7 +224,25 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
       const sound = AMBIENT_SOUNDS.find(s => s.id === currentSound);
       if (sound) {
         if (audioRef.current.paused) {
-          audioRef.current.play().catch(err => console.error('Error playing sound:', err));
+          // Make sure we have the correct source
+          const currentSrc = audioRef.current.src;
+          const expectedSrc = new URL(sound.url, window.location.origin).href;
+          if (currentSrc !== expectedSrc) {
+            audioRef.current.src = sound.url;
+            audioRef.current.load();
+          }
+          
+          // Try to play with error handling
+          audioRef.current.play().catch(err => {
+            console.error('Error playing sound:', err);
+            toast({
+              title: 'Could not play sound',
+              description: 'This may be due to browser restrictions. Try interacting with the page first.',
+              status: 'error',
+              duration: 3000,
+              isClosable: true,
+            });
+          });
         }
       }
     }
@@ -218,12 +263,22 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
     }
   };
   
-  // Initialize audio
+  // Initialize audio with the preloaded sound
   useEffect(() => {
     if (!audioRef.current) {
       audioRef.current = new Audio();
       audioRef.current.loop = true;
       audioRef.current.volume = volume / 100;
+      audioRef.current.muted = isMuted;
+      
+      // If there's a current sound selected, load it
+      if (currentSound) {
+        const sound = AMBIENT_SOUNDS.find(s => s.id === currentSound);
+        if (sound) {
+          audioRef.current.src = sound.url;
+          audioRef.current.load();
+        }
+      }
     }
     
     return () => {
@@ -233,6 +288,20 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
       }
     };
   }, []);
+  
+  // Update audio volume when it changes
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = volume / 100;
+    }
+  }, [volume]);
+  
+  // Update audio muted state when it changes
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.muted = isMuted;
+    }
+  }, [isMuted]);
   
   // Start timer
   const startTimer = useCallback(() => {
@@ -264,8 +333,8 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
           // Play completion sound
           const completionSound = new Audio(
             isBreak 
-              ? 'https://assets.mixkit.co/sfx/preview/mixkit-alert-quick-chime-766.mp3'
-              : 'https://assets.mixkit.co/sfx/preview/mixkit-achievement-bell-600.mp3'
+              ? COMPLETION_SOUNDS.break
+              : COMPLETION_SOUNDS.focus
           );
           completionSound.play().catch(e => console.error("Couldn't play completion sound", e));
           
@@ -666,14 +735,14 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                 <Progress
                   value={(totalTime - time) / totalTime * 100}
                   size="sm"
-                  colorScheme={isPaused ? "yellow" : isBreak ? "blue" : "red"}
+                  colorScheme={isPaused ? "yellow" : isBreak ? "green" : "blue"}
                   borderRadius="full"
                 />
               </Box>
 
               {/* Status text */}
               <Badge
-                colorScheme={isPaused ? "yellow" : isBreak ? "blue" : "red"}
+                colorScheme={isPaused ? "yellow" : isBreak ? "green" : "blue"}
                 fontSize="md"
                 px={4}
                 py={2}
@@ -689,7 +758,7 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                   <IconButton
                     aria-label="Start Timer"
                     icon={<FaPlay />}
-                    colorScheme="green"
+                    colorScheme={isBreak ? "green" : "blue"}
                     size="lg"
                     isRound
                     onClick={startTimer}
@@ -708,7 +777,7 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                 <IconButton
                   aria-label="Reset Timer"
                   icon={<FaUndo />}
-                  colorScheme="blue"
+                  colorScheme="gray"
                   size="md"
                   isRound
                   onClick={resetTimer}
@@ -751,28 +820,32 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                         aria-label="Play Sound"
                         icon={<FaPlay />}
                         size="sm"
-                        colorScheme="green"
+                        variant="ghost"
+                        colorScheme="gray"
                         onClick={playAmbientSound}
                       />
                       <IconButton
                         aria-label="Pause Sound"
                         icon={<FaPause />}
                         size="sm"
-                        colorScheme="yellow"
+                        variant="ghost"
+                        colorScheme="gray"
                         onClick={pauseAmbientSound}
                       />
                       <IconButton
                         aria-label="Stop Sound"
                         icon={<FaTimes />}
                         size="sm"
-                        colorScheme="red"
+                        variant="ghost"
+                        colorScheme="gray"
                         onClick={stopAmbientSound}
                       />
                       <IconButton
                         aria-label={isMuted ? "Unmute" : "Mute"}
                         icon={isMuted ? <FaVolumeMute /> : <FaVolumeUp />}
                         size="sm"
-                        colorScheme={isMuted ? "gray" : "blue"}
+                        variant="ghost"
+                        colorScheme="gray"
                         onClick={handleMuteToggle}
                       />
                     </HStack>
@@ -892,7 +965,7 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
           <ModalHeader display="flex" alignItems="center" justifyContent="space-between" pt={5} pb={4} pr={12}>
             <Text>Pomodoro Timer</Text>
             <Badge
-              colorScheme={isPaused ? 'yellow' : isRunning ? (isBreak ? 'blue' : 'red') : 'gray'}
+              colorScheme={isPaused ? 'yellow' : isRunning ? (isBreak ? 'green' : 'blue') : 'gray'}
               px={2}
               py={1}
               borderRadius="md"
@@ -963,7 +1036,7 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                   <Progress
                     value={(totalTime - time) / totalTime * 100}
                     size="xs"
-                    colorScheme={isPaused ? 'yellow' : isBreak ? 'blue' : 'red'}
+                    colorScheme={isPaused ? 'yellow' : isBreak ? 'green' : 'blue'}
                     position="absolute"
                     top={0}
                     left={0}
@@ -981,7 +1054,7 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                     {formatTime(time)}
                   </Text>
                   
-                  <Text fontSize="sm" mt={2} color={isBreak ? 'blue.500' : 'red.500'} fontWeight="medium">
+                  <Text fontSize="sm" mt={2} color={isBreak ? breakColor : focusColor} fontWeight="medium">
                     {isBreak ? 'BREAK TIME' : 'FOCUS TIME'}
                   </Text>
                 </Box>
@@ -993,7 +1066,7 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                       <IconButton
                         aria-label="Start Timer"
                         icon={<FaPlay />}
-                        colorScheme="green"
+                        colorScheme={isBreak ? "green" : "blue"}
                         size="lg"
                         isRound
                         onClick={startTimer}
@@ -1016,7 +1089,7 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                     <IconButton
                       aria-label="Reset Timer"
                       icon={<FaUndo />}
-                      colorScheme="blue"
+                      colorScheme="gray"
                       size="md"
                       isRound
                       onClick={resetTimer}
@@ -1028,6 +1101,7 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                       aria-label="Enter Focus Mode"
                       icon={<FaExpand />}
                       colorScheme="purple"
+                      variant="outline"
                       size="md"
                       isRound
                       onClick={toggleFocusMode}
@@ -1067,28 +1141,32 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                           aria-label="Play Sound"
                           icon={<FaPlay />}
                           size="sm"
-                          colorScheme="green"
+                          variant="ghost"
+                          colorScheme="gray"
                           onClick={playAmbientSound}
                         />
                         <IconButton
                           aria-label="Pause Sound"
                           icon={<FaPause />}
                           size="sm"
-                          colorScheme="yellow"
+                          variant="ghost"
+                          colorScheme="gray"
                           onClick={pauseAmbientSound}
                         />
                         <IconButton
                           aria-label="Stop Sound"
                           icon={<FaTimes />}
                           size="sm"
-                          colorScheme="red"
+                          variant="ghost"
+                          colorScheme="gray"
                           onClick={stopAmbientSound}
                         />
                         <IconButton
                           aria-label={isMuted ? "Unmute" : "Mute"}
                           icon={isMuted ? <FaVolumeMute /> : <FaVolumeUp />}
                           size="sm"
-                          colorScheme={isMuted ? "gray" : "blue"}
+                          variant="ghost"
+                          colorScheme="gray"
                           onClick={handleMuteToggle}
                         />
                       </HStack>
