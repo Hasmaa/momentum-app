@@ -48,7 +48,8 @@ import {
   FaVolumeMute,
   FaMusic,
   FaSun,
-  FaMoon
+  FaMoon,
+  FaTimes,
 } from 'react-icons/fa';
 import { Task } from '../../../types';
 import { keyframes } from '@emotion/react';
@@ -156,48 +157,66 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
     'linear-gradient(180deg, #1A202C 0%, #2D3748 100%)'
   );
   
-  // Handle sound selection
-  const handleSoundChange = (soundId: string) => {
-    setCurrentSound(soundId === "none" ? null : soundId);
-  };
-  
-  // Handle volume change
-  const handleVolumeChange = (value: number) => {
-    setVolume(value);
-    
-    if (audioRef.current) {
-      audioRef.current.volume = value / 100;
-      
-      if (value === 0) {
-        setIsMuted(true);
-      } else if (isMuted) {
-        setIsMuted(false);
-      }
-    }
-  };
-  
-  // Handle mute toggle
+  // Handle sound mute toggle
   const handleMuteToggle = () => {
     if (audioRef.current) {
-      if (isMuted) {
-        audioRef.current.volume = volume / 100;
-      } else {
-        audioRef.current.volume = 0;
-      }
+      audioRef.current.muted = !isMuted;
       setIsMuted(!isMuted);
     }
   };
-  
-  // Sound effect when timer completes
-  useEffect(() => {
-    // Create a separate audio element for timer completion sounds
-    const timerAudio = new Audio();
-    
-    return () => {
-      timerAudio.pause();
-      timerAudio.src = '';
-    };
-  }, []);
+
+  // Handle sound volume change
+  const handleVolumeChange = (newVolume: number) => {
+    setVolume(newVolume);
+    if (audioRef.current) {
+      audioRef.current.volume = newVolume / 100;
+    }
+  };
+
+  // Handle sound selection change
+  const handleSoundChange = (soundId: string) => {
+    setCurrentSound(soundId === 'none' ? null : soundId);
+    if (audioRef.current) {
+      if (soundId === 'none') {
+        audioRef.current.pause();
+        audioRef.current.src = '';
+      } else {
+        const sound = AMBIENT_SOUNDS.find(s => s.id === soundId);
+        if (sound) {
+          audioRef.current.src = sound.url;
+          audioRef.current.load();
+          audioRef.current.play().catch(err => console.error('Error playing sound:', err));
+        }
+      }
+    }
+  };
+
+  // Play ambient sound
+  const playAmbientSound = () => {
+    if (audioRef.current && currentSound) {
+      const sound = AMBIENT_SOUNDS.find(s => s.id === currentSound);
+      if (sound) {
+        if (audioRef.current.paused) {
+          audioRef.current.play().catch(err => console.error('Error playing sound:', err));
+        }
+      }
+    }
+  };
+
+  // Pause ambient sound
+  const pauseAmbientSound = () => {
+    if (audioRef.current && !audioRef.current.paused) {
+      audioRef.current.pause();
+    }
+  };
+
+  // Stop ambient sound
+  const stopAmbientSound = () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+  };
   
   // Initialize audio
   useEffect(() => {
@@ -213,29 +232,7 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
         audioRef.current.src = '';
       }
     };
-  }, [volume]);
-  
-  // Update audio source when sound changes
-  useEffect(() => {
-    if (audioRef.current) {
-      if (currentSound) {
-        const sound = AMBIENT_SOUNDS.find(s => s.id === currentSound);
-        
-        if (sound) {
-          audioRef.current.src = sound.url;
-          
-          if (!isPaused && isRunning) {
-            audioRef.current.play().catch(error => {
-              console.error("Audio play failed:", error);
-            });
-          }
-        }
-      } else {
-        audioRef.current.pause();
-        audioRef.current.src = '';
-      }
-    }
-  }, [currentSound, isPaused, isRunning]);
+  }, []);
   
   // Start timer
   const startTimer = useCallback(() => {
@@ -604,8 +601,15 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
             )}
           </Box>
 
-          {/* Main content */}
-          <VStack spacing={8} position="relative" zIndex={1}>
+          {/* Main content - Horizontal Layout */}
+          <Flex 
+            position="relative" 
+            zIndex={1} 
+            width="90%" 
+            maxWidth="1200px" 
+            justifyContent="center"
+            gap={8}
+          >
             {/* Exit button */}
             <Box position="absolute" top={-16} right={-4}>
               <Tooltip label="Exit focus mode (Esc)" placement="left">
@@ -620,92 +624,98 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
               </Tooltip>
             </Box>
 
-            {/* Timer display */}
-            <Center position="relative" mb={6}>
-              <Box
-                position="absolute"
-                w="260px"
-                h="260px"
-                borderRadius="full"
-                bg={useColorModeValue("whiteAlpha.300", "blackAlpha.300")}
-                boxShadow="0 0 20px rgba(255,255,255,0.2)"
-              />
-              
-              <Box
-                bg={useColorModeValue("white", "gray.800")}
-                borderRadius="full"
-                boxShadow="0px 10px 30px rgba(0, 0, 0, 0.15)"
-                p={14}
-                position="relative"
-                zIndex={1}
-              >
-                <Text
-                  fontSize="5xl"
-                  fontWeight="bold"
-                  color={textColor}
-                  fontFamily="mono"
-                >
-                  {formatTime(time)}
-                </Text>
-              </Box>
-            </Center>
-
-            {/* Timer progress */}
-            <Box width="300px" height="6px" mb={2}>
-              <Progress
-                value={(totalTime - time) / totalTime * 100}
-                size="sm"
-                colorScheme={isPaused ? "yellow" : isBreak ? "blue" : "red"}
-                borderRadius="full"
-              />
-            </Box>
-
-            {/* Status text */}
-            <Badge
-              colorScheme={isPaused ? "yellow" : isBreak ? "blue" : "red"}
-              fontSize="md"
-              px={4}
-              py={2}
-              borderRadius="full"
-              mb={4}
+            {/* Left Column: Timer and Controls */}
+            <VStack 
+              spacing={6} 
+              align="center" 
+              width={{ base: "100%", md: "50%" }}
+              maxWidth="500px"
             >
-              {isPaused ? "PAUSED" : isBreak ? "BREAK TIME" : "FOCUS TIME"}
-            </Badge>
-
-            {/* Controls */}
-            <HStack spacing={4}>
-              {!isRunning || isPaused ? (
-                <IconButton
-                  aria-label="Start Timer"
-                  icon={<FaPlay />}
-                  colorScheme="green"
-                  size="lg"
-                  isRound
-                  onClick={startTimer}
+              {/* Timer display */}
+              <Center position="relative" mb={6}>
+                <Box
+                  position="absolute"
+                  w="260px"
+                  h="260px"
+                  borderRadius="full"
+                  bg={useColorModeValue("whiteAlpha.300", "blackAlpha.300")}
+                  boxShadow="0 0 20px rgba(255,255,255,0.2)"
                 />
-              ) : (
-                <IconButton
-                  aria-label="Pause Timer"
-                  icon={<FaPause />}
-                  colorScheme="yellow"
-                  size="lg"
-                  isRound
-                  onClick={pauseTimer}
-                />
-              )}
-              
-              <IconButton
-                aria-label="Reset Timer"
-                icon={<FaUndo />}
-                colorScheme="blue"
-                size="md"
-                isRound
-                onClick={resetTimer}
-              />
-            </HStack>
+                
+                <Box
+                  bg={useColorModeValue("white", "gray.800")}
+                  borderRadius="full"
+                  boxShadow="0px 10px 30px rgba(0, 0, 0, 0.15)"
+                  p={14}
+                  position="relative"
+                  zIndex={1}
+                >
+                  <Text
+                    fontSize="5xl"
+                    fontWeight="bold"
+                    color={textColor}
+                    fontFamily="mono"
+                  >
+                    {formatTime(time)}
+                  </Text>
+                </Box>
+              </Center>
 
-            {/* Sound controls */}
-            {currentSound && (
+              {/* Timer progress */}
+              <Box width="300px" height="6px" mb={2}>
+                <Progress
+                  value={(totalTime - time) / totalTime * 100}
+                  size="sm"
+                  colorScheme={isPaused ? "yellow" : isBreak ? "blue" : "red"}
+                  borderRadius="full"
+                />
+              </Box>
+
+              {/* Status text */}
+              <Badge
+                colorScheme={isPaused ? "yellow" : isBreak ? "blue" : "red"}
+                fontSize="md"
+                px={4}
+                py={2}
+                borderRadius="full"
+                mb={4}
+              >
+                {isPaused ? "PAUSED" : isBreak ? "BREAK TIME" : "FOCUS TIME"}
+              </Badge>
+
+              {/* Timer Controls */}
+              <HStack spacing={4}>
+                {!isRunning || isPaused ? (
+                  <IconButton
+                    aria-label="Start Timer"
+                    icon={<FaPlay />}
+                    colorScheme="green"
+                    size="lg"
+                    isRound
+                    onClick={startTimer}
+                  />
+                ) : (
+                  <IconButton
+                    aria-label="Pause Timer"
+                    icon={<FaPause />}
+                    colorScheme="yellow"
+                    size="lg"
+                    isRound
+                    onClick={pauseTimer}
+                  />
+                )}
+                
+                <IconButton
+                  aria-label="Reset Timer"
+                  icon={<FaUndo />}
+                  colorScheme="blue"
+                  size="md"
+                  isRound
+                  onClick={resetTimer}
+                />
+              </HStack>
+
+              {/* Sound selector and controls */}
               <Box 
                 mt={4} 
                 p={4} 
@@ -713,217 +723,62 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                 bg={useColorModeValue("whiteAlpha.500", "blackAlpha.500")}
                 width="300px"
               >
-                <HStack spacing={4}>
-                  <IconButton
-                    aria-label={isMuted ? "Unmute" : "Mute"}
-                    icon={isMuted ? <FaVolumeMute /> : <FaVolumeUp />}
-                    size="sm"
-                    colorScheme={isMuted ? "gray" : "blue"}
-                    onClick={handleMuteToggle}
-                  />
-                  <Slider
-                    value={isMuted ? 0 : volume}
-                    onChange={handleVolumeChange}
-                    min={0}
-                    max={100}
-                    width="100%"
-                  >
-                    <SliderTrack>
-                      <SliderFilledTrack />
-                    </SliderTrack>
-                    <SliderThumb />
-                  </Slider>
-                </HStack>
-                <Text fontSize="xs" textAlign="center" mt={1} color={useColorModeValue("blackAlpha.700", "whiteAlpha.700")}>
-                  {AMBIENT_SOUNDS.find(s => s.id === currentSound)?.name}
-                </Text>
-              </Box>
-            )}
-          </VStack>
-        </Box>
-      </Portal>
-    );
-  };
-    
-  return (
-    <>
-      <Modal isOpen={isOpen && !isFocusMode} onClose={onClose} size="md" isCentered>
-        <ModalOverlay backdropFilter="blur(2px)" />
-        <ModalContent bg={bgColor} borderRadius="xl" boxShadow="xl">
-          <ModalHeader display="flex" alignItems="center" justifyContent="space-between" pt={5} pb={4}>
-            <Text>Pomodoro Timer</Text>
-            <Badge
-              colorScheme={isPaused ? 'yellow' : isRunning ? (isBreak ? 'blue' : 'red') : 'gray'}
-              px={2}
-              py={1}
-              borderRadius="md"
-            >
-              {isPaused ? 'PAUSED' : isRunning ? (isBreak ? 'BREAK' : 'FOCUS') : 'READY'}
-            </Badge>
-          </ModalHeader>
-          <ModalCloseButton />
-          
-          <ModalBody pb={6} px={6}>
-            <VStack spacing={6} align="stretch">
-              {/* Timer Settings */}
-              <HStack spacing={4} align="flex-end">
-                <FormControl>
-                  <FormLabel fontSize="sm">Focus Time (min)</FormLabel>
-                  <NumberInput 
-                    min={1} 
-                    max={60} 
-                    value={focusTime}
-                    onChange={(_, value) => setFocusTime(value)}
-                    isDisabled={isRunning}
-                    size="sm"
-                  >
-                    <NumberInputField />
-                    <NumberInputStepper>
-                      <NumberIncrementStepper />
-                      <NumberDecrementStepper />
-                    </NumberInputStepper>
-                  </NumberInput>
-                </FormControl>
-                
-                <FormControl>
-                  <FormLabel fontSize="sm">Break Time (min)</FormLabel>
-                  <NumberInput 
-                    min={1} 
-                    max={30} 
-                    value={breakTime}
-                    onChange={(_, value) => setBreakTime(value)}
-                    isDisabled={isRunning}
-                    size="sm"
-                  >
-                    <NumberInputField />
-                    <NumberInputStepper>
-                      <NumberIncrementStepper />
-                      <NumberDecrementStepper />
-                    </NumberInputStepper>
-                  </NumberInput>
-                </FormControl>
-              </HStack>
-              
-              <Divider />
-              
-              {/* Timer Display */}
-              <Box
-                py={6}
-                px={4}
-                bg={timerBgColor}
-                borderRadius="xl"
-                textAlign="center"
-                position="relative"
-                overflow="hidden"
-              >
-                <Progress
-                  value={(totalTime - time) / totalTime * 100}
-                  size="xs"
-                  colorScheme={isPaused ? 'yellow' : isBreak ? 'blue' : 'red'}
-                  position="absolute"
-                  top={0}
-                  left={0}
-                  right={0}
-                  borderTopLeftRadius="xl"
-                  borderTopRightRadius="xl"
-                />
-                
-                <Text
-                  fontSize="6xl"
-                  fontWeight="bold"
-                  color={textColor}
-                  fontFamily="mono"
-                >
-                  {formatTime(time)}
-                </Text>
-                
-                <Text fontSize="sm" mt={2} color={isBreak ? 'blue.500' : 'red.500'} fontWeight="medium">
-                  {isBreak ? 'BREAK TIME' : 'FOCUS TIME'}
-                </Text>
-              </Box>
-              
-              {/* Timer Controls */}
-              <HStack justify="center" spacing={4} mt={2}>
-                {!isRunning || isPaused ? (
-                  <Tooltip label="Start/Resume (Space)" placement="top">
-                    <IconButton
-                      aria-label="Start Timer"
-                      icon={<FaPlay />}
-                      colorScheme="green"
-                      size="lg"
-                      isRound
-                      onClick={startTimer}
-                    />
-                  </Tooltip>
-                ) : (
-                  <Tooltip label="Pause (Space)" placement="top">
-                    <IconButton
-                      aria-label="Pause Timer"
-                      icon={<FaPause />}
-                      colorScheme="yellow"
-                      size="lg"
-                      isRound
-                      onClick={pauseTimer}
-                    />
-                  </Tooltip>
-                )}
-                
-                <Tooltip label="Reset timer (R)" placement="top">
-                  <IconButton
-                    aria-label="Reset Timer"
-                    icon={<FaUndo />}
-                    colorScheme="blue"
-                    size="md"
-                    isRound
-                    onClick={resetTimer}
-                  />
-                </Tooltip>
-                
-                <Tooltip label="Focus mode (F)" placement="top">
-                  <IconButton
-                    aria-label="Enter Focus Mode"
-                    icon={<FaExpand />}
-                    colorScheme="purple"
-                    size="md"
-                    isRound
-                    onClick={toggleFocusMode}
-                  />
-                </Tooltip>
-              </HStack>
-              
-              {/* Sound Controls */}
-              <Box p={3} bg={timerBgColor} borderRadius="md" mt={2}>
-                <Flex align="center" mb={2}>
+                <Flex align="center" mb={3} justifyContent="space-between">
                   <HStack spacing={1}>
                     <FaMusic size="14px" />
-                    <Text fontSize="sm" fontWeight="medium">Ambient Sound</Text>
+                    <Text fontWeight="medium" fontSize="sm">Ambient Sound</Text>
                   </HStack>
                 </Flex>
                 
-                <HStack spacing={3}>
-                  <Select
-                    size="sm"
-                    value={currentSound || "none"}
-                    onChange={(e) => handleSoundChange(e.target.value)}
-                    maxW="50%"
-                  >
-                    <option value="none">No sound</option>
-                    {AMBIENT_SOUNDS.map(sound => (
-                      <option key={sound.id} value={sound.id}>
-                        {sound.name}
-                      </option>
-                    ))}
-                  </Select>
-                  
-                  {currentSound && (
-                    <HStack flex="1">
+                <Select 
+                  size="sm" 
+                  value={currentSound || "none"} 
+                  onChange={(e) => handleSoundChange(e.target.value)}
+                  mb={3}
+                >
+                  <option value="none">No sound</option>
+                  {AMBIENT_SOUNDS.map(sound => (
+                    <option key={sound.id} value={sound.id}>
+                      {sound.name}
+                    </option>
+                  ))}
+                </Select>
+                
+                {currentSound && (
+                  <>
+                    <HStack spacing={3} mb={2} justifyContent="center">
+                      <IconButton
+                        aria-label="Play Sound"
+                        icon={<FaPlay />}
+                        size="sm"
+                        colorScheme="green"
+                        onClick={playAmbientSound}
+                      />
+                      <IconButton
+                        aria-label="Pause Sound"
+                        icon={<FaPause />}
+                        size="sm"
+                        colorScheme="yellow"
+                        onClick={pauseAmbientSound}
+                      />
+                      <IconButton
+                        aria-label="Stop Sound"
+                        icon={<FaTimes />}
+                        size="sm"
+                        colorScheme="red"
+                        onClick={stopAmbientSound}
+                      />
                       <IconButton
                         aria-label={isMuted ? "Unmute" : "Mute"}
                         icon={isMuted ? <FaVolumeMute /> : <FaVolumeUp />}
-                        size="xs"
+                        size="sm"
                         colorScheme={isMuted ? "gray" : "blue"}
                         onClick={handleMuteToggle}
                       />
+                    </HStack>
+                    
+                    <HStack spacing={2} align="center">
+                      <Text fontSize="xs">Volume:</Text>
                       <Slider
                         value={isMuted ? 0 : volume}
                         onChange={handleVolumeChange}
@@ -938,20 +793,32 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                         <SliderThumb />
                       </Slider>
                     </HStack>
-                  )}
-                </HStack>
+                  </>
+                )}
               </Box>
-              
-              <Divider mt={2} />
-              
-              {/* Task Tracking */}
+            </VStack>
+
+            {/* Right Column: Task Tracking */}
+            <VStack 
+              spacing={6} 
+              align="stretch" 
+              width={{ base: "100%", md: "50%" }}
+              maxWidth="500px"
+              display={{ base: "none", md: "flex" }}
+              bg={useColorModeValue("whiteAlpha.500", "blackAlpha.500")}
+              p={5}
+              borderRadius="xl"
+              h="fit-content"
+              maxH="600px"
+            >
+              {/* Tasks completed */}
               <Box>
                 <Text fontWeight="medium" mb={2}>
                   Tasks completed this session:
                 </Text>
                 
                 {completedTasks.length === 0 ? (
-                  <Text fontSize="sm" color="gray.500" textAlign="center" py={2}>
+                  <Text fontSize="sm" color={useColorModeValue("gray.600", "gray.400")} textAlign="center" py={2}>
                     No tasks completed yet
                   </Text>
                 ) : (
@@ -963,9 +830,9 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                           key={taskId}
                           p={2}
                           borderRadius="md"
-                          bg={timerBgColor}
+                          bg={useColorModeValue("whiteAlpha.500", "blackAlpha.400")}
                           borderWidth="1px"
-                          borderColor={borderColor}
+                          borderColor={useColorModeValue("whiteAlpha.700", "whiteAlpha.300")}
                         >
                           <Text fontSize="sm">{task.title}</Text>
                         </Box>
@@ -973,14 +840,330 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                     })}
                   </VStack>
                 )}
+              </Box>
+              
+              <Divider />
+              
+              {/* Available Tasks */}
+              <Box>
+                <Text fontWeight="medium" mb={2}>
+                  Available tasks:
+                </Text>
+                
+                <VStack align="stretch" spacing={2} maxH="250px" overflowY="auto">
+                  {tasks
+                    .filter(task => task.status !== 'completed' && !completedTasks.includes(task.id))
+                    .map(task => (
+                      <HStack
+                        key={task.id}
+                        p={2}
+                        borderRadius="md"
+                        bg={useColorModeValue("whiteAlpha.500", "blackAlpha.400")}
+                        borderWidth="1px"
+                        borderColor={useColorModeValue("whiteAlpha.700", "whiteAlpha.300")}
+                        justify="space-between"
+                      >
+                        <Text fontSize="sm">{task.title}</Text>
+                        <IconButton
+                          icon={<FaCheck />}
+                          aria-label="Complete task"
+                          size="xs"
+                          colorScheme="green"
+                          variant="ghost"
+                          onClick={() => handleTaskComplete(task.id)}
+                        />
+                      </HStack>
+                    ))
+                  }
+                </VStack>
+              </Box>
+            </VStack>
+          </Flex>
+        </Box>
+      </Portal>
+    );
+  };
+    
+  return (
+    <>
+      <Modal isOpen={isOpen && !isFocusMode} onClose={onClose} size="4xl" isCentered>
+        <ModalOverlay backdropFilter="blur(2px)" />
+        <ModalContent bg={bgColor} borderRadius="xl" boxShadow="xl" >
+          <ModalHeader display="flex" alignItems="center" justifyContent="space-between" pt={5} pb={4} pr={12}>
+            <Text>Pomodoro Timer</Text>
+            <Badge
+              colorScheme={isPaused ? 'yellow' : isRunning ? (isBreak ? 'blue' : 'red') : 'gray'}
+              px={2}
+              py={1}
+              borderRadius="md"
+            >
+              {isPaused ? 'PAUSED' : isRunning ? (isBreak ? 'BREAK' : 'FOCUS') : 'READY'}
+            </Badge>
+          </ModalHeader>
+          <ModalCloseButton />
+          
+          <ModalBody pb={6} px={6}>
+            <Flex 
+              align="stretch"
+              gap={6}
+            >
+              {/* Left Column: Timer and Controls */}
+              <VStack spacing={6} align="stretch" flex="1">
+                {/* Timer Settings */}
+                <HStack spacing={4} align="flex-end">
+                  <FormControl>
+                    <FormLabel fontSize="sm">Focus Time (min)</FormLabel>
+                    <NumberInput 
+                      min={1} 
+                      max={60} 
+                      value={focusTime}
+                      onChange={(_, value) => setFocusTime(value)}
+                      isDisabled={isRunning}
+                      size="sm"
+                    >
+                      <NumberInputField />
+                      <NumberInputStepper>
+                        <NumberIncrementStepper />
+                        <NumberDecrementStepper />
+                      </NumberInputStepper>
+                    </NumberInput>
+                  </FormControl>
+                  
+                  <FormControl>
+                    <FormLabel fontSize="sm">Break Time (min)</FormLabel>
+                    <NumberInput 
+                      min={1} 
+                      max={30} 
+                      value={breakTime}
+                      onChange={(_, value) => setBreakTime(value)}
+                      isDisabled={isRunning}
+                      size="sm"
+                    >
+                      <NumberInputField />
+                      <NumberInputStepper>
+                        <NumberIncrementStepper />
+                        <NumberDecrementStepper />
+                      </NumberInputStepper>
+                    </NumberInput>
+                  </FormControl>
+                </HStack>
+                
+                <Divider />
+                
+                {/* Timer Display */}
+                <Box
+                  py={6}
+                  px={4}
+                  bg={timerBgColor}
+                  borderRadius="xl"
+                  textAlign="center"
+                  position="relative"
+                  overflow="hidden"
+                >
+                  <Progress
+                    value={(totalTime - time) / totalTime * 100}
+                    size="xs"
+                    colorScheme={isPaused ? 'yellow' : isBreak ? 'blue' : 'red'}
+                    position="absolute"
+                    top={0}
+                    left={0}
+                    right={0}
+                    borderTopLeftRadius="xl"
+                    borderTopRightRadius="xl"
+                  />
+                  
+                  <Text
+                    fontSize="6xl"
+                    fontWeight="bold"
+                    color={textColor}
+                    fontFamily="mono"
+                  >
+                    {formatTime(time)}
+                  </Text>
+                  
+                  <Text fontSize="sm" mt={2} color={isBreak ? 'blue.500' : 'red.500'} fontWeight="medium">
+                    {isBreak ? 'BREAK TIME' : 'FOCUS TIME'}
+                  </Text>
+                </Box>
+                
+                {/* Timer Controls */}
+                <HStack justify="center" spacing={4} mt={2}>
+                  {!isRunning || isPaused ? (
+                    <Tooltip label="Start/Resume (Space)" placement="top">
+                      <IconButton
+                        aria-label="Start Timer"
+                        icon={<FaPlay />}
+                        colorScheme="green"
+                        size="lg"
+                        isRound
+                        onClick={startTimer}
+                      />
+                    </Tooltip>
+                  ) : (
+                    <Tooltip label="Pause (Space)" placement="top">
+                      <IconButton
+                        aria-label="Pause Timer"
+                        icon={<FaPause />}
+                        colorScheme="yellow"
+                        size="lg"
+                        isRound
+                        onClick={pauseTimer}
+                      />
+                    </Tooltip>
+                  )}
+                  
+                  <Tooltip label="Reset timer (R)" placement="top">
+                    <IconButton
+                      aria-label="Reset Timer"
+                      icon={<FaUndo />}
+                      colorScheme="blue"
+                      size="md"
+                      isRound
+                      onClick={resetTimer}
+                    />
+                  </Tooltip>
+                  
+                  <Tooltip label="Focus mode (F)" placement="top">
+                    <IconButton
+                      aria-label="Enter Focus Mode"
+                      icon={<FaExpand />}
+                      colorScheme="purple"
+                      size="md"
+                      isRound
+                      onClick={toggleFocusMode}
+                    />
+                  </Tooltip>
+                </HStack>
+                
+                {/* Sound Controls */}
+                <Box p={3} bg={timerBgColor} borderRadius="md" mt={2}>
+                  <Flex align="center" mb={2}>
+                    <HStack spacing={1}>
+                      <FaMusic size="14px" />
+                      <Text fontSize="sm" fontWeight="medium">Ambient Sound</Text>
+                    </HStack>
+                  </Flex>
+                  
+                  <HStack spacing={3} mb={2}>
+                    <Select
+                      size="sm"
+                      value={currentSound || "none"}
+                      onChange={(e) => handleSoundChange(e.target.value)}
+                      maxW="100%"
+                    >
+                      <option value="none">No sound</option>
+                      {AMBIENT_SOUNDS.map(sound => (
+                        <option key={sound.id} value={sound.id}>
+                          {sound.name}
+                        </option>
+                      ))}
+                    </Select>
+                  </HStack>
+                  
+                  {currentSound && (
+                    <>
+                      <HStack spacing={3} mb={2} justifyContent="center">
+                        <IconButton
+                          aria-label="Play Sound"
+                          icon={<FaPlay />}
+                          size="sm"
+                          colorScheme="green"
+                          onClick={playAmbientSound}
+                        />
+                        <IconButton
+                          aria-label="Pause Sound"
+                          icon={<FaPause />}
+                          size="sm"
+                          colorScheme="yellow"
+                          onClick={pauseAmbientSound}
+                        />
+                        <IconButton
+                          aria-label="Stop Sound"
+                          icon={<FaTimes />}
+                          size="sm"
+                          colorScheme="red"
+                          onClick={stopAmbientSound}
+                        />
+                        <IconButton
+                          aria-label={isMuted ? "Unmute" : "Mute"}
+                          icon={isMuted ? <FaVolumeMute /> : <FaVolumeUp />}
+                          size="sm"
+                          colorScheme={isMuted ? "gray" : "blue"}
+                          onClick={handleMuteToggle}
+                        />
+                      </HStack>
+                      
+                      <HStack spacing={2} align="center">
+                        <Text fontSize="xs">Volume:</Text>
+                        <Slider
+                          value={isMuted ? 0 : volume}
+                          onChange={handleVolumeChange}
+                          min={0}
+                          max={100}
+                          size="sm"
+                          flex="1"
+                        >
+                          <SliderTrack>
+                            <SliderFilledTrack />
+                          </SliderTrack>
+                          <SliderThumb />
+                        </Slider>
+                      </HStack>
+                    </>
+                  )}
+                </Box>
+              </VStack>
+              
+              {/* Right Column: Task Tracking */}
+              <VStack 
+                spacing={6} 
+                align="stretch" 
+                flex="1"
+                bg={timerBgColor}
+                p={4}
+                borderRadius="md"
+                maxH="600px"
+              >
+                {/* Tasks completed */}
+                <Box>
+                  <Text fontWeight="medium" mb={2}>
+                    Tasks completed this session:
+                  </Text>
+                  
+                  {completedTasks.length === 0 ? (
+                    <Text fontSize="sm" color="gray.500" textAlign="center" py={2}>
+                      No tasks completed yet
+                    </Text>
+                  ) : (
+                    <VStack align="stretch" spacing={2} maxH="150px" overflowY="auto">
+                      {completedTasks.map(taskId => {
+                        const task = tasks.find(t => t.id === taskId);
+                        return task ? (
+                          <Box
+                            key={taskId}
+                            p={2}
+                            borderRadius="md"
+                            bg={useColorModeValue("white", "gray.700")}
+                            borderWidth="1px"
+                            borderColor={borderColor}
+                          >
+                            <Text fontSize="sm">{task.title}</Text>
+                          </Box>
+                        ) : null;
+                      })}
+                    </VStack>
+                  )}
+                </Box>
+                
+                <Divider />
                 
                 {/* Available Tasks */}
-                <Box mt={4}>
+                <Box flex="1">
                   <Text fontWeight="medium" mb={2}>
                     Available tasks:
                   </Text>
                   
-                  <VStack align="stretch" spacing={2} maxH="150px" overflowY="auto">
+                  <VStack align="stretch" spacing={2} maxH="220px" overflowY="auto">
                     {tasks
                       .filter(task => task.status !== 'completed' && !completedTasks.includes(task.id))
                       .map(task => (
@@ -988,7 +1171,7 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                           key={task.id}
                           p={2}
                           borderRadius="md"
-                          bg={timerBgColor}
+                          bg={useColorModeValue("white", "gray.700")}
                           borderWidth="1px"
                           borderColor={borderColor}
                           justify="space-between"
@@ -1007,8 +1190,8 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                     }
                   </VStack>
                 </Box>
-              </Box>
-            </VStack>
+              </VStack>
+            </Flex>
           </ModalBody>
 
           <ModalFooter pt={2}>
