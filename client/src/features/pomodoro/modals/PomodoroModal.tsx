@@ -36,6 +36,7 @@ import {
   SliderThumb,
   Select,
   Center,
+  Spinner,
 } from '@chakra-ui/react';
 import { 
   FaPlay, 
@@ -52,7 +53,7 @@ import {
   FaTimes,
 } from 'react-icons/fa';
 import { Task } from '../../../types';
-import { keyframes } from '@emotion/react';
+import { keyframes, css } from '@emotion/react';
 
 // Define the animation keyframes
 const floatAnimation = keyframes`
@@ -95,6 +96,24 @@ const moonRockAnimation = keyframes`
   100% { transform: rotate(-5deg); }
 `;
 
+// Add more animation keyframes for task animation
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+const checkmarkAnimation = keyframes`
+  0% { transform: scale(0); opacity: 0; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+`;
+
+const successPulse = keyframes`
+  0% { box-shadow: 0 0 0 0 rgba(72, 187, 120, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(72, 187, 120, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(72, 187, 120, 0); }
+`;
+
 // Add ambient sound options
 const AMBIENT_SOUNDS = [
   { id: 'forest', name: 'Forest', url: '/sounds/forest-ambience.mp3' },
@@ -135,6 +154,12 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
   
   // Completed tasks during this session
   const [completedTasks, setCompletedTasks] = useState<string[]>([]);
+  
+  // Tasks currently being processed (loading state)
+  const [loadingTasks, setLoadingTasks] = useState<string[]>([]);
+  
+  // Track newly completed tasks for animation
+  const [recentlyCompletedTask, setRecentlyCompletedTask] = useState<string | null>(null);
   
   // Focus mode state
   const [isFocusMode, setIsFocusMode] = useState(false);
@@ -425,10 +450,20 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
 
   // Handle task completion
   const handleTaskComplete = useCallback(async (taskId: string) => {
+    // Set loading state
+    setLoadingTasks(prev => [...prev, taskId]);
+    
     try {
       await onTaskComplete(taskId);
       
+      // Update completed tasks
       setCompletedTasks(prev => [...prev, taskId]);
+      
+      // Set recently completed for animation
+      setRecentlyCompletedTask(taskId);
+      
+      // Clear recent completion after animation (750ms)
+      setTimeout(() => setRecentlyCompletedTask(null), 750);
       
       toast({
         title: 'Task completed!',
@@ -445,6 +480,9 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
         duration: 3000,
         isClosable: true,
       });
+    } finally {
+      // Remove loading state
+      setLoadingTasks(prev => prev.filter(id => id !== taskId));
     }
   }, [onTaskComplete, toast]);
   
@@ -903,11 +941,24 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                           key={taskId}
                           p={2}
                           borderRadius="md"
-                          bg={useColorModeValue("whiteAlpha.500", "blackAlpha.400")}
+                          bg={useColorModeValue("white", "gray.700")}
                           borderWidth="1px"
-                          borderColor={useColorModeValue("whiteAlpha.700", "whiteAlpha.300")}
+                          borderColor={borderColor}
+                          css={css`animation: ${fadeIn} 0.3s ease-in-out;`}
+                          opacity={taskId === recentlyCompletedTask ? 0.8 : 1}
+                          transition="all 0.2s"
                         >
-                          <Text fontSize="sm">{task.title}</Text>
+                          <Flex alignItems="center">
+                            <Box 
+                              as="span" 
+                              color="green.500" 
+                              mr={2}
+                              css={taskId === recentlyCompletedTask ? css`animation: ${checkmarkAnimation} 0.5s ease-in-out;` : undefined}
+                            >
+                              <FaCheck />
+                            </Box>
+                            <Text fontSize="sm">{task.title}</Text>
+                          </Flex>
                         </Box>
                       ) : null;
                     })}
@@ -923,7 +974,7 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                   Available tasks:
                 </Text>
                 
-                <VStack align="stretch" spacing={2} maxH="250px" overflowY="auto">
+                <VStack align="stretch" spacing={2} maxH="220px" overflowY="auto">
                   {tasks
                     .filter(task => task.status !== 'completed' && !completedTasks.includes(task.id))
                     .map(task => (
@@ -931,19 +982,37 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                         key={task.id}
                         p={2}
                         borderRadius="md"
-                        bg={useColorModeValue("whiteAlpha.500", "blackAlpha.400")}
+                        bg={useColorModeValue("white", "gray.700")}
                         borderWidth="1px"
-                        borderColor={useColorModeValue("whiteAlpha.700", "whiteAlpha.300")}
+                        borderColor={borderColor}
                         justify="space-between"
+                        opacity={loadingTasks.includes(task.id) ? 0.7 : 1}
+                        transition="all 0.2s"
+                        css={recentlyCompletedTask === task.id ? css`animation: ${successPulse} 1s ease-in-out;` : undefined}
                       >
-                        <Text fontSize="sm">{task.title}</Text>
+                        <Text 
+                          fontSize="sm"
+                          css={css`animation: ${fadeIn} 0.3s ease-in-out;`}
+                        >
+                          {task.title}
+                        </Text>
                         <IconButton
-                          icon={<FaCheck />}
+                          icon={loadingTasks.includes(task.id) ? 
+                            <Spinner size="xs" /> : 
+                            <Box 
+                              as="span" 
+                              css={recentlyCompletedTask === task.id ? 
+                                css`animation: ${checkmarkAnimation} 0.5s ease-in-out;` : undefined}
+                            >
+                              <FaCheck />
+                            </Box>
+                          }
                           aria-label="Complete task"
                           size="xs"
                           colorScheme="green"
                           variant="ghost"
-                          onClick={() => handleTaskComplete(task.id)}
+                          onClick={() => !loadingTasks.includes(task.id) && handleTaskComplete(task.id)}
+                          isDisabled={loadingTasks.includes(task.id)}
                         />
                       </HStack>
                     ))
@@ -1224,8 +1293,21 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                             bg={useColorModeValue("white", "gray.700")}
                             borderWidth="1px"
                             borderColor={borderColor}
+                            css={css`animation: ${fadeIn} 0.3s ease-in-out;`}
+                            opacity={taskId === recentlyCompletedTask ? 0.8 : 1}
+                            transition="all 0.2s"
                           >
-                            <Text fontSize="sm">{task.title}</Text>
+                            <Flex alignItems="center">
+                              <Box 
+                                as="span" 
+                                color="green.500" 
+                                mr={2}
+                                css={taskId === recentlyCompletedTask ? css`animation: ${checkmarkAnimation} 0.5s ease-in-out;` : undefined}
+                              >
+                                <FaCheck />
+                              </Box>
+                              <Text fontSize="sm">{task.title}</Text>
+                            </Flex>
                           </Box>
                         ) : null;
                       })}
@@ -1253,15 +1335,33 @@ const PomodoroModal: React.FC<PomodoroModalProps> = ({
                           borderWidth="1px"
                           borderColor={borderColor}
                           justify="space-between"
+                          opacity={loadingTasks.includes(task.id) ? 0.7 : 1}
+                          transition="all 0.2s"
+                          css={recentlyCompletedTask === task.id ? css`animation: ${successPulse} 1s ease-in-out;` : undefined}
                         >
-                          <Text fontSize="sm">{task.title}</Text>
+                          <Text 
+                            fontSize="sm"
+                            css={css`animation: ${fadeIn} 0.3s ease-in-out;`}
+                          >
+                            {task.title}
+                          </Text>
                           <IconButton
-                            icon={<FaCheck />}
+                            icon={loadingTasks.includes(task.id) ? 
+                              <Spinner size="xs" /> : 
+                              <Box 
+                                as="span" 
+                                css={recentlyCompletedTask === task.id ? 
+                                  css`animation: ${checkmarkAnimation} 0.5s ease-in-out;` : undefined}
+                              >
+                                <FaCheck />
+                              </Box>
+                            }
                             aria-label="Complete task"
                             size="xs"
                             colorScheme="green"
                             variant="ghost"
-                            onClick={() => handleTaskComplete(task.id)}
+                            onClick={() => !loadingTasks.includes(task.id) && handleTaskComplete(task.id)}
+                            isDisabled={loadingTasks.includes(task.id)}
                           />
                         </HStack>
                       ))
