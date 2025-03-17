@@ -209,13 +209,18 @@ export const UnifiedFilterBar: React.FC<UnifiedFilterProps> = ({
   
   // Get priority icon and color
   const getPriorityInfo = (priority: PriorityType) => {
+    // Use different icon colors based on the current theme for better contrast
+    const lowColor = useColorModeValue("green.600", "green.500");
+    const mediumColor = useColorModeValue("yellow.600", "yellow.500");
+    const highColor = useColorModeValue("red.600", "red.500");
+    
     switch(priority) {
       case 'low':
-        return { icon: <WarningIcon color="green.500" />, color: 'green' };
+        return { icon: <WarningIcon color={lowColor} />, color: 'green' };
       case 'medium':
-        return { icon: <WarningIcon color="yellow.500" />, color: 'yellow' };
+        return { icon: <WarningIcon color={mediumColor} />, color: 'yellow' };
       case 'high':
-        return { icon: <WarningIcon color="red.500" />, color: 'red' };
+        return { icon: <WarningIcon color={highColor} />, color: 'red' };
       default:
         return { icon: null, color: 'gray' };
     }
@@ -580,7 +585,7 @@ export const UnifiedFilterBar: React.FC<UnifiedFilterProps> = ({
                   colorScheme={filterPriority.has('low') ? "green" : "gray"}
                   onClick={() => onPriorityFilterChange('low')}
                   justifyContent="flex-start"
-                  leftIcon={<WarningIcon color="green.500" boxSize="24px" />}
+                  leftIcon={<WarningIcon color={useColorModeValue("green.600", "green.500")} boxSize="24px" />}
                   borderRadius="lg"
                   boxShadow={`0 1px 2px ${shadowColor}`}
                   transition="all 0.2s"
@@ -598,7 +603,7 @@ export const UnifiedFilterBar: React.FC<UnifiedFilterProps> = ({
                   colorScheme={filterPriority.has('medium') ? "yellow" : "gray"}
                   onClick={() => onPriorityFilterChange('medium')}
                   justifyContent="flex-start"
-                  leftIcon={<WarningIcon color="yellow.500" boxSize="24px" />}
+                  leftIcon={<WarningIcon color={useColorModeValue("yellow.600", "yellow.500")} boxSize="24px" />}
                   borderRadius="lg"
                   boxShadow={`0 1px 2px ${shadowColor}`}
                   transition="all 0.2s"
@@ -616,7 +621,7 @@ export const UnifiedFilterBar: React.FC<UnifiedFilterProps> = ({
                   colorScheme={filterPriority.has('high') ? "red" : "gray"}
                   onClick={() => onPriorityFilterChange('high')}
                   justifyContent="flex-start"
-                  leftIcon={<WarningIcon color="red.500" boxSize="24px" />}
+                  leftIcon={<WarningIcon color={useColorModeValue("red.600", "red.500")} boxSize="24px" />}
                   borderRadius="lg"
                   boxShadow={`0 1px 2px ${shadowColor}`}
                   transition="all 0.2s"
