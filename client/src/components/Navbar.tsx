@@ -165,65 +165,79 @@ const Navbar = () => {
             position="relative"
             role="group"
           >
-            <MotionBox
-              initial={{ rotate: 0 }}
-              animate={{ rotate: 360 }}
-              transition={{ duration: 10, repeat: Infinity, ease: "linear", repeatType: "loop" }}
+            <Box
               display="inline-block"
               mr={3}
               position="relative"
-              _groupHover={{ scale: 1.1 }}
+              transition="transform 0.2s ease"
+              _groupHover={{ transform: 'translateY(-2px)' }}
             >
               <Box 
-                w="36px" 
-                h="36px" 
+                w="40px" 
+                h="40px" 
                 borderRadius="xl" 
                 bg={useColorModeValue(
                   'linear-gradient(135deg, #3182CE 0%, #63B3ED 100%)',
-                  'linear-gradient(135deg, #90CDF4 0%, #BEE3F8 100%)'
+                  'linear-gradient(135deg, #2C5282 0%, #4299E1 100%)'
                 )}
                 display="flex"
                 alignItems="center"
                 justifyContent="center"
-                color="white"
-                fontWeight="bold"
                 position="relative"
                 overflow="hidden"
-                _after={{
-                  content: '""',
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  background: 'linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 60%)',
+                transition="all 0.3s ease"
+                _groupHover={{
+                  bg: useColorModeValue(
+                    'linear-gradient(135deg, #2C5282 0%, #3182CE 100%)',
+                    'linear-gradient(135deg, #4299E1 0%, #63B3ED 100%)'
+                  ),
+                  transform: 'scale(1.05)'
                 }}
               >
                 <Text 
-                  fontSize="xl" 
+                  fontSize="2xl" 
                   fontWeight="black"
+                  color="white"
                   textShadow="0 2px 4px rgba(0,0,0,0.1)"
+                  transition="all 0.3s ease"
+                  _groupHover={{ 
+                    textShadow: '0 4px 8px rgba(0,0,0,0.2)',
+                  }}
                 >
                   M
                 </Text>
+                {/* Subtle shine effect */}
+                <Box
+                  position="absolute"
+                  top="-50%"
+                  left="-50%"
+                  width="200%"
+                  height="200%"
+                  background="linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.2) 50%, transparent 70%)"
+                  transform="translateX(-100%)"
+                  transition="transform 0.6s ease"
+                  _groupHover={{ transform: 'translateX(100%)' }}
+                />
               </Box>
-            </MotionBox>
+            </Box>
             <Box>
               <Text 
                 fontSize="xl" 
                 fontWeight="bold" 
                 bgGradient={useColorModeValue(
-                  'linear-gradient(135deg, #3182CE 0%, #63B3ED 100%)',
-                  'linear-gradient(135deg, #90CDF4 0%, #BEE3F8 100%)'
+                  'linear-gradient(135deg, #2B6CB0 0%, #3182CE 100%)',
+                  'linear-gradient(135deg, #63B3ED 0%, #90CDF4 100%)'
                 )}
                 bgClip="text"
                 letterSpacing="tight"
                 mb={-1}
+                transition="all 0.3s ease"
                 _groupHover={{
                   bgGradient: useColorModeValue(
-                    'linear-gradient(135deg, #2C5282 0%, #3182CE 100%)',
-                    'linear-gradient(135deg, #BEE3F8 0%, #E9F3FB 100%)'
-                  )
+                    'linear-gradient(135deg, #1A365D 0%, #2B6CB0 100%)',
+                    'linear-gradient(135deg, #90CDF4 0%, #BEE3F8 100%)'
+                  ),
+                  transform: 'translateY(-1px)'
                 }}
               >
                 Momentum
@@ -235,8 +249,11 @@ const Navbar = () => {
                 letterSpacing="wider"
                 textTransform="uppercase"
                 opacity={0.8}
-                _groupHover={{ opacity: 1 }}
-                transition="all 0.2s"
+                transition="all 0.3s ease"
+                _groupHover={{ 
+                  opacity: 1,
+                  color: useColorModeValue('blue.600', 'blue.200')
+                }}
               >
                 Task Management
               </Text>
