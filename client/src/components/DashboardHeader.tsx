@@ -109,11 +109,110 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       bg={buttonGroupBg}
       p={1}
       borderRadius="lg"
-      transition="all 0.2s"
-      _hover={{ bg: useColorModeValue('gray.100', 'gray.600') }}
+      transition="all 0.3s ease"
+      _hover={{ 
+        bg: useColorModeValue('gray.100', 'gray.600'),
+        transform: "translateY(-1px)",
+        boxShadow: "sm"
+      }}
     >
       {children}
     </HStack>
+  );
+
+  // Animation styles for icon buttons
+  const iconButtonStyles = {
+    transition: "all 0.3s ease",
+    position: "relative",
+    overflow: "hidden",
+    _before: {
+      content: '""',
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: useColorModeValue("blue.50", "rgba(99, 179, 237, 0.15)"),
+      borderRadius: "md",
+      opacity: 0,
+      transform: "scale(0.85)",
+      transition: "transform 0.3s ease, opacity 0.2s ease",
+      zIndex: -1,
+    },
+    _hover: { 
+      transform: "scale(1.05)",
+      _before: {
+        opacity: 1,
+        transform: "scale(1)",
+      },
+    },
+  }
+
+  const primaryButtonStyles = {
+    position: "relative",
+    transition: "all 0.3s ease",
+    _before: {
+      content: '""',
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: useColorModeValue("blue.400", "blue.300"),
+      opacity: 0,
+      transform: "translateY(100%)",
+      transition: "transform 0.3s ease, opacity 0.2s ease",
+      borderRadius: "md",
+      zIndex: -1,
+    },
+    _hover: {
+      transform: "translateY(-2px)",
+      boxShadow: "md",
+      _before: {
+        opacity: 0.2,
+        transform: "translateY(0)",
+      },
+    },
+  }
+
+  const ghostButtonStyles = {
+    position: "relative",
+    overflow: "hidden",
+    transition: "all 0.3s ease",
+    _before: {
+      content: '""',
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      background: useColorModeValue("gray.100", "whiteAlpha.100"),
+      borderRadius: "md",
+      opacity: 0,
+      transform: "scale(0.9)",
+      transition: "transform 0.3s ease, opacity 0.2s ease",
+      zIndex: -1,
+    },
+    _hover: {
+      _before: {
+        opacity: 1,
+        transform: "scale(1)",
+      },
+    },
+  }
+
+  // Animation styles for icon state transitions
+  const iconTransition = {
+    transition: "transform 0.4s ease, opacity 0.3s ease",
+  }
+
+  // Wrapper for icons with transitions
+  const AnimatedIcon = ({ as, ...props }: { as: any, [key: string]: any }) => (
+    <Icon 
+      as={as} 
+      transition="transform 0.4s ease, opacity 0.3s ease"
+      {...props} 
+    />
   );
 
   return (
@@ -131,9 +230,17 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         bg={buttonGroupBg}
         borderRadius="lg"
         p={1}
+        transition="all 0.3s ease"
+        _hover={{
+          boxShadow: "sm",
+          transform: "translateY(-1px)"
+        }}
       >
         <InputLeftElement pointerEvents="none">
-          <SearchIcon color={searchQuery ? accentColor : secondaryTextColor} />
+          <SearchIcon 
+            color={searchQuery ? accentColor : secondaryTextColor} 
+            transition="transform 0.4s ease, opacity 0.3s ease"
+          />
         </InputLeftElement>
         <Input
           placeholder="Search tasks..."
@@ -155,6 +262,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               variant="ghost"
               colorScheme="gray"
               onClick={() => onSearchQueryChange('')}
+              sx={iconButtonStyles}
             />
           </InputRightElement>
         )}
@@ -183,17 +291,28 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             <Text fontSize="sm" fontWeight="medium">
               {selectedTodos.size} selected
             </Text>
-            <Menu>
+            <Menu
+              placement="bottom-end"
+              closeOnSelect={true}
+              strategy="fixed"
+              autoSelect={false}
+              gutter={4}
+              isLazy
+            >
               <MenuButton
                 as={Button}
                 size="sm"
                 colorScheme="blue"
                 variant="ghost"
                 rightIcon={<ChevronDownIcon />}
+                sx={ghostButtonStyles}
               >
                 Actions
               </MenuButton>
-              <MenuList>
+              <MenuList
+                zIndex={1500}
+                shadow="lg"
+              >
                 <MenuItem onClick={() => onBulkStatusChange('pending')}>
                   <HStack>
                     <Icon as={WarningIcon} color="gray.500" />
@@ -234,6 +353,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               size="xs"
               variant="ghost"
               onClick={onClearSelection}
+              sx={iconButtonStyles}
             />
           </Box>
         )}
@@ -243,13 +363,16 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           <Tooltip label="Create new task (⌘N)" hasArrow>
             <Button
               size="sm"
-              leftIcon={<AddIcon />}
+              leftIcon={<AddIcon transition="transform 0.4s ease, opacity 0.3s ease" />}
               colorScheme="blue"
               onClick={onCreateTask}
               fontWeight="medium"
               _hover={{
-                transform: 'translateY(-1px)',
-                boxShadow: 'sm'
+                "& svg": { transform: "rotate(90deg)" }
+              }}
+              sx={{ 
+                ...primaryButtonStyles,
+                "& svg": { transition: "transform 0.4s ease, opacity 0.3s ease" } 
               }}
             >
               {isMobile ? <AddIcon /> : "New Task"}
@@ -259,11 +382,18 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           <Tooltip label="Use template (⌘T)" hasArrow>
             <Button
               size="sm"
-              leftIcon={<RepeatIcon />}
+              leftIcon={<RepeatIcon transition="transform 0.4s ease, opacity 0.3s ease" />}
               colorScheme="blue"
               variant="ghost"
               onClick={onOpenTemplate}
               fontWeight="medium"
+              _hover={{
+                "& svg": { transform: "rotate(180deg)" }
+              }}
+              sx={{ 
+                ...ghostButtonStyles,
+                "& svg": { transition: "transform 0.4s ease, opacity 0.3s ease" } 
+              }}
             >
               {isMobile ? <RepeatIcon /> : "Template"}
             </Button>
@@ -278,11 +408,12 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             <Box position="relative">
               <IconButton
                 aria-label="Toggle filter sidebar"
-                icon={<Icon as={FiFilter} />}
+                icon={<AnimatedIcon as={FiFilter} />}
                 size="sm"
                 colorScheme={hasActiveFilters ? "blue" : "gray"}
                 variant={hasActiveFilters ? "solid" : "ghost"}
                 onClick={onToggleFilterSidebar}
+                sx={hasActiveFilters ? primaryButtonStyles : iconButtonStyles}
               />
               {hasActiveFilters && (
                 <Badge 
@@ -300,21 +431,26 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           <Tooltip label={`Switch to ${isListView ? 'board' : 'list'} view (⌘/)`} hasArrow>
             <IconButton
               aria-label={`Switch to ${isListView ? 'board' : 'list'} view`}
-              icon={isListView ? <ViewIcon /> : <HamburgerIcon />}
+              icon={isListView ? 
+                <ViewIcon transition="transform 0.4s ease, opacity 0.3s ease" /> : 
+                <HamburgerIcon transition="transform 0.4s ease, opacity 0.3s ease" />
+              }
               size="sm"
               variant="ghost"
               onClick={onToggleView}
+              sx={iconButtonStyles}
             />
           </Tooltip>
 
           <Tooltip label="Manage tags" hasArrow>
             <IconButton
               aria-label="Manage tags"
-              icon={<MdLabel />}
+              icon={<AnimatedIcon as={MdLabel} />}
               size="sm"
               colorScheme="teal"
               variant="ghost"
               onClick={onOpenTagManager}
+              sx={iconButtonStyles}
             />
           </Tooltip>
 
@@ -325,9 +461,15 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               variant="ghost"
               onClick={onOpenAchievements}
               position="relative"
+              sx={iconButtonStyles}
               icon={
                 <Box position="relative">
-                  <Icon as={MedalIcon} color={useColorModeValue('blue.300', 'yellow.400')} />
+                  <Icon 
+                    as={MedalIcon} 
+                    color={useColorModeValue('blue.300', 'yellow.400')} 
+                    transition="transform 0.4s ease, opacity 0.3s ease"
+                    _groupHover={{ transform: "rotate(10deg)" }}
+                  />
                   {recentlyUnlocked && (
                     <Box
                       position="absolute"
@@ -337,6 +479,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                       h="8px"
                       bg="green.400"
                       borderRadius="full"
+                      transition="transform 0.4s ease, opacity 0.3s ease"
+                      _groupHover={{ transform: "scale(1.3)" }}
                     />
                   )}
                 </Box>
@@ -352,9 +496,16 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
                 colorScheme="purple"
                 variant="ghost"
                 onClick={onOpenPomodoro}
-                leftIcon={<Icon as={FaClock} color="purple.400" />}
+                leftIcon={<AnimatedIcon as={FaClock} color="purple.400" />}
                 fontWeight="medium"
                 position="relative"
+                _hover={{
+                  "& svg": { transform: "rotate(20deg)" }
+                }}
+                sx={{ 
+                  ...ghostButtonStyles,
+                  "& svg": { transition: "transform 0.4s ease, opacity 0.3s ease" } 
+                }}
               >
                 <Text color="purple.400">{pomodoroTimeRemaining}</Text>
                 <Box
@@ -378,11 +529,18 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             ) : (
               <IconButton
                 aria-label="Pomodoro timer"
-                icon={<Icon as={FaClock} />}
+                icon={<AnimatedIcon as={FaClock} />}
                 size="sm"
                 colorScheme="purple"
                 variant="ghost"
                 onClick={onOpenPomodoro}
+                sx={{
+                  ...iconButtonStyles,
+                  _before: {
+                    ...iconButtonStyles._before,
+                    background: useColorModeValue("purple.50", "rgba(214, 188, 250, 0.15)"),
+                  }
+                }}
               />
             )}
           </Tooltip>
@@ -395,20 +553,34 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
           <Tooltip label="Keyboard shortcuts (?)" hasArrow>
             <IconButton
               aria-label="Keyboard shortcuts"
-              icon={<QuestionIcon />}
+              icon={<QuestionIcon transition="transform 0.4s ease, opacity 0.3s ease" />}
               size="sm"
               variant="ghost"
               onClick={onOpenShortcuts}
+              sx={iconButtonStyles}
             />
           </Tooltip>
 
           <Tooltip label={`Switch to ${colorMode === 'light' ? 'dark' : 'light'} mode`} hasArrow>
             <IconButton
               aria-label={`Switch to ${colorMode === 'light' ? 'dark' : 'light'} mode`}
-              icon={colorMode === 'light' ? <MoonIcon /> : <SunIcon />}
+              icon={colorMode === 'light' ? 
+                <MoonIcon transition="transform 0.4s ease, opacity 0.3s ease" /> : 
+                <SunIcon transition="transform 0.4s ease, opacity 0.3s ease" />
+              }
               size="sm"
               variant="ghost"
               onClick={toggleColorMode}
+              sx={{
+                ...iconButtonStyles,
+                "& svg": { transition: "all 0.5s ease" },
+                _before: {
+                  ...iconButtonStyles._before,
+                  background: colorMode === 'light' 
+                    ? useColorModeValue("purple.50", "rgba(214, 188, 250, 0.15)") 
+                    : useColorModeValue("yellow.50", "rgba(250, 240, 137, 0.15)")
+                }
+              }}
             />
           </Tooltip>
         </ButtonGroup>
