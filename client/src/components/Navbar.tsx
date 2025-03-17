@@ -318,77 +318,7 @@ const Navbar = () => {
         <HStack spacing={{ base: 2, md: 3 }}>
           {!isMobile && <FontSelector onFontChange={handleFontChange} />}
           
-          {/* Pomodoro Button */}
-          <Tooltip label="Track your focus time with Pomodoro" hasArrow placement="bottom">
-            <Box
-              px={3}
-              py={2}
-              borderRadius="full"
-              bg={useColorModeValue('purple.50', 'purple.900')}
-              color={useColorModeValue('purple.600', 'purple.200')}
-              boxShadow={isHovered ? 
-                (colorMode === 'light' ? '0 0 8px rgba(128, 90, 213, 0.6)' : '0 0 8px rgba(214, 188, 250, 0.4)') 
-                : 'none'}
-              transition="all 0.3s ease"
-              cursor="pointer"
-              position="relative"
-              overflow="hidden"
-              onClick={handleOpenPomodoro}
-              onMouseEnter={() => setIsHovered(true)}
-              onMouseLeave={() => setIsHovered(false)}
-              _hover={{ 
-                bg: useColorModeValue('purple.100', 'purple.800'),
-                transform: 'translateY(-2px)'
-              }}
-              _active={{
-                bg: useColorModeValue('purple.200', 'purple.700'),
-                transform: 'translateY(0)'
-              }}
-              sx={{
-                animation: isHovered ? `${pulseAnimation} 2s infinite ease-in-out` : 'none',
-                '&::before': {
-                  content: '""',
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  background: colorMode === 'light' 
-                    ? 'linear-gradient(135deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%)'
-                    : 'linear-gradient(135deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0) 100%)',
-                  transform: isHovered ? 'translateX(100%)' : 'translateX(-100%)',
-                  transition: 'transform 0.6s ease',
-                }
-              }}
-              display="flex"
-              alignItems="center"
-              aria-label="Open Pomodoro Timer"
-            >
-              <Box 
-                animation={isHovered ? `${rotateAnimation} 1s infinite ease-in-out` : 'none'}
-                mr={2}
-              >
-                <FaClock size="16px" />
-              </Box>
-              <Text fontWeight="medium" mr={2} display={{ base: "none", md: "block" }}>Pomodoro</Text>
-              <ActiveTimers 
-                onOpenPomodoro={handleOpenPomodoro}
-              />
-            </Box>
-          </Tooltip>
-          
-          {/* Theme Toggle Button */}
-          <Tooltip label={`Switch to ${colorMode === 'light' ? 'dark' : 'light'} mode`} hasArrow placement="bottom">
-            <IconButton
-              aria-label={`Switch to ${colorMode === 'light' ? 'dark' : 'light'} mode`}
-              variant="ghost"
-              icon={colorMode === 'light' ? <FaMoon /> : <FaSun />}
-              onClick={toggleColorMode}
-              size="sm"
-              borderRadius="md"
-              _hover={{ bg: hoverBg }}
-            />
-          </Tooltip>
+
           
           {/* More Menu for mobile */}
           {isMobile && (
