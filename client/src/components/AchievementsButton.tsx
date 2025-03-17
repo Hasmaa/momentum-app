@@ -6,7 +6,7 @@ import {
   Tooltip,
   Badge,
 } from '@chakra-ui/react';
-import { TrophyIcon } from './AchievementIcon';
+import { MedalIcon } from './AchievementIcon';
 import { motion } from 'framer-motion';
 
 const MotionBox = motion(Box);
@@ -39,7 +39,7 @@ const AchievementsButton: React.FC<AchievementsButtonProps> = ({
       <Box position="relative">
         <IconButton
           aria-label="Achievements"
-          icon={<TrophyIcon boxSize="1.2rem" />}
+          icon={<MedalIcon boxSize="1.2rem" />}
           borderRadius="full"
           bg={buttonBg}
           color={iconColor}
@@ -47,6 +47,7 @@ const AchievementsButton: React.FC<AchievementsButtonProps> = ({
           onClick={onClick}
           size="sm"
           variant="ghost"
+          colorScheme="yellow"
         />
         
         {/* Count badge */}

@@ -37,7 +37,7 @@ import {
 } from '@chakra-ui/icons';
 import { MdLabel } from 'react-icons/md';
 import { FaClock } from 'react-icons/fa';
-import { TrophyIcon } from './AchievementIcon';
+import { TrophyIcon, MedalIcon } from './AchievementIcon';
 
 interface DashboardHeaderProps {
   selectedTodos: Set<string>;
@@ -246,7 +246,7 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
               position="relative"
               icon={
                 <Box position="relative">
-                  <Icon as={TrophyIcon} />
+                  <Icon as={MedalIcon} color={useColorModeValue('blue.300', 'yellow.400')} />
                   {recentlyUnlocked && (
                     <Box
                       position="absolute"
