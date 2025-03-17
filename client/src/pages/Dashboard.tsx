@@ -227,6 +227,10 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
   const [isPomodoroOpen, setIsPomodoroOpen] = useState(false);
   const [pomodoroTask, setPomodoroTask] = useState<Task | null>(null);
 
+  // Add state for Pomodoro timer display in header
+  const [pomodoroActive, setPomodoroActive] = useState(false);
+  const [pomodoroTimeRemaining, setPomodoroTimeRemaining] = useState('');
+
   const mainBg = useColorModeValue('gray.50', 'gray.900');
   const cardBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.200', 'gray.700');
@@ -1726,6 +1730,37 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     transition: { duration: 0.2 }
   });
 
+  // Add effect to listen for Pomodoro timer changes
+  useEffect(() => {
+    // Subscribe to Pomodoro store changes
+    const unsubscribe = usePomodoroStore.subscribe(() => {
+      const timer = usePomodoroStore.getState().timer;
+      
+      if (timer && timer.isRunning) {
+        setPomodoroActive(true);
+        
+        // Format time as MM:SS
+        const mins = Math.floor(timer.remainingTime / 60000);
+        const secs = Math.floor((timer.remainingTime % 60000) / 1000);
+        setPomodoroTimeRemaining(`${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`);
+      } else {
+        setPomodoroActive(false);
+        setPomodoroTimeRemaining('');
+      }
+    });
+    
+    // Check initial state
+    const timer = usePomodoroStore.getState().timer;
+    if (timer && timer.isRunning) {
+      setPomodoroActive(true);
+      const mins = Math.floor(timer.remainingTime / 60000);
+      const secs = Math.floor((timer.remainingTime % 60000) / 1000);
+      setPomodoroTimeRemaining(`${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`);
+    }
+    
+    return () => unsubscribe();
+  }, []);
+
   return (
     <Box bg={mainBg} minH="100vh" transition="background-color 0.2s">
       <Container 
@@ -1779,6 +1814,8 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                 onBulkCapitalize={handleBulkCapitalize}
                 onBulkDelete={handleBulkDelete}
                 recentlyUnlocked={!!recentlyUnlocked}
+                pomodoroActive={pomodoroActive}
+                pomodoroTimeRemaining={pomodoroTimeRemaining}
               />
             </CardBody>
           </Card>

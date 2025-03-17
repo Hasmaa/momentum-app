@@ -55,6 +55,8 @@ interface DashboardHeaderProps {
   onBulkCapitalize: () => void;
   onBulkDelete: () => void;
   recentlyUnlocked: boolean;
+  pomodoroActive?: boolean;
+  pomodoroTimeRemaining?: string;
 }
 
 export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
@@ -73,6 +75,8 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
   onBulkCapitalize,
   onBulkDelete,
   recentlyUnlocked,
+  pomodoroActive = false,
+  pomodoroTimeRemaining = '',
 }) => {
   const { colorMode, toggleColorMode } = useColorMode();
   const isMobile = useBreakpointValue({ base: true, md: false });
@@ -263,15 +267,47 @@ export const DashboardHeader: React.FC<DashboardHeaderProps> = ({
             />
           </Tooltip>
 
-          <Tooltip label="Focus timer" hasArrow>
-            <IconButton
-              aria-label="Pomodoro timer"
-              icon={<Icon as={FaClock} />}
-              size="sm"
-              colorScheme="purple"
-              variant="ghost"
-              onClick={onOpenPomodoro}
-            />
+          <Tooltip label={pomodoroActive ? `Focus timer: ${pomodoroTimeRemaining}` : "Focus timer"} hasArrow>
+            {pomodoroActive ? (
+              <Button
+                aria-label="Pomodoro timer"
+                size="sm"
+                colorScheme="purple"
+                variant="ghost"
+                onClick={onOpenPomodoro}
+                leftIcon={<Icon as={FaClock} color="purple.400" />}
+                fontWeight="medium"
+                position="relative"
+              >
+                <Text color="purple.400">{pomodoroTimeRemaining}</Text>
+                <Box
+                  position="absolute"
+                  top="-2px"
+                  right="-2px"
+                  w="8px"
+                  h="8px"
+                  bg="purple.400"
+                  borderRadius="full"
+                  animation="pulse 2s infinite"
+                  sx={{
+                    "@keyframes pulse": {
+                      "0%": { opacity: 0.6, transform: "scale(0.9)" },
+                      "50%": { opacity: 1, transform: "scale(1.1)" },
+                      "100%": { opacity: 0.6, transform: "scale(0.9)" }
+                    }
+                  }}
+                />
+              </Button>
+            ) : (
+              <IconButton
+                aria-label="Pomodoro timer"
+                icon={<Icon as={FaClock} />}
+                size="sm"
+                colorScheme="purple"
+                variant="ghost"
+                onClick={onOpenPomodoro}
+              />
+            )}
           </Tooltip>
         </ButtonGroup>
 
