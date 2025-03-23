@@ -18,7 +18,9 @@ import {
   MenuDivider,
   Badge,
   VisuallyHidden,
-  useColorModeValue
+  useColorModeValue,
+  Button,
+  Avatar
 } from '@chakra-ui/react';
 import { Link as RouterLink, useNavigate, useLocation } from 'react-router-dom';
 import { 
@@ -31,7 +33,8 @@ import {
   FiList,
   FiHome,
   FiPlus,
-  FiTag
+  FiTag,
+  FiLogOut
 } from 'react-icons/fi';
 import { 
   FaClock, 
@@ -45,6 +48,7 @@ import { keyframes } from '@emotion/react';
 import FontSelector from './FontSelector';
 import { FontOption } from '../theme';
 import { motion } from 'framer-motion';
+import { useAuth } from '../context/AuthContext';
 
 const MotionBox = motion(Box);
 
@@ -55,6 +59,7 @@ const Navbar = () => {
   const toast = useToast();
   const [isHovered, setIsHovered] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const { user, signOut } = useAuth();
   
   // Responsive design
   const isMobile = useBreakpointValue({ base: true, md: false });
@@ -133,6 +138,27 @@ const Navbar = () => {
     // Dispatch a custom event that Dashboard can listen for
     const event = new CustomEvent('create-new-task');
     window.dispatchEvent(event);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({
+        title: 'Signed out successfully',
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      });
+      navigate('/auth');
+    } catch (error: any) {
+      toast({
+        title: 'Error signing out',
+        description: error.message,
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+    }
   };
 
   return (
@@ -315,57 +341,109 @@ const Navbar = () => {
         )}
 
         {/* Right Side Tools */}
-        <HStack spacing={{ base: 2, md: 3 }}>
+        <HStack spacing={4} display={{ base: 'none', md: 'flex' }}>
           {!isMobile && <FontSelector onFontChange={handleFontChange} />}
           
-
-          
-          {/* More Menu for mobile */}
-          {isMobile && (
+          {/* Add Auth Status */}
+          {user ? (
             <Menu>
               <MenuButton
-                as={IconButton}
-                aria-label="Open menu"
-                icon={<FiMenu />}
-                variant="ghost"
-                size="sm"
-                borderRadius="md"
-              />
-              <MenuList zIndex={200}>
-                <Link as={RouterLink} to="/" _hover={{ textDecoration: 'none' }}>
-                  <MenuItem icon={<FiHome />} isDisabled={isActive('/')}>
-                    Tasks
-                  </MenuItem>
-                </Link>
-                <Link as={RouterLink} to="/analytics" _hover={{ textDecoration: 'none' }}>
-                  <MenuItem icon={<FiBarChart2 />} isDisabled={isActive('/analytics')}>
-                    Analytics
-                  </MenuItem>
-                </Link>
-                <MenuItem icon={<FiPlus />} onClick={handleNewTask}>
-                  New Task
-                </MenuItem>
-                <MenuItem 
-                  icon={<FiTag />} 
-                  onClick={() => {
-                    navigate('/');
-                    const event = new CustomEvent('open-tag-manager');
-                    window.dispatchEvent(event);
-                  }}
-                >
-                  Manage Tags
-                </MenuItem>
+                as={Button}
+                rounded="full"
+                variant="link"
+                cursor="pointer"
+                minW={0}
+              >
+                <Avatar
+                  size="sm"
+                  name={user.email?.split('@')[0] || 'User'}
+                  src={user.user_metadata?.avatar_url}
+                  bg="blue.500"
+                />
+              </MenuButton>
+              <MenuList>
+                <Text px={3} py={2} fontWeight="medium">
+                  {user.email}
+                </Text>
                 <MenuDivider />
+                <MenuItem icon={<FiUser />}>Profile</MenuItem>
                 <MenuItem icon={<FiSettings />}>Settings</MenuItem>
-                <MenuItem icon={<FiHelpCircle />}>Help & Support</MenuItem>
                 <MenuDivider />
-                <MenuItem>
-                  <FontSelector onFontChange={handleFontChange} />
+                <MenuItem icon={<FiLogOut />} onClick={handleSignOut}>
+                  Sign Out
                 </MenuItem>
               </MenuList>
             </Menu>
+          ) : (
+            <Button
+              colorScheme="blue"
+              size="sm"
+              leftIcon={<FiUser />}
+              onClick={() => navigate('/auth')}
+            >
+              Sign In
+            </Button>
           )}
+          
+          {/* Keep color mode toggle */}
+          <IconButton
+            size="md"
+            fontSize="lg"
+            aria-label={`Switch to ${colorMode === 'light' ? 'dark' : 'light'} mode`}
+            variant="ghost"
+            color={useColorModeValue('gray.600', 'gray.300')}
+            onClick={toggleColorMode}
+            icon={colorMode === 'light' ? <FaMoon /> : <FaSun />}
+            _hover={{ bg: hoverBg }}
+            transition="all 0.2s"
+          />
         </HStack>
+
+        {/* More Menu for mobile */}
+        {isMobile && (
+          <Menu>
+            <MenuButton
+              as={IconButton}
+              aria-label="Open menu"
+              icon={<FiMenu />}
+              variant="ghost"
+              size="sm"
+              borderRadius="md"
+            />
+            <MenuList zIndex={200}>
+              <Link as={RouterLink} to="/" _hover={{ textDecoration: 'none' }}>
+                <MenuItem icon={<FiHome />} isDisabled={isActive('/')}>
+                  Tasks
+                </MenuItem>
+              </Link>
+              <Link as={RouterLink} to="/analytics" _hover={{ textDecoration: 'none' }}>
+                <MenuItem icon={<FiBarChart2 />} isDisabled={isActive('/analytics')}>
+                  Analytics
+                </MenuItem>
+              </Link>
+              <MenuItem icon={<FiPlus />} onClick={handleNewTask}>
+                New Task
+              </MenuItem>
+              <MenuItem 
+                icon={<FiTag />} 
+                onClick={() => {
+                  navigate('/');
+                  const event = new CustomEvent('open-tag-manager');
+                  window.dispatchEvent(event);
+                }}
+              >
+                Manage Tags
+              </MenuItem>
+              <MenuDivider />
+              <MenuItem icon={<FiSettings />}>Settings</MenuItem>
+              <MenuItem icon={<FiHelpCircle />}>Help & Support</MenuItem>
+              <MenuDivider />
+              <MenuItem>
+                <FontSelector onFontChange={handleFontChange} />
+              </MenuItem>
+            </MenuList>
+          </Menu>
+        )}
       </Flex>
     </Box>
   );

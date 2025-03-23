@@ -50,6 +50,7 @@ import {
   PopoverArrow,
   PopoverCloseButton,
   Progress,
+  Code,
 } from '@chakra-ui/react';
 import {
   Task,
@@ -124,6 +125,8 @@ import { TrophyIcon } from '../components/AchievementIcon';
 import { UnifiedFilterBar } from '../components/filters/UnifiedFilterBar';
 // Add import for DashboardHeader
 import { DashboardHeader } from '../components/DashboardHeader';
+import { useAuth } from '../context/AuthContext';
+import { TodoAPI } from '../services/api';
 
 const MotionBox = motion(Box);
 export const MotionCard = motion(Card);
@@ -530,40 +533,58 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
   };
 
   const fetchTodos = async () => {
+    setIsLoading(true);
     try {
-      setIsLoading(true);
-      const params = new URLSearchParams();
+      // Build sorting parameters
+      const sortField = sortConfig.field;
+      const sortDirection = sortConfig.direction;
       
+      // Use TodoAPI instead of direct fetch
+      const data = await TodoAPI.getAll(sortField, sortDirection);
+      
+      // Filter the data on client side based on the selected filters
+      let filteredData = [...data];
+      
+      // Apply status filter if not set to 'all'
       if (!filterStatus.has('all')) {
-        Array.from(filterStatus).forEach(status => 
-          params.append('status', status)
+        filteredData = filteredData.filter(todo => 
+          filterStatus.has(todo.status as string)
         );
       }
       
+      // Apply priority filter if not set to 'all'
       if (!filterPriority.has('all')) {
-        Array.from(filterPriority).forEach(priority => 
-          params.append('priority', priority)
+        filteredData = filteredData.filter(todo => 
+          filterPriority.has(todo.priority as string)
         );
       }
       
-      // Add tag filtering
+      // Apply tag filtering
       if (tagFilters.selectedTags.length > 0) {
-        tagFilters.selectedTags.forEach(tag => 
-          params.append('tagIds', tag.id)
-        );
-        params.append('tagMatchType', tagFilters.matchType);
+        filteredData = filteredData.filter(todo => {
+          const todoTagIds = todo.tags?.map(tag => tag.id) || [];
+          
+          if (tagFilters.matchType === 'any') {
+            // Match if todo has any of the selected tags
+            return tagFilters.selectedTags.some(tag => todoTagIds.includes(tag.id));
+          } else {
+            // Match if todo has all of the selected tags
+            return tagFilters.selectedTags.every(tag => todoTagIds.includes(tag.id));
+          }
+        });
       }
       
-      if (searchQuery) params.append('search', searchQuery);
-      params.append('sortField', sortConfig.field);
-      params.append('sortDirection', sortConfig.direction);
-
-      const response = await fetch(`http://localhost:5001/api/todos?${params}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch tasks');
+      // Apply search filter
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        filteredData = filteredData.filter(
+          todo => 
+            todo.title.toLowerCase().includes(query) || 
+            (todo.description && todo.description.toLowerCase().includes(query))
+        );
       }
-      const data = await response.json();
-      setTodos(data);
+      
+      setTodos(filteredData);
     } catch (error) {
       toast({
         title: 'Error fetching tasks',
@@ -1771,6 +1792,25 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     return () => unsubscribe();
   }, []);
 
+  const { session, checkSession } = useAuth();
+
+  const SessionDebugger = () => {
+    return (
+      <Box my={4} p={4} bg="gray.100" borderRadius="md">
+        <Text fontWeight="bold" mb={2}>Debug Session</Text>
+        <Button size="sm" colorScheme="blue" onClick={checkSession} mb={2}>
+          Check Session
+        </Button>
+        {session && (
+          <Box mt={2}>
+            <Text fontSize="sm">Token (first 10 chars):</Text>
+            <Code fontSize="xs">{session.access_token.substring(0, 10)}...</Code>
+          </Box>
+        )}
+      </Box>
+    );
+  };
+
   return (
     <Box bg={mainBg} minH="100vh" transition="background-color 0.2s">
       <Container 
@@ -2479,6 +2519,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
           onClose={closeTagManager}
           onTagsUpdated={fetchTodos}
         />
+        <SessionDebugger />
       </Container>
       <KeyboardShortcuts isOpen={isShortcutsOpen} onClose={onShortcutsClose} />
     </Box>

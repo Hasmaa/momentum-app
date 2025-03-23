@@ -1,16 +1,32 @@
 import { ChakraProvider, Box, ColorModeScript } from '@chakra-ui/react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from 'react-query';
 import { useState, useEffect } from 'react';
 import theme, { createTheme, getCurrentFont, FontOption } from './theme';
 import Navbar from './components/Navbar';
 import Dashboard from './pages/Dashboard';
 import Auth from './pages/Auth';
+import AuthCallback from './pages/AuthCallback';
+import TestAuth from './pages/TestAuth';
 import AnalyticsDashboardPage from './pages/AnalyticsDashboardPage';
 import { FocusEnvironmentProvider } from './features/focus-environment';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import './index.css';
 
 const queryClient = new QueryClient();
+
+// Protected route component
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+  
+  if (loading) return null;
+  
+  if (!user) {
+    return <Navigate to="/auth" />;
+  }
+  
+  return <>{children}</>;
+};
 
 function App() {
   const [currentTheme, setCurrentTheme] = useState(theme);
@@ -47,18 +63,36 @@ function App() {
       <ColorModeScript initialColorMode={currentTheme.config.initialColorMode} />
       <ChakraProvider theme={currentTheme}>
         <QueryClientProvider client={queryClient}>
-          <FocusEnvironmentProvider>
-            <Router>
-              <Box minH="100vh" bg="gray.50">
-                <Navbar />
-                <Routes>
-                  <Route path="/" element={<Dashboard />} />
-                  <Route path="/auth" element={<Auth />} />
-                  <Route path="/analytics" element={<AnalyticsDashboardPage />} />
-                </Routes>
-              </Box>
-            </Router>
-          </FocusEnvironmentProvider>
+          <AuthProvider>
+            <FocusEnvironmentProvider>
+              <Router>
+                <Box minH="100vh" bg="gray.50">
+                  <Navbar />
+                  <Routes>
+                    <Route path="/auth" element={<Auth />} />
+                    <Route path="/auth/callback" element={<AuthCallback />} />
+                    <Route path="/test-auth" element={<TestAuth />} />
+                    <Route 
+                      path="/" 
+                      element={
+                        <ProtectedRoute>
+                          <Dashboard />
+                        </ProtectedRoute>
+                      } 
+                    />
+                    <Route 
+                      path="/analytics" 
+                      element={
+                        <ProtectedRoute>
+                          <AnalyticsDashboardPage />
+                        </ProtectedRoute>
+                      } 
+                    />
+                  </Routes>
+                </Box>
+              </Router>
+            </FocusEnvironmentProvider>
+          </AuthProvider>
         </QueryClientProvider>
       </ChakraProvider>
     </>

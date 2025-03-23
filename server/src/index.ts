@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import todoRoutes from './routes/todo';
+import authRoutes from './routes/auth';
 
 dotenv.config();
 
@@ -13,6 +14,21 @@ app.use(express.json());
 
 // Routes
 app.use('/api/todos', todoRoutes);
+app.use('/api/auth', authRoutes);
+
+// Health check route
+app.get('/api/health', (req, res) => {
+  // Log auth header for debugging
+  const authHeader = req.headers.authorization;
+  console.log('[HEALTH] Request headers:', JSON.stringify(req.headers));
+  console.log('[HEALTH] Auth header:', authHeader ? authHeader.substring(0, 20) + '...' : 'Not provided');
+  
+  res.status(200).json({ 
+    status: 'ok',
+    authHeaderPresent: !!authHeader,
+    timestamp: new Date().toISOString() 
+  });
+});
 
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {

@@ -1,0 +1,16 @@
+# This file controls the configuration for your local development Supabase instance
+# Reference: https://supabase.com/docs/guides/cli/config
+
+[auth]
+# The base URL for your application. Used for redirecting to your app after OAuth sign-ins
+site_url = "http://localhost:5173"
+
+# A list of URLs allowed to make cross-origin API requests to your Supabase project
+additional_redirect_urls = ["http://localhost:5173/auth/callback"]
+
+# Automatically assign roles to new users
+[auth.external.google]
+enabled = true
+client_id = "YOUR_GOOGLE_CLIENT_ID" # Replace with your Google client ID
+secret = "YOUR_GOOGLE_CLIENT_SECRET" # Replace with your Google client secret
+redirect_uri = "http://localhost:54321/auth/v1/callback" 

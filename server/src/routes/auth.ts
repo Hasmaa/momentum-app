@@ -1,71 +1,85 @@
-import express from 'express';
-import { body } from 'express-validator';
-import User from '../models/User';
-import jwt from 'jsonwebtoken';
+import express, { Request, Response } from 'express';
+import { body, validationResult } from 'express-validator';
+import { signUp, signIn, signOut } from '../services/supabase';
 
 const router = express.Router();
 
 router.post('/register',
   [
-    body('email').isEmail(),
-    body('password').isLength({ min: 6 }),
-    body('name').notEmpty()
+    body('email').isEmail().withMessage('Please enter a valid email'),
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long'),
+    body('name').notEmpty().withMessage('Name is required')
   ],
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
-      const { email, password, name } = req.body;
-      
-      const existingUser = await User.findOne({ email });
-      if (existingUser) {
-        return res.status(400).json({ message: 'User already exists' });
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
       }
 
-      const user = new User({ email, password, name });
-      await user.save();
-
-      const token = jwt.sign(
-        { userId: user._id },
-        process.env.JWT_SECRET || 'fallback-secret',
-        { expiresIn: '7d' }
-      );
-
-      res.status(201).json({ token, user: { id: user._id, email, name } });
-    } catch (error) {
-      res.status(500).json({ message: 'Server error' });
+      const { email, password, name } = req.body;
+      
+      const userData = {
+        name,
+        created_at: new Date().toISOString()
+      };
+      
+      const data = await signUp(email, password, userData);
+      
+      res.status(201).json({ 
+        message: 'User registered successfully',
+        user: data.user,
+        session: data.session
+      });
+    } catch (error: any) {
+      res.status(500).json({ 
+        message: 'Registration failed', 
+        error: error.message 
+      });
     }
   }
 );
 
 router.post('/login',
   [
-    body('email').isEmail(),
-    body('password').exists()
+    body('email').isEmail().withMessage('Please enter a valid email'),
+    body('password').exists().withMessage('Password is required')
   ],
-  async (req, res) => {
+  async (req: Request, res: Response) => {
     try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+      }
+
       const { email, password } = req.body;
       
-      const user = await User.findOne({ email });
-      if (!user) {
-        return res.status(400).json({ message: 'Invalid credentials' });
-      }
-
-      const isMatch = await user.comparePassword(password);
-      if (!isMatch) {
-        return res.status(400).json({ message: 'Invalid credentials' });
-      }
-
-      const token = jwt.sign(
-        { userId: user._id },
-        process.env.JWT_SECRET || 'fallback-secret',
-        { expiresIn: '7d' }
-      );
-
-      res.json({ token, user: { id: user._id, email: user.email, name: user.name } });
-    } catch (error) {
-      res.status(500).json({ message: 'Server error' });
+      const data = await signIn(email, password);
+      
+      res.json({ 
+        message: 'Login successful',
+        user: data.user,
+        session: data.session
+      });
+    } catch (error: any) {
+      res.status(401).json({ 
+        message: 'Authentication failed', 
+        error: error.message 
+      });
     }
   }
 );
+
+router.post('/logout', async (req: Request, res: Response) => {
+  try {
+    await signOut();
+    res.json({ message: 'Logout successful' });
+  } catch (error: any) {
+    res.status(500).json({ 
+      message: 'Logout failed', 
+      error: error.message 
+    });
+  }
+});
 
 export default router; 

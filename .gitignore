@@ -5,6 +5,7 @@
 /logs
 /temp
 /uploads
-client/node_modules
-server/node_modules
-server/src/data/todos.json
+/client/node_modules
+/server/node_modules
+/server/src/data/todos.json
+/server/node_modules

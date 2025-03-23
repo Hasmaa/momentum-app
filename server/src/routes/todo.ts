@@ -1,365 +1,141 @@
 import express, { Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
-import * as todoService from '../services/todoService';
-import { FilterOptions, SortOptions, Todo } from '../services/todoService';
+import * as todoService from '../services/todo';
+import { authMiddleware } from '../middleware/auth';
+import { Todo } from '../services/todo';
 
 const router = express.Router();
 
-// Add delay function to simulate network latency
+// Add delay function to simulate network latency (optional - for development only)
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Protect all todo routes with authentication
+router.use(authMiddleware);
 
 // Validation middleware
 const todoValidation = [
   body('title').trim().notEmpty().withMessage('Title is required'),
   body('description').optional().trim(),
-  body('status')
-    .optional()
-    .isIn(['pending', 'in-progress', 'completed'])
-    .withMessage('Invalid status'),
-  body('priority')
-    .optional()
-    .isIn(['low', 'medium', 'high'])
-    .withMessage('Invalid priority')
+  body('completed').optional().isBoolean().withMessage('Completed must be a boolean')
 ];
-
-// In-memory storage
-let todos: Todo[] = [];
-
-// Helper function to get the next order number
-const getNextOrder = (status: Todo['status']): number => {
-  const statusTodos = todos.filter(t => t.status === status);
-  if (statusTodos.length === 0) return 0;
-  return Math.max(...statusTodos.map(t => t.order)) + 1;
-};
-
-// Helper function to reorder todos
-const reorderTodos = (status: Todo['status'], startOrder: number) => {
-  const statusTodos = todos.filter(t => t.status === status && t.order >= startOrder);
-  statusTodos.forEach(todo => {
-    todo.order += 1;
-  });
-};
 
 // Get all todos
 router.get('/', async (req: Request, res: Response) => {
   try {
-    // Add 600ms delay
-    await delay(600);
-
-    const filters: FilterOptions = {};
-    const sort: SortOptions = {
-      field: (req.query.sortField as keyof Todo) || 'createdAt',
-      direction: (req.query.sortDirection as 'asc' | 'desc') || 'desc'
-    };
-
-    // Handle multiple status values
-    if (req.query.status) {
-      const statusValues = Array.isArray(req.query.status) 
-        ? req.query.status as Todo['status'][]
-        : [req.query.status as Todo['status']];
-      filters.status = statusValues;
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'User not authenticated' });
     }
 
-    // Handle multiple priority values
-    if (req.query.priority) {
-      const priorityValues = Array.isArray(req.query.priority)
-        ? req.query.priority as Todo['priority'][]
-        : [req.query.priority as Todo['priority']];
-      filters.priority = priorityValues;
-    }
+    // Optional: add artificial delay for development
+    // await delay(500);
 
-    if (req.query.search) {
-      filters.search = req.query.search as string;
-    }
-
-    // Handle tag filtering
-    if (req.query.tagIds) {
-      const tagIds = Array.isArray(req.query.tagIds)
-        ? req.query.tagIds as string[]
-        : [req.query.tagIds as string];
-      filters.tagIds = tagIds;
-      
-      // Set the tag match type
-      if (req.query.tagMatchType) {
-        filters.tagMatchType = req.query.tagMatchType as 'any' | 'all';
-      } else {
-        filters.tagMatchType = 'any'; // Default to 'any' if not specified
-      }
-    }
-
-    const todos = await todoService.readTodos(filters, sort);
+    const todos = await todoService.getTodos(req.user.id);
     res.json(todos);
-  } catch (error) {
-    console.error('Error fetching todos:', error);
-    res.status(500).json({ message: 'Error fetching todos' });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Get a specific todo
+router.get('/:id', async (req: Request, res: Response) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
+    const { id } = req.params;
+    const todo = await todoService.getTodoById(id, req.user.id);
+
+    if (!todo) {
+      return res.status(404).json({ message: 'Todo not found' });
+    }
+
+    res.json(todo);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
   }
 });
 
 // Create a todo
-router.post('/', todoValidation, async (req: Request<any, any, Partial<Todo>>, res: Response) => {
+router.post('/', todoValidation, async (req: Request, res: Response) => {
   try {
-    // Add 600ms delay
-    await delay(600);
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const todo = await todoService.createTodo({
-      title: req.body.title!,
-      description: req.body.description,
-      status: req.body.status || 'pending',
-      priority: req.body.priority || 'medium',
-      dueDate: req.body.dueDate || new Date().toISOString(),
-      tags: req.body.tags || []
-    });
+    const { title, description, completed = false } = req.body;
+    
+    const newTodo: Todo = {
+      title,
+      description,
+      completed,
+      user_id: req.user.id
+    };
 
-    res.status(201).json(todo);
-  } catch (error) {
-    console.error('Error creating todo:', error);
-    res.status(500).json({ message: 'Error creating todo' });
+    const createdTodo = await todoService.createTodo(newTodo);
+    res.status(201).json(createdTodo);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
   }
 });
 
 // Update a todo
-router.put('/:id', async (req, res) => {
+router.put('/:id', todoValidation, async (req: Request, res: Response) => {
   try {
-    // Add 600ms delay
-    await delay(600);
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
 
-    const todo = await todoService.updateTodo(req.params.id, req.body);
-    
-    if (!todo) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+
+    const { id } = req.params;
+    const { title, description, completed } = req.body;
+
+    // First check if the todo exists and belongs to the user
+    const existingTodo = await todoService.getTodoById(id, req.user.id);
+    if (!existingTodo) {
       return res.status(404).json({ message: 'Todo not found' });
     }
 
-    res.json(todo);
-  } catch (error) {
-    console.error('Error updating todo:', error);
-    res.status(500).json({ message: 'Error updating todo' });
+    const updatedTodo = await todoService.updateTodo(
+      id,
+      { title, description, completed },
+      req.user.id
+    );
+
+    res.json(updatedTodo);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
   }
 });
 
 // Delete a todo
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req: Request, res: Response) => {
   try {
-    // Add 600ms delay
-    await delay(600);
-
-    const deleted = await todoService.deleteTodo(req.params.id);
-    
-    if (!deleted) {
-      return res.status(404).json({ message: 'Todo not found' });
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'User not authenticated' });
     }
-
-    res.json({ message: 'Todo deleted successfully' });
-  } catch (error) {
-    console.error('Error deleting todo:', error);
-    res.status(500).json({ message: 'Error deleting todo' });
-  }
-});
-
-// PUT /api/todos/:id/move
-router.put('/:id/move', async (req, res) => {
-  try {
-    // Add 600ms delay
-    await delay(600);
 
     const { id } = req.params;
-    const { newOrder, status } = req.body;
 
-    const todo = await todoService.moveTodo(id, status, newOrder);
-    
-    if (!todo) {
+    // First check if the todo exists and belongs to the user
+    const existingTodo = await todoService.getTodoById(id, req.user.id);
+    if (!existingTodo) {
       return res.status(404).json({ message: 'Todo not found' });
     }
 
-    res.json(todo);
-  } catch (error) {
-    console.error('Error moving todo:', error);
-    res.status(500).json({ message: 'Error moving todo' });
-  }
-});
-
-// Bulk update todos
-router.put('/bulk/update', async (req, res) => {
-  try {
-    // Add 600ms delay
-    await delay(600);
-
-    const { todoIds, updates } = req.body;
-
-    if (!Array.isArray(todoIds) || todoIds.length === 0) {
-      return res.status(400).json({ message: 'todoIds must be a non-empty array' });
-    }
-
-    // Read all todos once
-    const todos = await todoService.readTodos();
-    const updatedTodos: typeof todos = [];
-    let maxOrderByStatus: Record<string, number> = {};
-
-    // First pass: calculate max order for each status
-    if (updates.status) {
-      todos.forEach(todo => {
-        if (!maxOrderByStatus[todo.status]) {
-          maxOrderByStatus[todo.status] = todo.order;
-        } else {
-          maxOrderByStatus[todo.status] = Math.max(maxOrderByStatus[todo.status], todo.order);
-        }
-      });
-    }
-
-    // Second pass: update todos
-    todos.forEach(todo => {
-      if (todoIds.includes(todo.id)) {
-        // If we're changing status, assign new order
-        if (updates.status && updates.status !== todo.status) {
-          maxOrderByStatus[updates.status] = (maxOrderByStatus[updates.status] || 0) + 1;
-          updatedTodos.push({
-            ...todo,
-            ...updates,
-            order: maxOrderByStatus[updates.status],
-            updatedAt: new Date().toISOString()
-          });
-        } else {
-          // No status change, keep same order
-          updatedTodos.push({
-            ...todo,
-            ...updates,
-            updatedAt: new Date().toISOString()
-          });
-        }
-      } else {
-        // Not being updated, but might need order adjustment
-        if (updates.status && todo.status === updates.status) {
-          // This todo is in the target status column, keep its order
-          updatedTodos.push(todo);
-        } else {
-          updatedTodos.push(todo);
-        }
-      }
-    });
-
-    // Write all updates at once
-    await todoService.writeTodos(updatedTodos);
-
-    const successfulUpdates = updatedTodos.filter(todo => todoIds.includes(todo.id));
-
-    if (successfulUpdates.length === 0) {
-      return res.status(404).json({ message: 'No todos were found to update' });
-    }
-
-    res.json({
-      message: `Successfully updated ${successfulUpdates.length} todos`,
-      todos: successfulUpdates
-    });
-  } catch (error) {
-    console.error('Error bulk updating todos:', error);
-    res.status(500).json({ message: 'Error bulk updating todos' });
-  }
-});
-
-// Bulk delete todos
-router.delete('/bulk/delete', async (req, res) => {
-  try {
-    // Add 600ms delay
-    await delay(600);
-
-    const { todoIds } = req.body;
-
-    if (!Array.isArray(todoIds) || todoIds.length === 0) {
-      return res.status(400).json({ message: 'todoIds must be a non-empty array' });
-    }
-
-    // Read all todos once
-    const todos = await todoService.readTodos();
-    
-    // Filter out todos to be deleted and adjust orders
-    const todosToKeep = todos.filter(todo => !todoIds.includes(todo.id));
-    
-    // Recalculate orders for each status
-    const statusGroups = new Map<Todo['status'], Todo[]>();
-    
-    // Group todos by status
-    todosToKeep.forEach(todo => {
-      if (!statusGroups.has(todo.status)) {
-        statusGroups.set(todo.status, []);
-      }
-      statusGroups.get(todo.status)!.push(todo);
-    });
-    
-    // Reorder todos within each status group
-    statusGroups.forEach(todos => {
-      todos.sort((a, b) => a.order - b.order);
-      todos.forEach((todo, index) => {
-        todo.order = index;
-      });
-    });
-
-    // Write the remaining todos back to storage
-    await todoService.writeTodos(todosToKeep);
-
-    const deletedCount = todos.length - todosToKeep.length;
-
-    if (deletedCount === 0) {
-      return res.status(404).json({ message: 'No todos were found to delete' });
-    }
-
-    res.json({
-      message: `Successfully deleted ${deletedCount} todos`,
-      deletedCount
-    });
-  } catch (error) {
-    console.error('Error bulk deleting todos:', error);
-    res.status(500).json({ message: 'Error bulk deleting todos' });
-  }
-});
-
-// Bulk capitalize todos
-router.put('/bulk/capitalize', async (req, res) => {
-  try {
-    // Add 600ms delay
-    await delay(600);
-
-    const { todoIds } = req.body;
-
-    if (!Array.isArray(todoIds) || todoIds.length === 0) {
-      return res.status(400).json({ message: 'todoIds must be a non-empty array' });
-    }
-
-    // Read all todos once
-    const todos = await todoService.readTodos();
-    const updatedTodos = todos.map(todo => {
-      if (todoIds.includes(todo.id)) {
-        return {
-          ...todo,
-          title: todo.title
-            .split(' ')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-            .join(' '),
-          updatedAt: new Date().toISOString()
-        };
-      }
-      return todo;
-    });
-
-    // Write all updates at once
-    await todoService.writeTodos(updatedTodos);
-
-    const successfulUpdates = updatedTodos.filter(todo => todoIds.includes(todo.id));
-
-    if (successfulUpdates.length === 0) {
-      return res.status(404).json({ message: 'No todos were found to update' });
-    }
-
-    res.json({
-      message: `Successfully title-cased ${successfulUpdates.length} todos`,
-      todos: successfulUpdates
-    });
-  } catch (error) {
-    console.error('Error capitalizing todos:', error);
-    res.status(500).json({ message: 'Error capitalizing todos' });
+    await todoService.deleteTodo(id, req.user.id);
+    res.json({ message: 'Todo deleted successfully' });
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
   }
 });
 
