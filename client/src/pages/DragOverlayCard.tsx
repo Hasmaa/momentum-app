@@ -1,7 +1,6 @@
 import { WarningIcon, CalendarIcon } from '@chakra-ui/icons';
 import { useColorModeValue, Card, Box, CardBody, VStack, Heading, Text, Flex, HStack, Tag as ChakraTag, TagLeftIcon, TagLabel, Wrap, WrapItem } from '@chakra-ui/react';
 import { isPast, isWithinInterval, addDays, format } from 'date-fns';
-import React from 'react';
 import { Task } from '../types';
 import { TagBadge } from '../components/tags/TagBadge';
 
@@ -23,8 +22,8 @@ export const DragOverlayCard = ({ todo }: { todo: Task; }) => {
   const descriptionColor = useColorModeValue('gray.600', 'gray.300');
   const borderColor = useColorModeValue('gray.100', 'gray.700');
 
-  const isOverdue = isPast(new Date(todo.dueDate));
-  const isDueSoon = isWithinInterval(new Date(todo.dueDate), {
+  const isOverdue = isPast(new Date(todo.due_date));
+  const isDueSoon = isWithinInterval(new Date(todo.due_date), {
     start: new Date(),
     end: addDays(new Date(), 2)
   });
@@ -113,7 +112,7 @@ export const DragOverlayCard = ({ todo }: { todo: Task; }) => {
                 as={CalendarIcon}
                 boxSize="10px" />
               <TagLabel>
-                {format(new Date(todo.dueDate), 'MMM d')}
+                {format(new Date(todo.due_date), 'MMM d')}
               </TagLabel>
             </ChakraTag>
           </Flex>

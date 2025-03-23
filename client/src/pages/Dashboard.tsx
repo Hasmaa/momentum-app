@@ -1074,7 +1074,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                                 animate={{ opacity: 1, y: 0 }}
                                 whileHover={{ 
                                   scale: 1.02,
-                                  borderColor: status === 'completed' ? 'green.400' : status === 'in-progress' ? 'blue.400' : 'gray.400',
+                                  borderColor: status === 'completed' ? '#48BB78' : status === 'in-progress' ? '#4299E1' : '#A0AEC0',
                                   boxShadow: 'lg'
                                 }}
                               >
@@ -1292,7 +1292,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                             animate={{ opacity: 1, y: 0 }}
                             whileHover={{ 
                               scale: 1.02,
-                              borderColor: status === 'completed' ? 'green.400' : status === 'in-progress' ? 'blue.400' : 'gray.400',
+                              borderColor: status === 'completed' ? '#48BB78' : status === 'in-progress' ? '#4299E1' : '#A0AEC0',
                               boxShadow: 'lg'
                             }}
                           >
@@ -1438,7 +1438,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
           description: task.description,
           status: task.status,
           priority: task.priority,
-          dueDate: dueDate.toISOString(),
+          due_date: dueDate.toISOString(),
           tags: [], // Add empty tags array as needed by the API
           completed: task.status === 'completed'
         });
@@ -1982,7 +1982,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                                                         animate={{ opacity: 1, y: 0 }}
                                                         whileHover={{ 
                                                           scale: 1.02,
-                                                          borderColor: status === 'completed' ? 'green.400' : status === 'in-progress' ? 'blue.400' : 'gray.400',
+                                                          borderColor: status === 'completed' ? '#48BB78' : status === 'in-progress' ? '#4299E1' : '#A0AEC0',
                                                           boxShadow: 'lg'
                                                         }}
                                                       >
@@ -2225,7 +2225,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
                                                   animate={{ opacity: 1, y: 0 }}
                                                   whileHover={{ 
                                                     scale: 1.02,
-                                                    borderColor: status === 'completed' ? 'green.400' : status === 'in-progress' ? 'blue.400' : 'gray.400',
+                                                    borderColor: status === 'completed' ? '#48BB78' : status === 'in-progress' ? '#4299E1' : '#A0AEC0',
                                                     boxShadow: 'lg'
                                                   }}
                                                 >

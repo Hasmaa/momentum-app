@@ -21,6 +21,7 @@ export interface Task extends BaseTask {
   completedAt?: string;
   order: number;
   tags: Tag[];
+  due_date: string;
 }
 
 // Task Template Interface
