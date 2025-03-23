@@ -181,16 +181,26 @@ export const deleteTodo = async (id: string, userId: string) => {
   return { success: true };
 };
 
-export const moveTodo = async (id: string, newStatus: Todo['status'], newOrder: number) => {
-  // First get the todo to move
+export const moveTodo = async (id: string, newStatus: Todo['status'], newOrder: number, userId: string) => {
+  console.log(`Moving todo ${id} to status ${newStatus} with order ${newOrder} for user ${userId}`);
+  
+  // First get the todo to move and make sure it belongs to the user
   const { data: todo, error: fetchError } = await supabase
     .from(TODOS_TABLE)
     .select('*')
     .eq('id', id)
+    .eq('user_id', userId)
     .single();
   
-  if (fetchError) throw fetchError;
-  if (!todo) throw new Error('Todo not found');
+  if (fetchError) {
+    console.error('Error fetching todo for move:', fetchError);
+    throw fetchError;
+  }
+  
+  if (!todo) {
+    console.error(`Todo ${id} not found for user ${userId}`);
+    throw new Error('Todo not found or does not belong to the user');
+  }
   
   // Update the todo with the new status and order
   const { data, error } = await supabase
@@ -200,10 +210,16 @@ export const moveTodo = async (id: string, newStatus: Todo['status'], newOrder: 
       updated_at: new Date().toISOString()
     })
     .eq('id', id)
+    .eq('user_id', userId)
     .select()
     .single();
   
-  if (error) throw error;
+  if (error) {
+    console.error('Error updating todo for move:', error);
+    throw error;
+  }
+  
+  console.log(`Successfully moved todo ${id} to status ${newStatus}`);
   
   // Map snake_case back to camelCase
   if (data && data.due_date) {

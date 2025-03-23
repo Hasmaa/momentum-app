@@ -171,6 +171,144 @@ router.delete('/:id', async (req: Request, res: Response) => {
   }
 });
 
+// Bulk delete todos
+router.post('/bulk/delete', async (req: Request, res: Response) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
+    const { todoIds } = req.body;
+    
+    if (!Array.isArray(todoIds) || todoIds.length === 0) {
+      return res.status(400).json({ message: 'Invalid or empty todoIds array' });
+    }
+    
+    console.log(`Attempting to bulk delete ${todoIds.length} todos for user ${req.user.id}`);
+    
+    // Verify all todos belong to the user before deleting
+    for (const id of todoIds) {
+      const todo = await todoService.getTodoById(id, req.user.id);
+      if (!todo) {
+        return res.status(404).json({ 
+          message: `Todo with ID ${id} not found or does not belong to the user` 
+        });
+      }
+    }
+    
+    // Delete all todos one by one
+    const results = await Promise.all(
+      todoIds.map(id => todoService.deleteTodo(id, req.user.id))
+    );
+    
+    res.json({ 
+      message: `Successfully deleted ${results.length} todos`,
+      count: results.length
+    });
+  } catch (error: any) {
+    console.error('Error in bulk delete:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Bulk update todos
+router.put('/bulk/update', async (req: Request, res: Response) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
+    const { todoIds, updates } = req.body;
+    
+    if (!Array.isArray(todoIds) || todoIds.length === 0) {
+      return res.status(400).json({ message: 'Invalid or empty todoIds array' });
+    }
+    
+    if (!updates || typeof updates !== 'object') {
+      return res.status(400).json({ message: 'Updates must be an object' });
+    }
+    
+    console.log(`Attempting to bulk update ${todoIds.length} todos for user ${req.user.id}`);
+    
+    // Verify all todos belong to the user before updating
+    for (const id of todoIds) {
+      const todo = await todoService.getTodoById(id, req.user.id);
+      if (!todo) {
+        return res.status(404).json({ 
+          message: `Todo with ID ${id} not found or does not belong to the user` 
+        });
+      }
+    }
+    
+    // Update all todos one by one
+    const updatedTodos = await Promise.all(
+      todoIds.map(id => todoService.updateTodo(id, updates, req.user.id))
+    );
+    
+    res.json({ 
+      message: `Successfully updated ${updatedTodos.length} todos`,
+      todos: updatedTodos 
+    });
+  } catch (error: any) {
+    console.error('Error in bulk update:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Bulk capitalize todos
+router.put('/bulk/capitalize', async (req: Request, res: Response) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
+    const { todoIds } = req.body;
+    
+    if (!Array.isArray(todoIds) || todoIds.length === 0) {
+      return res.status(400).json({ message: 'Invalid or empty todoIds array' });
+    }
+    
+    console.log(`Attempting to capitalize ${todoIds.length} todos for user ${req.user.id}`);
+    
+    const updatedTodos = [];
+    
+    // For each todo, get it, capitalize the title, and update it
+    for (const id of todoIds) {
+      // First verify the todo exists and belongs to the user
+      const todo = await todoService.getTodoById(id, req.user.id);
+      
+      if (!todo) {
+        return res.status(404).json({ 
+          message: `Todo with ID ${id} not found or does not belong to the user` 
+        });
+      }
+      
+      // Capitalize the title
+      const capitalizedTitle = todo.title.charAt(0).toUpperCase() + todo.title.slice(1);
+      
+      if (capitalizedTitle !== todo.title) {
+        // Only update if the title actually changed
+        const updatedTodo = await todoService.updateTodo(
+          id, 
+          { title: capitalizedTitle },
+          req.user.id
+        );
+        updatedTodos.push(updatedTodo);
+      } else {
+        updatedTodos.push(todo);
+      }
+    }
+    
+    res.json({ 
+      message: `Successfully capitalized ${updatedTodos.length} todos`,
+      todos: updatedTodos 
+    });
+  } catch (error: any) {
+    console.error('Error capitalizing todos:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Move a todo (for drag and drop)
 router.post('/:id/move', async (req: Request, res: Response) => {
   try {
@@ -187,7 +325,7 @@ router.post('/:id/move', async (req: Request, res: Response) => {
       return res.status(404).json({ message: 'Todo not found' });
     }
 
-    const updatedTodo = await todoService.moveTodo(id, status, order);
+    const updatedTodo = await todoService.moveTodo(id, status, order, req.user.id);
     res.json(updatedTodo);
   } catch (error: any) {
     console.error('Error moving todo:', error);

@@ -9,26 +9,31 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 
-// Routes
-app.use('/api/todos', todoRoutes);
-app.use('/api/auth', authRoutes);
+// Basic logging middleware
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`);
+  next();
+});
 
-// Health check route
+// Health check endpoint
 app.get('/api/health', (req, res) => {
-  // Log auth header for debugging
-  const authHeader = req.headers.authorization;
-  console.log('[HEALTH] Request headers:', JSON.stringify(req.headers));
-  console.log('[HEALTH] Auth header:', authHeader ? authHeader.substring(0, 20) + '...' : 'Not provided');
+  console.log('Health check request');
+  console.log('Auth Header:', req.headers.authorization ? 'Present' : 'Not present');
   
-  res.status(200).json({ 
+  // Return basic health status with auth information
+  res.json({
     status: 'ok',
-    authHeaderPresent: !!authHeader,
-    timestamp: new Date().toISOString() 
+    timestamp: new Date().toISOString(),
+    authHeaderPresent: !!req.headers.authorization,
   });
 });
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/todos', todoRoutes);
 
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
