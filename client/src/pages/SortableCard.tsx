@@ -57,6 +57,40 @@ export const SortableCard = React.forwardRef<HTMLDivElement, {
     end: addDays(new Date(), 2)
   });
 
+  // Make sure we have a valid date before using format
+  const formatDate = (dateString: string | undefined) => {
+    if (!dateString) return 'No date';
+    
+    try {
+      const date = new Date(dateString);
+      // Check if the date is valid
+      if (isNaN(date.getTime())) {
+        return 'Invalid date';
+      }
+      return format(date, 'MMM d');
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Invalid date';
+    }
+  };
+
+  // Also make sure to check for valid date before using format for tooltip
+  const getTooltipDate = (dateString: string | undefined) => {
+    if (!dateString) return 'No due date';
+    
+    try {
+      const date = new Date(dateString);
+      // Check if the date is valid
+      if (isNaN(date.getTime())) {
+        return 'Invalid due date';
+      }
+      return `Due: ${format(date, 'PPP')}`;
+    } catch (error) {
+      console.error('Error formatting tooltip date:', error);
+      return 'Invalid due date';
+    }
+  };
+
   return (
     <Box
       ref={useMergeRefs(setNodeRef, ref)}
@@ -298,7 +332,7 @@ export const SortableCard = React.forwardRef<HTMLDivElement, {
                 </HStack>
 
                 <Tooltip
-                  label={`Due: ${format(new Date(todo.dueDate), 'PPP')}`}
+                  label={getTooltipDate(todo.dueDate)}
                   placement="top"
                   hasArrow
                 >
@@ -313,7 +347,7 @@ export const SortableCard = React.forwardRef<HTMLDivElement, {
                       as={CalendarIcon}
                       boxSize="10px" />
                     <TagLabel>
-                      {format(new Date(todo.dueDate), 'MMM d')}
+                      {formatDate(todo.dueDate)}
                     </TagLabel>
                   </ChakraTag>
                 </Tooltip>

@@ -25,7 +25,17 @@ export const getTodos = async (userId: string) => {
     .order('created_at', { ascending: false });
   
   if (error) throw error;
-  return data;
+  
+  // Map snake_case to camelCase for all todos
+  return data?.map(todo => {
+    if (todo.due_date) {
+      return {
+        ...todo,
+        dueDate: todo.due_date
+      };
+    }
+    return todo;
+  }) || [];
 };
 
 export const getTodoById = async (id: string, userId: string) => {
@@ -37,6 +47,15 @@ export const getTodoById = async (id: string, userId: string) => {
     .single();
   
   if (error) throw error;
+  
+  // Map snake_case to camelCase for the todo
+  if (data && data.due_date) {
+    return {
+      ...data,
+      dueDate: data.due_date
+    };
+  }
+  
   return data;
 };
 
@@ -116,18 +135,38 @@ export const createTodo = async (todo: Todo) => {
 };
 
 export const updateTodo = async (id: string, todo: Partial<Todo>, userId: string) => {
+  // Create an update object that maps camelCase to snake_case
+  const updateData: any = {
+    ...todo,
+    updated_at: new Date().toISOString()
+  };
+  
+  // Convert dueDate to due_date if present
+  if (todo.dueDate !== undefined) {
+    updateData.due_date = todo.dueDate;
+    delete updateData.dueDate; // Remove the camelCase version
+  }
+  
+  console.log(`Updating todo ${id} with data:`, JSON.stringify(updateData));
+  
   const { data, error } = await supabase
     .from(TODOS_TABLE)
-    .update({
-      ...todo,
-      updated_at: new Date().toISOString()
-    })
+    .update(updateData)
     .eq('id', id)
     .eq('user_id', userId)
     .select()
     .single();
   
   if (error) throw error;
+  
+  // Map snake_case back to camelCase
+  if (data && data.due_date) {
+    return {
+      ...data,
+      dueDate: data.due_date
+    };
+  }
+  
   return data;
 };
 
