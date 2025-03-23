@@ -93,20 +93,24 @@ export const testRequestInterceptor = async () => {
       authHeader: response.config.headers?.Authorization || 'NOT SET'
     });
     
+    // Get the actual auth header value
+    const authHeader = response.config.headers?.Authorization;
+    const authHeaderStr = typeof authHeader === 'string' ? authHeader : 'NOT SET';
+    
     // See if token was attached as expected
-    if (response.config.headers?.Authorization === `Bearer ${expectedToken}`) {
+    if (authHeaderStr === `Bearer ${expectedToken}`) {
       console.log('✅ INTERCEPTOR TEST: SUCCESS - Token was correctly attached by interceptor');
     } else {
       console.log('❌ INTERCEPTOR TEST: FAILED - Token was not attached or doesn\'t match expected token');
       console.log('Expected:', `Bearer ${expectedToken?.substring(0, 10)}...`);
-      console.log('Actual:', response.config.headers?.Authorization?.substring(0, 17) || 'NOT SET');
+      console.log('Actual:', typeof authHeader === 'string' ? authHeaderStr.substring(0, 17) : 'NOT SET');
     }
     
     return {
       success: true,
-      tokenMatched: response.config.headers?.Authorization === `Bearer ${expectedToken}`,
+      tokenMatched: authHeaderStr === `Bearer ${expectedToken}`,
       expectedToken: expectedToken ? `${expectedToken.substring(0, 10)}...` : 'NO TOKEN',
-      actualHeader: response.config.headers?.Authorization?.substring(0, 17) || 'NOT SET'
+      actualHeader: typeof authHeader === 'string' ? authHeaderStr.substring(0, 17) : 'NOT SET'
     };
   } catch (error) {
     console.log('🧪 INTERCEPTOR TEST: Request failed', error);
@@ -121,7 +125,7 @@ export const testRequestInterceptor = async () => {
 api.interceptors.request.use(
   async (config) => {
     try {
-      console.log('API Request to:', config.url);
+      console.log(`API Request to: ${config.method?.toUpperCase()} ${config.url}`);
       
       // Check if this is a test request
       const isTestRequest = config.headers?.['X-Test-Request'] === 'true';
@@ -133,16 +137,23 @@ api.interceptors.request.use(
       
       // Always include the token if we have one
       if (token) {
+        console.log(`[${config.method?.toUpperCase()}] Adding authorization token to request`);
+        
         // Make sure to set Authorization as a string
         config.headers['Authorization'] = `Bearer ${token}`;
-        console.log('Authorization header set:', `Bearer ${token.substring(0, 10)}...`);
+        console.log(`[${config.method?.toUpperCase()}] Authorization header set:`, `Bearer ${token.substring(0, 10)}...`);
+        
+        // Check that the header is actually there after setting
+        console.log(`[${config.method?.toUpperCase()}] Verifying header was set:`, config.headers['Authorization'] ? 'YES' : 'NO');
         
         // WORKAROUND: Also set it directly on the reqConfig.headers for axios
         if (config.headers) {
           if (typeof config.headers.set === 'function') {
+            console.log(`[${config.method?.toUpperCase()}] Using .set() method on headers`);
             config.headers.set('Authorization', `Bearer ${token}`);
           } else {
             // Direct property access as fallback
+            console.log(`[${config.method?.toUpperCase()}] Using direct property assignment`);
             config.headers['Authorization'] = `Bearer ${token}`;
           }
         }
@@ -151,7 +162,7 @@ api.interceptors.request.use(
           console.log('🧪 INTERCEPTOR TEST: Token added to headers:', `Bearer ${token.substring(0, 10)}...`);
         }
       } else {
-        console.warn('⚠️ WARNING: No access token available - request will not be authenticated');
+        console.warn(`⚠️ [${config.method?.toUpperCase()}] WARNING: No access token available - request will not be authenticated`);
         
         if (isTestRequest) {
           console.log('🧪 INTERCEPTOR TEST: No token available to add to headers');
@@ -159,12 +170,12 @@ api.interceptors.request.use(
       }
       
       // Log the final headers for debugging
-      console.log('Request headers:', JSON.stringify({
+      console.log(`[${config.method?.toUpperCase()}] Final request headers:`, JSON.stringify({
         ...config.headers,
         Authorization: config.headers.Authorization ? 'Bearer ***' : undefined
       }));
     } catch (error) {
-      console.error('Error setting auth token:', error);
+      console.error(`[${config.method?.toUpperCase()}] Error setting auth token:`, error);
     }
     
     return config;
@@ -204,6 +215,13 @@ export interface Todo {
   user_id?: string;
   created_at?: string;
   updated_at?: string;
+  status?: string;
+  priority?: string;
+  due_date?: string;
+  order?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  tags?: { id: string; name: string; color: string }[];
 }
 
 // Todo API methods
@@ -232,40 +250,122 @@ export const TodoAPI = {
 
   // Create a new todo
   create: async (todo: Omit<Todo, 'id'>): Promise<Todo> => {
-    // Make sure we have the user_id 
-    if (!todo.user_id) {
-      const { data } = await supabase.auth.getUser();
-      if (data.user) {
-        todo.user_id = data.user.id;
-        console.log('Setting user_id from current user:', todo.user_id.substring(0, 8) + '...');
-      } else {
-        console.error('No authenticated user found when creating todo');
-        throw new Error('Cannot create todo: No authenticated user');
-      }
-    } else {
-      console.log('Using provided user_id:', todo.user_id.substring(0, 8) + '...');
-    }
-    
-    console.log('Creating todo with data:', {
+    console.log('📝 TodoAPI.create - Starting with data:', {
       title: todo.title,
-      completed: todo.completed,
-      user_id: todo.user_id.substring(0, 8) + '...' // Log partial user_id for privacy
+      status: todo.status,
+      priority: todo.priority
     });
     
-    const response = await api.post('/todos', todo);
-    return response.data;
+    // Get the current user to set user_id correctly
+    try {
+      console.log('📝 TodoAPI.create - Getting current session directly from supabase');
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      if (!sessionData.session) {
+        console.error('📝 TodoAPI.create - No active Supabase session found');
+        throw new Error('Authentication required: No active session');
+      }
+      
+      console.log('📝 TodoAPI.create - Session found, user ID:', 
+        sessionData.session.user.id.substring(0, 8) + '...');
+      
+      // IMPORTANT: Always set the user_id to match the session user exactly
+      todo.user_id = sessionData.session.user.id;
+      
+      console.log('📝 TodoAPI.create - Checking token validity:', 
+        sessionData.session.access_token.substring(0, 10) + '...');
+      
+      console.log('📝 TodoAPI.create - Final todo data with user_id:', {
+        title: todo.title,
+        completed: todo.completed,
+        status: todo.status,
+        priority: todo.priority,
+        user_id: todo.user_id?.substring(0, 8) + '...' // Log partial user_id for privacy
+      });
+      
+      try {
+        console.log('📝 TodoAPI.create - Sending POST request to /todos');
+        
+        // For extra debugging, add auth header manually in addition to interceptor
+        const headers = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${sessionData.session.access_token}`
+        };
+        
+        console.log('📝 TodoAPI.create - Using headers:', {
+          ...headers,
+          'Authorization': headers.Authorization ? 'Bearer ***' : undefined
+        });
+        
+        const response = await api.post('/todos', todo, { headers });
+        console.log('📝 TodoAPI.create - Request successful, received response');
+        return response.data;
+      } catch (error: any) {
+        console.error('📝 TodoAPI.create - Server error:', error.response?.data || error);
+        console.error('📝 TodoAPI.create - Error status:', error.response?.status);
+        console.error('📝 TodoAPI.create - Request payload:', JSON.stringify(todo, null, 2));
+        throw error;
+      }
+    } catch (error) {
+      console.error('📝 TodoAPI.create - Authentication error:', error);
+      throw error;
+    }
   },
 
   // Update a todo
   update: async (id: string, todo: Partial<Todo>): Promise<Todo> => {
-    const response = await api.put(`/todos/${id}`, todo);
-    return response.data;
+    console.log('🔄 TodoAPI.update - Starting update for todo:', id.substring(0, 8) + '...');
+    
+    try {
+      // Don't allow changing user_id in updates to prevent RLS issues
+      if (todo.user_id) {
+        console.warn('🔄 TodoAPI.update - Removing user_id from update payload for security');
+        delete todo.user_id;
+      }
+      
+      console.log('🔄 TodoAPI.update - Sending update with data:', {
+        ...todo,
+        id: id.substring(0, 8) + '...'
+      });
+      
+      const response = await api.put(`/todos/${id}`, todo);
+      console.log('🔄 TodoAPI.update - Update successful');
+      return response.data;
+    } catch (error) {
+      console.error('🔄 TodoAPI.update - Error updating todo:', error);
+      throw error;
+    }
   },
 
   // Delete a todo
   delete: async (id: string): Promise<void> => {
     await api.delete(`/todos/${id}`);
   },
+  
+  // Bulk operations
+  bulkDelete: async (todoIds: string[]): Promise<any> => {
+    const response = await api.post('/todos/bulk/delete', { todoIds });
+    return response.data;
+  },
+  
+  bulkUpdate: async (todoIds: string[], updates: Partial<Todo>): Promise<any> => {
+    const response = await api.put('/todos/bulk/update', { todoIds, updates });
+    return response.data;
+  },
+  
+  bulkCapitalize: async (todoIds: string[]): Promise<any> => {
+    const response = await api.put('/todos/bulk/capitalize', { todoIds });
+    return response.data;
+  },
+  
+  // Move todo (for drag and drop)
+  moveTodo: async (todoId: string, toStatus: string, index: number): Promise<any> => {
+    const response = await api.post(`/todos/${todoId}/move`, { 
+      status: toStatus, 
+      order: index 
+    });
+    return response.data;
+  }
 };
 
 // Export the API instance for other API services

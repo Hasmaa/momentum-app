@@ -408,27 +408,15 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     
     setIsDeleting(true);
     try {
-      const response = await fetch('http://localhost:5001/api/todos/bulk/delete', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          todoIds: Array.from(selectedTodos)
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to delete tasks');
-      }
-
-      const result = await response.json();
+      // Use TodoAPI instead of direct fetch
+      const result = await TodoAPI.bulkDelete(Array.from(selectedTodos));
+      
       fetchTodos();
       setSelectedTodos(new Set());
       setIsSelectMode(false);
       
       toast({
-        title: result.message,
+        title: result.message || 'Tasks deleted successfully',
         status: 'success',
         duration: 3000,
       });
@@ -448,28 +436,18 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     if (selectedTodos.size === 0) return;
     
     try {
-      const response = await fetch('http://localhost:5001/api/todos/bulk/update', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          todoIds: Array.from(selectedTodos),
-          updates: { status: newStatus }
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update tasks');
-      }
-
-      const result = await response.json();
+      // Use TodoAPI instead of direct fetch
+      const result = await TodoAPI.bulkUpdate(
+        Array.from(selectedTodos),
+        { status: newStatus }
+      );
+      
       fetchTodos();
       setSelectedTodos(new Set());
       setIsSelectMode(false);
       
       toast({
-        title: result.message,
+        title: result.message || 'Tasks updated successfully',
         status: 'success',
         duration: 3000,
       });
@@ -487,27 +465,15 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     if (selectedTodos.size === 0) return;
     
     try {
-      const response = await fetch('http://localhost:5001/api/todos/bulk/capitalize', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          todoIds: Array.from(selectedTodos)
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to capitalize tasks');
-      }
-
-      const result = await response.json();
+      // Use TodoAPI instead of direct fetch
+      const result = await TodoAPI.bulkCapitalize(Array.from(selectedTodos));
+      
       fetchTodos();
       setSelectedTodos(new Set());
       setIsSelectMode(false);
       
       toast({
-        title: result.message,
+        title: result.message || 'Tasks capitalized successfully',
         status: 'success',
         duration: 3000,
       });
@@ -618,22 +584,16 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const response = await fetch('http://localhost:5001/api/todos', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title,
-          description,
-          status,
-          priority,
-          dueDate: new Date(dueDate).toISOString(),
-          tags: newTaskTags, // Add tags to the request
-        }),
+      // Use TodoAPI instead of direct fetch
+      await TodoAPI.create({
+        title,
+        description,
+        status,
+        priority,
+        due_date: new Date(dueDate).toISOString(),
+        tags: newTaskTags,
+        completed: status === 'completed'
       });
-      
-      if (!response.ok) throw new Error('Failed to create todo');
       
       setTitle('');
       setDescription('');
@@ -673,11 +633,8 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     setIsDeleting(true);
     
     try {
-      const response = await fetch(`http://localhost:5001/api/todos/${todoToDelete.id}`, {
-        method: 'DELETE',
-      });
-      
-      if (!response.ok) throw new Error('Failed to delete todo');
+      // Use TodoAPI instead of direct fetch
+      await TodoAPI.delete(todoToDelete.id);
       
       fetchTodos();
       toast({
@@ -704,18 +661,9 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
   const handleStatusChange = async (id: string, newStatus: Task['status']) => {
     setUpdatingTodoIds(prev => new Set(prev).add(id));
     try {
-      const response = await fetch(`http://localhost:5001/api/todos/${id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update task status');
-      }
-
+      // Use TodoAPI instead of direct fetch
+      await TodoAPI.update(id, { status: newStatus });
+      
       await fetchTodos();
       toast({
         title: 'Task status updated',
@@ -734,9 +682,9 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
       });
     } finally {
       setUpdatingTodoIds(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(id);
-        return newSet;
+        const updated = new Set(prev);
+        updated.delete(id);
+        return updated;
       });
     }
   };
@@ -759,22 +707,15 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
     }
 
     try {
-      const response = await fetch(`http://localhost:5001/api/todos/${todo.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          title: todo.title,
-          description: todo.description,
-          status: todo.status,
-          priority: todo.priority,
-          dueDate: new Date(todo.dueDate).toISOString(),
-          tags: todo.tags || [], // Include tags in the update
-        }),
+      // Use TodoAPI instead of direct fetch
+      await TodoAPI.update(todo.id, {
+        title: todo.title,
+        description: todo.description,
+        status: todo.status,
+        priority: todo.priority,
+        due_date: new Date(todo.dueDate).toISOString(),
+        tags: todo.tags || [],
       });
-      
-      if (!response.ok) throw new Error('Failed to update todo');
       
       setEditingTodo(null);
       onEditModalClose();
@@ -914,21 +855,8 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
       );
       setTodos(updatedTodos.sort((a, b) => a.order - b.order));
 
-      // Make the API call
-      const response = await fetch(`http://localhost:5001/api/todos/${todoId}/move`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          newOrder,
-          status: newStatus
-        }),
-      });
-      
-      if (!response.ok) throw new Error('Failed to update todo');
-
-      const updatedTodo = await response.json();
+      // Make the API call using TodoAPI
+      const updatedTodo = await TodoAPI.moveTodo(todoId, newStatus, newOrder);
       console.log('Server response:', updatedTodo);
 
       // Update local state with the server response
@@ -961,11 +889,9 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
   // Add function to fetch todos for achievement checks
   const fetchTodosForAchievements = async (): Promise<Task[]> => {
     try {
-      const response = await fetch('http://localhost:5001/api/todos');
-      if (!response.ok) {
-        throw new Error('Failed to fetch tasks for achievement check');
-      }
-      return await response.json();
+      // Use TodoAPI instead of direct fetch
+      const data = await TodoAPI.getAll();
+      return data as unknown as Task[]; // Type conversion needed due to differences between Todo and Task
     } catch (error) {
       console.error('Error fetching tasks for achievement check:', error);
       return todos; // Fall back to current state if fetch fails

@@ -3,15 +3,20 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const supabaseUrl = process.env.SUPABASE_URL || '';
-const supabaseKey = process.env.SUPABASE_ANON_KEY || '';
+const supabaseUrl = process.env.SUPABASE_URL || 'http://localhost:54321';
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
 
-if (!supabaseUrl || !supabaseKey) {
-  console.error('Missing Supabase credentials. Please check your .env file.');
-  process.exit(1);
-}
+// Use the service role key so we can bypass RLS for server operations
+export const supabase = createClient(supabaseUrl, supabaseKey, {
+  auth: {
+    autoRefreshToken: false,
+    persistSession: false
+  }
+});
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// Log which key is being used (without exposing the full key)
+console.log(`Supabase initialized with URL: ${supabaseUrl}`);
+console.log(`Using Supabase key type: ${supabaseKey.startsWith('eyJ') && supabaseKey.includes('service_role') ? 'Service Role Key' : 'Other Key'}`);
 
 // Auth helpers
 export const signUp = async (email: string, password: string, userData: any = {}) => {
