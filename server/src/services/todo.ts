@@ -179,4 +179,39 @@ export const deleteTodo = async (id: string, userId: string) => {
   
   if (error) throw error;
   return { success: true };
+};
+
+export const moveTodo = async (id: string, newStatus: Todo['status'], newOrder: number) => {
+  // First get the todo to move
+  const { data: todo, error: fetchError } = await supabase
+    .from(TODOS_TABLE)
+    .select('*')
+    .eq('id', id)
+    .single();
+  
+  if (fetchError) throw fetchError;
+  if (!todo) throw new Error('Todo not found');
+  
+  // Update the todo with the new status and order
+  const { data, error } = await supabase
+    .from(TODOS_TABLE)
+    .update({ 
+      status: newStatus,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', id)
+    .select()
+    .single();
+  
+  if (error) throw error;
+  
+  // Map snake_case back to camelCase
+  if (data && data.due_date) {
+    return {
+      ...data,
+      dueDate: data.due_date
+    };
+  }
+  
+  return data;
 }; 

@@ -171,4 +171,28 @@ router.delete('/:id', async (req: Request, res: Response) => {
   }
 });
 
+// Move a todo (for drag and drop)
+router.post('/:id/move', async (req: Request, res: Response) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: 'User not authenticated' });
+    }
+
+    const { id } = req.params;
+    const { status, order } = req.body;
+
+    // First check if the todo exists and belongs to the user
+    const existingTodo = await todoService.getTodoById(id, req.user.id);
+    if (!existingTodo) {
+      return res.status(404).json({ message: 'Todo not found' });
+    }
+
+    const updatedTodo = await todoService.moveTodo(id, status, order);
+    res.json(updatedTodo);
+  } catch (error: any) {
+    console.error('Error moving todo:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 export default router; 
