@@ -1432,15 +1432,15 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
         const dueDate = new Date();
         dueDate.setDate(dueDate.getDate() + (typeof task.dueDate === 'number' ? task.dueDate : 0));
         
-        await fetch('http://localhost:5001/api/todos', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            ...task,
-            dueDate: dueDate.toISOString(),
-          }),
+        // Use TodoAPI instead of direct fetch for proper auth and field mapping
+        await TodoAPI.create({
+          title: task.title,
+          description: task.description,
+          status: task.status,
+          priority: task.priority,
+          dueDate: dueDate.toISOString(),
+          tags: [], // Add empty tags array as needed by the API
+          completed: task.status === 'completed'
         });
 
         // Update progress toast
@@ -1722,7 +1722,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialTasks = [] }) => {
 
   const SessionDebugger = () => {
     return (
-      <Box my={4} p={4} bg="gray.100" borderRadius="md">
+      <Box my={4} p={4} bg="gray.100" borderRadius="md" display="none">
         <Text fontWeight="bold" mb={2}>Debug Session</Text>
         <Button size="sm" colorScheme="blue" onClick={checkSession} mb={2}>
           Check Session
